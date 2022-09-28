@@ -1,0 +1,48 @@
+namespace LC.Crawler.BackOffice.Permissions;
+
+public static class BackOfficePermissions
+{
+    public const string GroupName = "BackOffice";
+
+    public static class Dashboard
+    {
+        public const string DashboardGroup = GroupName + ".Dashboard";
+        public const string Host = DashboardGroup + ".Host";
+        public const string Tenant = DashboardGroup + ".Tenant";
+    }
+
+    //Add your own permission names. Example:
+    //public const string MyPermission1 = GroupName + ".MyPermission1";
+
+    public class CrawlerAccounts
+    {
+        public const string Default = GroupName + ".CrawlerAccounts";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public class CrawlerProxies
+    {
+        public const string Default = GroupName + ".CrawlerProxies";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public class CrawlerCredentials
+    {
+        public const string Default = GroupName + ".CrawlerCredentials";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public class DataSources
+    {
+        public const string Default = GroupName + ".DataSources";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+}

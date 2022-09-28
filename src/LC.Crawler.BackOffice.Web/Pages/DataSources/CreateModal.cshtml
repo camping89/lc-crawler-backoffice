@@ -1,0 +1,30 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Web.Pages.DataSources
+@using LC.Crawler.BackOffice.DataSources;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model CreateModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/DataSources/CreateModal" autocomplete="off">
+    <abp-modal id="DataSourceCreateModal">
+        <abp-modal-header title="@L["NewDataSource"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    
+            <abp-input asp-for="DataSource.Url"/>
+
+            <abp-input asp-for="DataSource.IsActive"/>
+
+                    
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

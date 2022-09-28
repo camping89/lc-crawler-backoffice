@@ -1,0 +1,20 @@
+namespace LC.Crawler.BackOffice.Web.Menus;
+
+public class BackOfficeMenus
+{
+    private const string Prefix = "BackOffice";
+
+    public const string Home = Prefix + ".Home";
+
+    public const string HostDashboard = Prefix + ".HostDashboard";
+
+    public const string TenantDashboard = Prefix + ".TenantDashboard";
+    public const string CrawlerAccounts = Prefix + ".CrawlerAccounts";
+
+    public const string CrawlerProxies = Prefix + ".CrawlerProxies";
+
+    public const string CrawlerCredentials = Prefix + ".CrawlerCredentials";
+
+    public const string DataSources = Prefix + ".DataSources";
+
+}

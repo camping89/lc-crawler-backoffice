@@ -1,0 +1,48 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using LC.Crawler.BackOffice.Web.Pages.CrawlerCredentials
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.CrawlerCredentials;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model EditModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/CrawlerCredentials/EditModal" autocomplete="off">
+    <abp-modal id="CrawlerCredentialEditModal">
+        <abp-modal-header title="@L["Update"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    <abp-input asp-for="Id" />
+                    <abp-input asp-for="CrawlerCredential.ConcurrencyStamp" hidden="true" suppress-label="true"/>
+                    
+            <abp-select asp-for="CrawlerCredential.DataSourceType"/>
+
+            <abp-input asp-for="CrawlerCredential.CrawledAt" value="@(Model.CrawlerCredential.CrawledAt?.ToString("yyyy-MM-dd"))" type="date"/>
+
+            <abp-input asp-for="CrawlerCredential.IsAvailable"/>
+
+                                <label for="CrawlerAccount_Username">@L["CrawlerAccount"] </label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.CrawlerCredential.CrawlerAccountId  )" id="CrawlerAccount_Id" name="CrawlerCredential.CrawlerAccountId"/>
+                <input type="text" id="CrawlerAccount_Username" class="form-control" value="@Model.CrawlerAccount?.Username" disabled>
+                <abp-button button-type="Info" id="CrawlerAccountLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+            <label for="CrawlerProxy_Ip">@L["CrawlerProxy"] </label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.CrawlerCredential.CrawlerProxyId  )" id="CrawlerProxy_Id" name="CrawlerCredential.CrawlerProxyId"/>
+                <input type="text" id="CrawlerProxy_Ip" class="form-control" value="@Model.CrawlerProxy?.Ip" disabled>
+                <abp-button button-type="Info" id="CrawlerProxyLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

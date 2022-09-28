@@ -1,0 +1,89 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using LC.Crawler.BackOffice.Permissions
+@using LC.Crawler.BackOffice.Web.Pages.CrawlerProxies
+@using LC.Crawler.BackOffice.Web.Menus
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@inject IAuthorizationService Authorization
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["CrawlerProxies"].Value;
+    PageLayout.Content.MenuItemName = BackOfficeMenus.CrawlerProxies;
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/CrawlerProxies/index.js" />
+}
+
+@section content_toolbar {
+    @if (await Authorization.IsGrantedAsync(BackOfficePermissions.CrawlerProxies.Create))
+    {
+        <abp-button id="NewCrawlerProxyButton" text="@L["NewCrawlerProxy"].Value" icon="plus" button-type="Primary" />
+    }
+}
+
+<abp-card>
+    <abp-card-body>
+		<abp-row class="mb-3">
+            <abp-column size-md="_12">
+                <form id="SearchForm" autocomplete="off">
+                    <div class="input-group">
+                        <input class="form-control page-search-filter-text" id="FilterText" placeholder="@L["Search"]"/>
+                        <abp-button button-type="Primary" type="submit" icon="search"/>
+                    </div>
+                </form>
+            </abp-column>
+            <abp-column size-md="_12" class="mt-3">
+                <a href="javascript:;" id="AdvancedFilterSectionToggler" class="text-decoration-none">@L["SeeAdvancedFilters"]</a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row id="AdvancedFilterSection" style="display: none;">
+            <abp-column size="_3">
+                <abp-input asp-for="IpFilter" label="@L["Ip"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PortFilter" label="@L["Port"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ProtocolFilter" label="@L["Protocol"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="UsernameFilter" label="@L["Username"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PasswordFilter" label="@L["Password"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PingedAtFilterMin" label="@L["MinPingedAt"].Value" type="date"/>
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PingedAtFilterMax" label="@L["MaxPingedAt"].Value" type="date"/>
+            </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="IsActiveFilter" label="@L["IsActive"].Value" />
+            </abp-column>
+        </abp-row>
+
+        <abp-table striped-rows="true" id="CrawlerProxiesTable">
+            <thead>
+				<tr>
+					<th>@L["Actions"]</th>
+					<th>@L["Ip"]</th>
+					<th>@L["Port"]</th>
+					<th>@L["Protocol"]</th>
+					<th>@L["Username"]</th>
+					<th>@L["Password"]</th>
+					<th>@L["PingedAt"]</th>
+					<th>@L["IsActive"]</th>
+
+				</tr>
+            </thead>
+        </abp-table>
+    </abp-card-body>
+</abp-card>

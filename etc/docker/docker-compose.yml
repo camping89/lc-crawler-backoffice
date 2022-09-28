@@ -1,0 +1,64 @@
+version: '3.7'
+
+services:
+  backoffice-web:
+    image: lc.crawler/backoffice-web:latest
+    container_name: backoffice-web
+    build:
+      context: ../../
+      dockerfile: src/LC.Crawler.BackOffice.Web/Dockerfile.local
+    environment:
+      - ASPNETCORE_URLS=https://+:443;http://+:80;
+      - Kestrel__Certificates__Default__Path=/root/certificate/localhost.pfx
+      - Kestrel__Certificates__Default__Password=91f91912-5ab0-49df-8166-23377efaf3cc
+      - App__SelfUrl=https://localhost:44353
+      - AuthServer__RequireHttpsMetadata=false
+      - AuthServer__Authority=http://backoffice-web
+      - App__MVCPublicUrl=https://localhost:44306
+      - ConnectionStrings__Default=mongodb://mongodb/BackOffice
+    ports:
+      - "44353:443"
+    restart: on-failure
+    volumes:
+      - ./certs:/root/certificate
+    networks:
+      - abp-network
+
+
+
+  db-migrator:
+    image: lc.crawler/backoffice-db-migrator:latest
+    container_name: db-migrator
+    build:
+      context: ../../
+      dockerfile: src/BackOffice.DbMigrator/Dockerfile.local
+    environment:
+      - IdentityServer__Clients__BackOffice_Web__RootUrl=https://localhost:44353
+      - ConnectionStrings__Default=mongodb://mongodb/BackOffice
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - abp-network
+  
+  mongodb:
+    container_name: mongodb
+    image: mongo:4.2
+    ports:
+      - "27017:27017"
+    volumes:
+       - mongodb_data:/data/db
+    networks:
+      - abp-network
+    healthcheck:
+      test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 10
+volumes:
+  mongodb_data:
+    name: backoffice_mongodb_data
+networks:
+  abp-network:
+    name: backoffice-network
+    driver: bridge

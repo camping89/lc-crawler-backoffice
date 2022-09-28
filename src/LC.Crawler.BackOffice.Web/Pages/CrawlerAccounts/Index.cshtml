@@ -1,0 +1,90 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using LC.Crawler.BackOffice.Permissions
+@using LC.Crawler.BackOffice.Web.Pages.CrawlerAccounts
+@using LC.Crawler.BackOffice.Web.Menus
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@inject IAuthorizationService Authorization
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["CrawlerAccounts"].Value;
+    PageLayout.Content.MenuItemName = BackOfficeMenus.CrawlerAccounts;
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/CrawlerAccounts/index.js" />
+}
+
+@section content_toolbar {
+    @if (await Authorization.IsGrantedAsync(BackOfficePermissions.CrawlerAccounts.Create))
+    {
+        <abp-button id="NewCrawlerAccountButton" text="@L["NewCrawlerAccount"].Value" icon="plus" button-type="Primary" />
+    }
+}
+
+<abp-card>
+    <abp-card-body>
+		<abp-row class="mb-3">
+            <abp-column size-md="_12">
+                <form id="SearchForm" autocomplete="off">
+                    <div class="input-group">
+                        <input class="form-control page-search-filter-text" id="FilterText" placeholder="@L["Search"]"/>
+                        <abp-button button-type="Primary" type="submit" icon="search"/>
+                    </div>
+                </form>
+            </abp-column>
+            <abp-column size-md="_12" class="mt-3">
+                <a href="javascript:;" id="AdvancedFilterSectionToggler" class="text-decoration-none">@L["SeeAdvancedFilters"]</a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row id="AdvancedFilterSection" style="display: none;">
+            <abp-column size="_3">
+                <abp-input asp-for="UsernameFilter" label="@L["Username"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PasswordFilter" label="@L["Password"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="TwoFactorCodeFilter" label="@L["TwoFactorCode"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="AccountTypeFilter" label="@L["AccountType"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="AccountStatusFilter" label="@L["AccountStatus"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="EmailFilter" label="@L["Email"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="EmailPasswordFilter" label="@L["EmailPassword"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="IsActiveFilter" label="@L["IsActive"].Value" />
+            </abp-column>
+        </abp-row>
+
+        <abp-table striped-rows="true" id="CrawlerAccountsTable">
+            <thead>
+				<tr>
+					<th>@L["Actions"]</th>
+					<th>@L["Username"]</th>
+					<th>@L["Password"]</th>
+					<th>@L["TwoFactorCode"]</th>
+					<th>@L["AccountType"]</th>
+					<th>@L["AccountStatus"]</th>
+					<th>@L["Email"]</th>
+					<th>@L["EmailPassword"]</th>
+					<th>@L["IsActive"]</th>
+
+				</tr>
+            </thead>
+        </abp-table>
+    </abp-card-body>
+</abp-card>

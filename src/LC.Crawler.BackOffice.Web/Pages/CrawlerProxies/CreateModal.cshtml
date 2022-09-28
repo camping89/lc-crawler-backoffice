@@ -1,0 +1,40 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Web.Pages.CrawlerProxies
+@using LC.Crawler.BackOffice.CrawlerProxies;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model CreateModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/CrawlerProxies/CreateModal" autocomplete="off">
+    <abp-modal id="CrawlerProxyCreateModal">
+        <abp-modal-header title="@L["NewCrawlerProxy"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    
+            <abp-input asp-for="CrawlerProxy.Ip"/>
+
+            <abp-input asp-for="CrawlerProxy.Port"/>
+
+            <abp-input asp-for="CrawlerProxy.Protocol"/>
+
+            <abp-input asp-for="CrawlerProxy.Username"/>
+
+            <abp-input asp-for="CrawlerProxy.Password"/>
+
+            <abp-input asp-for="CrawlerProxy.PingedAt" value="" type="date"/>
+
+            <abp-input asp-for="CrawlerProxy.IsActive"/>
+
+                    
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

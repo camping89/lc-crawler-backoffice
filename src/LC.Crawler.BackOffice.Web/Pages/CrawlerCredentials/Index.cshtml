@@ -1,0 +1,92 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using LC.Crawler.BackOffice.Permissions
+@using LC.Crawler.BackOffice.Web.Pages.CrawlerCredentials
+@using LC.Crawler.BackOffice.Web.Menus
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@inject IAuthorizationService Authorization
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["CrawlerCredentials"].Value;
+    PageLayout.Content.MenuItemName = BackOfficeMenus.CrawlerCredentials;
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/CrawlerCredentials/index.js" />
+}
+
+@section content_toolbar {
+    @if (await Authorization.IsGrantedAsync(BackOfficePermissions.CrawlerCredentials.Create))
+    {
+        <abp-button id="NewCrawlerCredentialButton" text="@L["NewCrawlerCredential"].Value" icon="plus" button-type="Primary" />
+    }
+}
+
+<abp-card>
+    <abp-card-body>
+		<abp-row class="mb-3">
+            <abp-column size-md="_12">
+                <form id="SearchForm" autocomplete="off">
+                    <div class="input-group">
+                        <input class="form-control page-search-filter-text" id="FilterText" placeholder="@L["Search"]"/>
+                        <abp-button button-type="Primary" type="submit" icon="search"/>
+                    </div>
+                </form>
+            </abp-column>
+            <abp-column size-md="_12" class="mt-3">
+                <a href="javascript:;" id="AdvancedFilterSectionToggler" class="text-decoration-none">@L["SeeAdvancedFilters"]</a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row id="AdvancedFilterSection" style="display: none;">
+            <abp-column size="_3">
+                <abp-select asp-for="DataSourceTypeFilter" label="@L["DataSourceType"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="CrawledAtFilterMin" label="@L["MinCrawledAt"].Value" type="date"/>
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="CrawledAtFilterMax" label="@L["MaxCrawledAt"].Value" type="date"/>
+            </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="IsAvailableFilter" label="@L["IsAvailable"].Value" />
+            </abp-column>
+                <abp-column size="_3">
+                    <label for="CrawlerAccount_Filter_Username">@L["CrawlerAccount"]</label>
+                    <div class="input-group mb-3 mt-2">
+                        <input hidden id="CrawlerAccountIdFilter" />
+                        <input type="text" id="CrawlerAccount_Filter_Username" class="form-control" disabled>
+                        <abp-button button-type="Info" id="CrawlerAccountFilterLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                        <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+                    </div>
+                </abp-column>
+                <abp-column size="_3">
+                    <label for="CrawlerProxy_Filter_Ip">@L["CrawlerProxy"]</label>
+                    <div class="input-group mb-3 mt-2">
+                        <input hidden id="CrawlerProxyIdFilter" />
+                        <input type="text" id="CrawlerProxy_Filter_Ip" class="form-control" disabled>
+                        <abp-button button-type="Info" id="CrawlerProxyFilterLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                        <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+                    </div>
+                </abp-column>
+        </abp-row>
+
+        <abp-table striped-rows="true" id="CrawlerCredentialsTable">
+            <thead>
+				<tr>
+					<th>@L["Actions"]</th>
+					<th>@L["DataSourceType"]</th>
+					<th>@L["CrawledAt"]</th>
+					<th>@L["IsAvailable"]</th>
+					<th>@L["CrawlerAccount"]</th>
+					<th>@L["CrawlerProxy"]</th>
+				</tr>
+            </thead>
+        </abp-table>
+    </abp-card-body>
+</abp-card>

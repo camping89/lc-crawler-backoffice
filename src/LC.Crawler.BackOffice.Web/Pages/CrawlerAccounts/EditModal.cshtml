@@ -1,0 +1,44 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using LC.Crawler.BackOffice.Web.Pages.CrawlerAccounts
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.CrawlerAccounts;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model EditModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/CrawlerAccounts/EditModal" autocomplete="off">
+    <abp-modal id="CrawlerAccountEditModal">
+        <abp-modal-header title="@L["Update"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    <abp-input asp-for="Id" />
+                    <abp-input asp-for="CrawlerAccount.ConcurrencyStamp" hidden="true" suppress-label="true"/>
+                    
+            <abp-input asp-for="CrawlerAccount.Username"/>
+
+            <abp-input asp-for="CrawlerAccount.Password"/>
+
+            <abp-input asp-for="CrawlerAccount.TwoFactorCode"/>
+
+            <abp-select asp-for="CrawlerAccount.AccountType"/>
+
+            <abp-select asp-for="CrawlerAccount.AccountStatus"/>
+
+            <abp-input asp-for="CrawlerAccount.Email"/>
+
+            <abp-input asp-for="CrawlerAccount.EmailPassword"/>
+
+            <abp-input asp-for="CrawlerAccount.IsActive"/>
+
+                    
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
