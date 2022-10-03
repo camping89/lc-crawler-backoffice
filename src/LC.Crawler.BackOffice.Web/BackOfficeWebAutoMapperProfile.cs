@@ -1,3 +1,7 @@
+using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
@@ -20,5 +24,13 @@ public class BackOfficeWebAutoMapperProfile : Profile
         CreateMap<CrawlerCredentialDto, CrawlerCredentialUpdateDto>();
 
         CreateMap<DataSourceDto, DataSourceUpdateDto>();
+
+        CreateMap<CategoryDto, CategoryUpdateDto>();
+
+        CreateMap<ArticleDto, ArticleUpdateDto>().Ignore(x => x.CategoryIds);
+
+        CreateMap<MediaDto, MediaUpdateDto>();
+
+        CreateMap<ProductDto, ProductUpdateDto>().Ignore(x => x.CategoryIds).Ignore(x => x.MediaIds);
     }
 }

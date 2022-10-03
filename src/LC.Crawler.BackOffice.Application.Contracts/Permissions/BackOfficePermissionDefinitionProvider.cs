@@ -36,6 +36,26 @@ public class BackOfficePermissionDefinitionProvider : PermissionDefinitionProvid
         dataSourcePermission.AddChild(BackOfficePermissions.DataSources.Create, L("Permission:Create"));
         dataSourcePermission.AddChild(BackOfficePermissions.DataSources.Edit, L("Permission:Edit"));
         dataSourcePermission.AddChild(BackOfficePermissions.DataSources.Delete, L("Permission:Delete"));
+
+        var categoryPermission = myGroup.AddPermission(BackOfficePermissions.Categories.Default, L("Permission:Categories"));
+        categoryPermission.AddChild(BackOfficePermissions.Categories.Create, L("Permission:Create"));
+        categoryPermission.AddChild(BackOfficePermissions.Categories.Edit, L("Permission:Edit"));
+        categoryPermission.AddChild(BackOfficePermissions.Categories.Delete, L("Permission:Delete"));
+
+        var articlePermission = myGroup.AddPermission(BackOfficePermissions.Articles.Default, L("Permission:Articles"));
+        articlePermission.AddChild(BackOfficePermissions.Articles.Create, L("Permission:Create"));
+        articlePermission.AddChild(BackOfficePermissions.Articles.Edit, L("Permission:Edit"));
+        articlePermission.AddChild(BackOfficePermissions.Articles.Delete, L("Permission:Delete"));
+
+        var mediaPermission = myGroup.AddPermission(BackOfficePermissions.Medias.Default, L("Permission:Medias"));
+        mediaPermission.AddChild(BackOfficePermissions.Medias.Create, L("Permission:Create"));
+        mediaPermission.AddChild(BackOfficePermissions.Medias.Edit, L("Permission:Edit"));
+        mediaPermission.AddChild(BackOfficePermissions.Medias.Delete, L("Permission:Delete"));
+
+        var productPermission = myGroup.AddPermission(BackOfficePermissions.Products.Default, L("Permission:Products"));
+        productPermission.AddChild(BackOfficePermissions.Products.Create, L("Permission:Create"));
+        productPermission.AddChild(BackOfficePermissions.Products.Edit, L("Permission:Edit"));
+        productPermission.AddChild(BackOfficePermissions.Products.Delete, L("Permission:Delete"));
     }
 
     private static LocalizableString L(string name)

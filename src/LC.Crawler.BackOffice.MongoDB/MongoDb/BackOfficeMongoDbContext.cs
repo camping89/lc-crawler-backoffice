@@ -1,3 +1,7 @@
+using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
@@ -11,6 +15,10 @@ namespace LC.Crawler.BackOffice.MongoDB;
 [ConnectionStringName("Default")]
 public class BackOfficeMongoDbContext : AbpMongoDbContext
 {
+    public IMongoCollection<Product> Products => Collection<Product>();
+    public IMongoCollection<Media> Medias => Collection<Media>();
+    public IMongoCollection<Article> Articles => Collection<Article>();
+    public IMongoCollection<Category> Categories => Collection<Category>();
     public IMongoCollection<DataSource> DataSources => Collection<DataSource>();
     public IMongoCollection<CrawlerCredential> CrawlerCredentials => Collection<CrawlerCredential>();
     public IMongoCollection<CrawlerProxy> CrawlerProxies => Collection<CrawlerProxy>();
@@ -36,5 +44,13 @@ public class BackOfficeMongoDbContext : AbpMongoDbContext
         modelBuilder.Entity<CrawlerCredential>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "CrawlerCredentials"; });
 
         modelBuilder.Entity<DataSource>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "DataSources"; });
+
+        modelBuilder.Entity<Category>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "Categories"; });
+
+        modelBuilder.Entity<Article>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "Articles"; });
+
+        modelBuilder.Entity<Media>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "Medias"; });
+
+        modelBuilder.Entity<Product>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "Products"; });
     }
 }

@@ -46,5 +46,10 @@ namespace LC.Crawler.BackOffice.DataSources
             return await _dataSourceRepository.UpdateAsync(dataSource);
         }
 
+        public Task<List<DataSource>> GetDataSourcesAsync()
+        {
+            return _dataSourceRepository.GetListAsync();
+        }
+
     }
 }

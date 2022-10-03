@@ -40,6 +40,8 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Saas.Host;
 using System;
+using LC.Crawler.BackOffice.LongChau.MongoDb;
+using LC.Crawler.BackOffice.MessageQueue;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
@@ -51,6 +53,7 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Identity;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Gdpr.Web;
+using Volo.Abp.EventBus.RabbitMq;
 
 namespace LC.Crawler.BackOffice.Web;
 
@@ -58,6 +61,8 @@ namespace LC.Crawler.BackOffice.Web;
     typeof(BackOfficeHttpApiModule),
     typeof(BackOfficeApplicationModule),
     typeof(BackOfficeMongoDbModule),
+    typeof(LongChauMongoDbModule),
+
     typeof(AbpAutofacModule),
     typeof(AbpIdentityWebModule),
     typeof(AbpAccountPublicWebIdentityServerModule),
@@ -73,7 +78,11 @@ namespace LC.Crawler.BackOffice.Web;
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreSerilogModule)
     )]
-public class BackOfficeWebModule : AbpModule
+    [DependsOn(
+        typeof(AbpEventBusRabbitMqModule),
+        typeof(LCMessageQueueModule)
+    )]
+    public class BackOfficeWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -138,6 +147,10 @@ public class BackOfficeWebModule : AbpModule
             options.Conventions.AuthorizePage("/CrawlerProxies/Index", BackOfficePermissions.CrawlerProxies.Default);
             options.Conventions.AuthorizePage("/CrawlerCredentials/Index", BackOfficePermissions.CrawlerCredentials.Default);
             options.Conventions.AuthorizePage("/DataSources/Index", BackOfficePermissions.DataSources.Default);
+            options.Conventions.AuthorizePage("/Categories/Index", BackOfficePermissions.Categories.Default);
+            options.Conventions.AuthorizePage("/Articles/Index", BackOfficePermissions.Articles.Default);
+            options.Conventions.AuthorizePage("/Medias/Index", BackOfficePermissions.Medias.Default);
+            options.Conventions.AuthorizePage("/Products/Index", BackOfficePermissions.Products.Default);
         });
     }
 

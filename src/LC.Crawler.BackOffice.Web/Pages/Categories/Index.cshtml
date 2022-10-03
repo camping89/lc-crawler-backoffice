@@ -1,0 +1,79 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using LC.Crawler.BackOffice.Permissions
+@using LC.Crawler.BackOffice.Web.Pages.Categories
+@using LC.Crawler.BackOffice.Web.Menus
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@inject IAuthorizationService Authorization
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["Categories"].Value;
+    PageLayout.Content.MenuItemName = BackOfficeMenus.Categories;
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/Categories/index.js" />
+}
+
+@section content_toolbar {
+    @if (await Authorization.IsGrantedAsync(BackOfficePermissions.Categories.Create))
+    {
+        <abp-button id="NewCategoryButton" text="@L["NewCategory"].Value" icon="plus" button-type="Primary" />
+    }
+}
+
+<abp-card>
+    <abp-card-body>
+		<abp-row class="mb-3">
+            <abp-column size-md="_12">
+                <form id="SearchForm" autocomplete="off">
+                    <div class="input-group">
+                        <input class="form-control page-search-filter-text" id="FilterText" placeholder="@L["Search"]"/>
+                        <abp-button button-type="Primary" type="submit" icon="search"/>
+                    </div>
+                </form>
+            </abp-column>
+            <abp-column size-md="_12" class="mt-3">
+                <a href="javascript:;" id="AdvancedFilterSectionToggler" class="text-decoration-none">@L["SeeAdvancedFilters"]</a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row id="AdvancedFilterSection" style="display: none;">
+            <abp-column size="_3">
+                <abp-input asp-for="NameFilter" label="@L["Name"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="SlugFilter" label="@L["Slug"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
+            </abp-column>
+                <abp-column size="_3">
+                    <label for="Category1_Filter_Name">@L["ParentCategory"]</label>
+                    <div class="input-group mb-3 mt-2">
+                        <input hidden id="Category1IdFilter" />
+                        <input type="text" id="Category1_Filter_Name" class="form-control" disabled>
+                        <abp-button button-type="Info" id="Category1FilterLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                        <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+                    </div>
+                </abp-column>
+        </abp-row>
+
+        <abp-table striped-rows="true" id="CategoriesTable">
+            <thead>
+				<tr>
+					<th>@L["Actions"]</th>
+					<th>@L["Name"]</th>
+					<th>@L["Slug"]</th>
+					<th>@L["Description"]</th>
+					<th>@L["ParentCategory"]</th>
+				</tr>
+            </thead>
+        </abp-table>
+    </abp-card-body>
+</abp-card>

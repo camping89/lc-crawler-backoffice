@@ -17,4 +17,12 @@ public class BackOfficeMenus
 
     public const string DataSources = Prefix + ".DataSources";
 
+    public const string Categories = Prefix + ".Categories";
+
+    public const string Articles = Prefix + ".Articles";
+
+    public const string Medias = Prefix + ".Medias";
+
+    public const string Products = Prefix + ".Products";
+
 }

@@ -50,6 +50,23 @@ namespace LC.Crawler.BackOffice.CrawlerAccounts
             crawlerAccount.SetConcurrencyStampIfNotNull(concurrencyStamp);
             return await _crawlerAccountRepository.UpdateAsync(crawlerAccount);
         }
+        public async Task UpdateAccountStatus(CrawlerAccount account)
+        {
+            if (account is not null)
+            {
+                var queryable = await _crawlerAccountRepository.GetQueryableAsync();
+                var query = queryable.Where(x => x.Id == account.Id);
 
+                var crawlerAccount = await AsyncExecuter.FirstOrDefaultAsync(query);
+
+                if (crawlerAccount is not null)
+                {
+                    crawlerAccount.AccountStatus = account.AccountStatus;
+
+                    await _crawlerAccountRepository.UpdateAsync(crawlerAccount);
+                }
+            }
+            
+        }
     }
 }

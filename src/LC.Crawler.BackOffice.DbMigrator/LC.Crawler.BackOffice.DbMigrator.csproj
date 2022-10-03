@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Autofac" Version="5.3.4" />
+    <ProjectReference Include="..\LC.Crawler.BackOffice.MongoDB.LongChau\LC.Crawler.BackOffice.MongoDB.LongChau.csproj" />
     <ProjectReference Include="..\LC.Crawler.BackOffice.MongoDB\LC.Crawler.BackOffice.MongoDB.csproj" />
     <ProjectReference Include="..\LC.Crawler.BackOffice.Application.Contracts\LC.Crawler.BackOffice.Application.Contracts.csproj" />
   </ItemGroup>

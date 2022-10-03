@@ -1,0 +1,17 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+
+namespace LC.Crawler.BackOffice.Medias
+{
+    public class MediaUpdateDto
+    {
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        public string ContentType { get; set; }
+        [Required]
+        public string Url { get; set; }
+
+    }
+}

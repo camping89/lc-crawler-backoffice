@@ -1,0 +1,92 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Web.Pages.Products
+@using LC.Crawler.BackOffice.Products;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model CreateModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/Products/CreateModal" autocomplete="off">
+    <abp-modal id="ProductCreateModal">
+        <abp-modal-header title="@L["NewProduct"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+             <abp-tabs>
+                <abp-tab title="@L["Product"].Value">
+                    
+            <abp-input asp-for="Product.Name"/>
+
+            <abp-input asp-for="Product.Brand"/>
+
+            <abp-input asp-for="Product.Rating"/>
+
+            <abp-input asp-for="Product.Price"/>
+
+            <abp-input asp-for="Product.DiscountPercent"/>
+
+            <abp-input asp-for="Product.ShortDescription"/>
+
+            <abp-input asp-for="Product.Description"/>
+
+                    
+                </abp-tab>
+                                <abp-tab title="@L["Categories"].Value">
+                    <div class="input-group mb-3">
+                        <select id="CategoryLookup"
+                                        name="CategoryLookup"
+                                        class="custom-select form-control"
+                                        style="width: 85%"
+                                        data-value="">
+                        </select>
+                        <abp-button button-type="Info" id="AddCategoryButton" class="text-light">@L["Add"]</abp-button>
+                    </div>
+
+                    <abp-row>
+                        <abp-table style="display:none" id="CategoryTable">
+                            <thead Theme="Dark">
+                            <tr style="text-align: center; vertical-align: middle;">
+                                <th scope="Column" style="text-align: left">Name</th>
+                                <th scope="Column"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="CategoryTableRows">
+                            </tbody>
+                        </abp-table>
+                    </abp-row>
+                 </abp-tab>
+                <abp-tab title="@L["Medias"].Value">
+                    <div class="input-group mb-3">
+                        <select id="MediaLookup"
+                                        name="MediaLookup"
+                                        class="custom-select form-control"
+                                        style="width: 85%"
+                                        data-value="">
+                        </select>
+                        <abp-button button-type="Info" id="AddMediaButton" class="text-light">@L["Add"]</abp-button>
+                    </div>
+
+                    <abp-row>
+                        <abp-table style="display:none" id="MediaTable">
+                            <thead Theme="Dark">
+                            <tr style="text-align: center; vertical-align: middle;">
+                                <th scope="Column" style="text-align: left">Url</th>
+                                <th scope="Column"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="MediaTableRows">
+                            </tbody>
+                        </abp-table>
+                    </abp-row>
+                 </abp-tab>
+
+            </abp-tabs>
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

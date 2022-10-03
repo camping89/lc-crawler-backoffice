@@ -1,0 +1,39 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Web.Pages.Categories
+@using LC.Crawler.BackOffice.Categories;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model CreateModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/Categories/CreateModal" autocomplete="off">
+    <abp-modal id="CategoryCreateModal">
+        <abp-modal-header title="@L["NewCategory"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    
+            <abp-input asp-for="Category.Name"/>
+
+            <abp-input asp-for="Category.Slug"/>
+
+            <abp-input asp-for="Category.Description"/>
+
+                                <label for="Category1_Name">@L["ParentCategory"] </label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.Category.ParentCategoryId )" id="Category1_Id" name="Category.ParentCategoryId"/>
+                <input type="text" id="Category1_Name" class="form-control" disabled>
+                <abp-button button-type="Info" id="Category1LookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

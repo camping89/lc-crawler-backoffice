@@ -1,0 +1,117 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using LC.Crawler.BackOffice.Permissions
+@using LC.Crawler.BackOffice.Web.Pages.Articles
+@using LC.Crawler.BackOffice.Web.Menus
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@inject IAuthorizationService Authorization
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["Articles"].Value;
+    PageLayout.Content.MenuItemName = BackOfficeMenus.Articles;
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/Articles/index.js" />
+}
+
+@section content_toolbar {
+    @if (await Authorization.IsGrantedAsync(BackOfficePermissions.Articles.Create))
+    {
+        <abp-button id="NewArticleButton" text="@L["NewArticle"].Value" icon="plus" button-type="Primary" />
+    }
+}
+
+<abp-card>
+    <abp-card-body>
+		<abp-row class="mb-3">
+            <abp-column size-md="_12">
+                <form id="SearchForm" autocomplete="off">
+                    <div class="input-group">
+                        <input class="form-control page-search-filter-text" id="FilterText" placeholder="@L["Search"]"/>
+                        <abp-button button-type="Primary" type="submit" icon="search"/>
+                    </div>
+                </form>
+            </abp-column>
+            <abp-column size-md="_12" class="mt-3">
+                <a href="javascript:;" id="AdvancedFilterSectionToggler" class="text-decoration-none">@L["SeeAdvancedFilters"]</a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row id="AdvancedFilterSection" style="display: none;">
+            <abp-column size="_3">
+                <abp-input asp-for="TitleFilter" label="@L["Title"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ExcerptFilter" label="@L["Excerpt"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ContentFilter" label="@L["Content"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="CreatedAtFilterMin" label="@L["MinCreatedAt"].Value" type="date"/>
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="CreatedAtFilterMax" label="@L["MaxCreatedAt"].Value" type="date"/>
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="AuthorFilter" label="@L["Author"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="TagsFilter" label="@L["Tags"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="LikeCountFilterMin" label="@L["MinLikeCount"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="LikeCountFilterMax" label="@L["MaxLikeCount"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="CommentCountFilterMin" label="@L["MinCommentCount"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="CommentCountFilterMax" label="@L["MaxCommentCount"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ShareCountFilterMin" label="@L["MinShareCount"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ShareCountFilterMax" label="@L["MaxShareCount"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <div class="form-group">
+                    <label class="mb-2" id-for="CategoryFilter">@L["Category"]</label>
+                    <select id="CategoryFilter"
+                            name="CategoryFilter"
+                            class="custom-select form-control"
+                            style="width: 100%"
+                            data-value="">
+                    </select>
+                </div>
+            </abp-column> 
+        </abp-row>
+
+        <abp-table striped-rows="true" id="ArticlesTable">
+            <thead>
+				<tr>
+					<th>@L["Actions"]</th>
+					<th>@L["Title"]</th>
+					<th>@L["Excerpt"]</th>
+					<th>@L["Content"]</th>
+					<th>@L["CreatedAt"]</th>
+					<th>@L["Author"]</th>
+					<th>@L["Tags"]</th>
+					<th>@L["LikeCount"]</th>
+					<th>@L["CommentCount"]</th>
+					<th>@L["ShareCount"]</th>
+
+				</tr>
+            </thead>
+        </abp-table>
+    </abp-card-body>
+</abp-card>

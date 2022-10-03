@@ -1,0 +1,117 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using LC.Crawler.BackOffice.Permissions
+@using LC.Crawler.BackOffice.Web.Pages.Products
+@using LC.Crawler.BackOffice.Web.Menus
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@inject IAuthorizationService Authorization
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.Title = L["Products"].Value;
+    PageLayout.Content.MenuItemName = BackOfficeMenus.Products;
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/Products/index.js" />
+}
+
+@section content_toolbar {
+    @if (await Authorization.IsGrantedAsync(BackOfficePermissions.Products.Create))
+    {
+        <abp-button id="NewProductButton" text="@L["NewProduct"].Value" icon="plus" button-type="Primary" />
+    }
+}
+
+<abp-card>
+    <abp-card-body>
+		<abp-row class="mb-3">
+            <abp-column size-md="_12">
+                <form id="SearchForm" autocomplete="off">
+                    <div class="input-group">
+                        <input class="form-control page-search-filter-text" id="FilterText" placeholder="@L["Search"]"/>
+                        <abp-button button-type="Primary" type="submit" icon="search"/>
+                    </div>
+                </form>
+            </abp-column>
+            <abp-column size-md="_12" class="mt-3">
+                <a href="javascript:;" id="AdvancedFilterSectionToggler" class="text-decoration-none">@L["SeeAdvancedFilters"]</a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row id="AdvancedFilterSection" style="display: none;">
+            <abp-column size="_3">
+                <abp-input asp-for="NameFilter" label="@L["Name"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="BrandFilter" label="@L["Brand"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="RatingFilterMin" label="@L["MinRating"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="RatingFilterMax" label="@L["MaxRating"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PriceFilterMin" label="@L["MinPrice"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PriceFilterMax" label="@L["MaxPrice"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="DiscountPercentFilterMin" label="@L["MinDiscountPercent"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="DiscountPercentFilterMax" label="@L["MaxDiscountPercent"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ShortDescriptionFilter" label="@L["ShortDescription"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <div class="form-group">
+                    <label class="mb-2" id-for="CategoryFilter">@L["Category"]</label>
+                    <select id="CategoryFilter"
+                            name="CategoryFilter"
+                            class="custom-select form-control"
+                            style="width: 100%"
+                            data-value="">
+                    </select>
+                </div>
+            </abp-column> 
+            <abp-column size="_3">
+                <div class="form-group">
+                    <label class="mb-2" id-for="MediaFilter">@L["Media"]</label>
+                    <select id="MediaFilter"
+                            name="MediaFilter"
+                            class="custom-select form-control"
+                            style="width: 100%"
+                            data-value="">
+                    </select>
+                </div>
+            </abp-column> 
+        </abp-row>
+
+        <abp-table striped-rows="true" id="ProductsTable">
+            <thead>
+				<tr>
+					<th>@L["Actions"]</th>
+					<th>@L["Name"]</th>
+					<th>@L["Brand"]</th>
+					<th>@L["Rating"]</th>
+					<th>@L["Price"]</th>
+					<th>@L["DiscountPercent"]</th>
+					<th>@L["ShortDescription"]</th>
+					<th>@L["Description"]</th>
+
+				</tr>
+            </thead>
+        </abp-table>
+    </abp-card-body>
+</abp-card>

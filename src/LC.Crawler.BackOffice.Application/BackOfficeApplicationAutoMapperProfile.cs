@@ -1,3 +1,7 @@
+using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
@@ -27,5 +31,20 @@ public class BackOfficeApplicationAutoMapperProfile : Profile
         CreateMap<CrawlerProxy, LookupDto<Guid?>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Ip));
 
         CreateMap<DataSource, DataSourceDto>();
+
+        CreateMap<Category, CategoryDto>();
+
+        CreateMap<CategoryWithNavigationProperties, CategoryWithNavigationPropertiesDto>();
+        CreateMap<Category, LookupDto<Guid?>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Name));
+
+        CreateMap<Article, ArticleDto>();
+        CreateMap<ArticleWithNavigationProperties, ArticleWithNavigationPropertiesDto>();
+        CreateMap<Category, LookupDto<Guid>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Name));
+
+        CreateMap<Media, MediaDto>();
+
+        CreateMap<Product, ProductDto>();
+        CreateMap<ProductWithNavigationProperties, ProductWithNavigationPropertiesDto>();
+        CreateMap<Media, LookupDto<Guid>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Url));
     }
 }

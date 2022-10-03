@@ -1,0 +1,124 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using LC.Crawler.BackOffice.Web.Pages.Products
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Products;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model EditModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/Products/EditModal" autocomplete="off">
+    <abp-modal id="ProductEditModal">
+        <abp-modal-header title="@L["Update"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+             <abp-tabs>
+                <abp-tab title="@L["Product"].Value">
+                    <abp-input asp-for="Id" />
+                    <abp-input asp-for="Product.ConcurrencyStamp" hidden="true" suppress-label="true"/>
+                    
+            <abp-input asp-for="Product.Name"/>
+
+            <abp-input asp-for="Product.Brand"/>
+
+            <abp-input asp-for="Product.Rating"/>
+
+            <abp-input asp-for="Product.Price"/>
+
+            <abp-input asp-for="Product.DiscountPercent"/>
+
+            <abp-input asp-for="Product.ShortDescription"/>
+
+            <abp-input asp-for="Product.Description"/>
+
+                    
+                </abp-tab>
+                                 <abp-tab title="@L["Categories"].Value">
+                 
+                    <div class="input-group mb-3">
+                        <select id="CategoryLookup"
+                                        name="CategoryLookup"
+                                        class="custom-select form-control"
+                                        style="width: 85%"
+                                        data-value="">
+                        </select>
+                        <abp-button button-type="Info" id="AddCategoryButton" class="text-light">@L["Add"]</abp-button>
+                    </div>
+
+                    <abp-row>
+                        <abp-table style="@(Model.Categories.Any() ? "": "display:none")" id="CategoryTable">
+                            <thead Theme="Dark">
+                            <tr style="text-align: center; vertical-align: middle;">
+                                <th scope="Column" style="text-align: left">@L["Name"]</th>
+                                <th scope="Column"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="CategoryTableRows">
+                            @for (var index = 0; index < Model.Categories.Count; index++)
+                            {
+                                <tr style="text-align: center; vertical-align: middle;" index="@index">
+                                    <td style="display: none" name="id" display-name="@Model.Categories[index].Name" index="@index">@Model.Categories[index].Id</td>
+                                    <td style="display: none">
+                                        <input value="@Model.Categories[index].Id" id="SelectedCategoryIds[@index]" name="SelectedCategoryIds[@index]"/>
+                                    </td>
+                                    <td style="text-align: left">@Model.Categories[index].Name</td>
+                                    <td style="text-align: right">
+                                        <abp-button button-type="Danger" size="Small" class="text-light categoryDeleteButton" index="@index"> <i class="fa fa-trash"></i> </abp-button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </abp-table>
+                    </abp-row>
+
+                </abp-tab>
+                 <abp-tab title="@L["Medias"].Value">
+                 
+                    <div class="input-group mb-3">
+                        <select id="MediaLookup"
+                                        name="MediaLookup"
+                                        class="custom-select form-control"
+                                        style="width: 85%"
+                                        data-value="">
+                        </select>
+                        <abp-button button-type="Info" id="AddMediaButton" class="text-light">@L["Add"]</abp-button>
+                    </div>
+
+                    <abp-row>
+                        <abp-table style="@(Model.Medias.Any() ? "": "display:none")" id="MediaTable">
+                            <thead Theme="Dark">
+                            <tr style="text-align: center; vertical-align: middle;">
+                                <th scope="Column" style="text-align: left">@L["Url"]</th>
+                                <th scope="Column"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="MediaTableRows">
+                            @for (var index = 0; index < Model.Medias.Count; index++)
+                            {
+                                <tr style="text-align: center; vertical-align: middle;" index="@index">
+                                    <td style="display: none" name="id" display-name="@Model.Medias[index].Url" index="@index">@Model.Medias[index].Id</td>
+                                    <td style="display: none">
+                                        <input value="@Model.Medias[index].Id" id="SelectedMediaIds[@index]" name="SelectedMediaIds[@index]"/>
+                                    </td>
+                                    <td style="text-align: left">@Model.Medias[index].Url</td>
+                                    <td style="text-align: right">
+                                        <abp-button button-type="Danger" size="Small" class="text-light mediaDeleteButton" index="@index"> <i class="fa fa-trash"></i> </abp-button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </abp-table>
+                    </abp-row>
+
+                </abp-tab>
+
+            </abp-tabs>
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

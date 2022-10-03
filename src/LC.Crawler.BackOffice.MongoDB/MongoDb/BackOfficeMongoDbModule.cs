@@ -1,3 +1,7 @@
+using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
@@ -49,6 +53,14 @@ public class BackOfficeMongoDbModule : AbpModule
             options.AddRepository<CrawlerCredential, CrawlerCredentials.MongoCrawlerCredentialRepository>();
 
             options.AddRepository<DataSource, DataSources.MongoDataSourceRepository>();
+
+            options.AddRepository<Category, Categories.MongoCategoryRepository>();
+
+            options.AddRepository<Article, Articles.MongoArticleRepository>();
+
+            options.AddRepository<Media, Medias.MongoMediaRepository>();
+
+            options.AddRepository<Product, Products.MongoProductRepository>();
 
         });
 

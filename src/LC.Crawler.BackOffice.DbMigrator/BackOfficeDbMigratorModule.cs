@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.LongChau.MongoDb;
 using LC.Crawler.BackOffice.MongoDB;
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
@@ -8,6 +9,7 @@ namespace LC.Crawler.BackOffice.DbMigrator;
 [DependsOn(
     typeof(AbpAutofacModule),
     typeof(BackOfficeMongoDbModule),
+    typeof(LongChauMongoDbModule),
     typeof(BackOfficeApplicationContractsModule)
 )]
 public class BackOfficeDbMigratorModule : AbpModule

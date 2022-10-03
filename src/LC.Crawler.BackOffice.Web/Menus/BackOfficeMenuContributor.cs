@@ -121,6 +121,42 @@ public class BackOfficeMenuContributor : IMenuContributor
                 icon: "fa fa-file-alt",
                 requiredPermissionName: BackOfficePermissions.DataSources.Default)
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.Categories,
+                l["Menu:Categories"],
+                url: "/Categories",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.Categories.Default)
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.Articles,
+                l["Menu:Articles"],
+                url: "/Articles",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.Articles.Default)
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.Medias,
+                l["Menu:Medias"],
+                url: "/Medias",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.Medias.Default)
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.Products,
+                l["Menu:Products"],
+                url: "/Products",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.Products.Default)
+        );
         return Task.CompletedTask;
     }
 }

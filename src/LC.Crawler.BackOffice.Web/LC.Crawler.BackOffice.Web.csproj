@@ -39,11 +39,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="6.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="6.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="6.0.5" />
+    <PackageReference Include="Volo.Abp.EventBus.RabbitMQ" Version="5.3.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LC.Crawler.BackOffice.Application\LC.Crawler.BackOffice.Application.csproj" />
     <ProjectReference Include="..\LC.Crawler.BackOffice.HttpApi\LC.Crawler.BackOffice.HttpApi.csproj" />
+    <ProjectReference Include="..\LC.Crawler.BackOffice.MessageQueue\LC.Crawler.BackOffice.MessageQueue.csproj" />
+    <ProjectReference Include="..\LC.Crawler.BackOffice.MongoDB.LongChau\LC.Crawler.BackOffice.MongoDB.LongChau.csproj" />
     <ProjectReference Include="..\LC.Crawler.BackOffice.MongoDB\LC.Crawler.BackOffice.MongoDB.csproj" />
     <PackageReference Include="Volo.Abp.Autofac" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="5.3.4" />
