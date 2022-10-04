@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Articles;
@@ -32,5 +33,9 @@ public class BackOfficeWebAutoMapperProfile : Profile
         CreateMap<MediaDto, MediaUpdateDto>();
 
         CreateMap<ProductDto, ProductUpdateDto>().Ignore(x => x.CategoryIds).Ignore(x => x.MediaIds);
+
+        CreateMap<ProductVariantDto, ProductVariantUpdateDto>();
+
+        CreateMap<ArticleDto, ArticleUpdateDto>().Ignore(x => x.CategoryIds).Ignore(x => x.MediaIds);
     }
 }

@@ -1,15 +1,12 @@
 using System;
-using LC.Crawler.BackOffice.LongChau.MongoDb;
 using Volo.Abp.Data;
 using Volo.Abp.Modularity;
-using Volo.Abp.Uow;
 
 namespace LC.Crawler.BackOffice.MongoDB;
 
 [DependsOn(
     typeof(BackOfficeTestBaseModule),
-    typeof(BackOfficeMongoDbModule),
-    typeof(LongChauMongoDbModule)
+    typeof(BackOfficeMongoDbModule)
 )]
 public class BackOfficeMongoDbTestModule : AbpModule
 {

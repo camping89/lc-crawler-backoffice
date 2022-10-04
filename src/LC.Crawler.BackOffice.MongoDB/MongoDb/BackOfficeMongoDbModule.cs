@@ -1,3 +1,5 @@
+using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Articles;
@@ -61,6 +63,10 @@ public class BackOfficeMongoDbModule : AbpModule
             options.AddRepository<Media, Medias.MongoMediaRepository>();
 
             options.AddRepository<Product, Products.MongoProductRepository>();
+
+            options.AddRepository<ProductVariant, ProductVariants.MongoProductVariantRepository>();
+
+            options.AddRepository<ProductAttribute, ProductAttributes.MongoProductAttributeRepository>();
 
         });
 

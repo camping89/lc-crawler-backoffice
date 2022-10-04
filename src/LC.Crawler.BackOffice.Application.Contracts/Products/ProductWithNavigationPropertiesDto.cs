@@ -1,8 +1,6 @@
-using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Medias;
-
-using System;
-using Volo.Abp.Application.Dtos;
+using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Categories;
 using System.Collections.Generic;
 
 namespace LC.Crawler.BackOffice.Products
@@ -11,6 +9,8 @@ namespace LC.Crawler.BackOffice.Products
     {
         public ProductDto Product { get; set; }
 
+        public MediaDto Media { get; set; }
+        public DataSourceDto DataSource { get; set; }
         public List<CategoryDto> Categories { get; set; }
         public List<MediaDto> Medias { get; set; }
 

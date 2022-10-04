@@ -25,4 +25,6 @@ public class BackOfficeMenus
 
     public const string Products = Prefix + ".Products";
 
+    public const string ProductVariants = Prefix + ".ProductVariants";
+
 }

@@ -20,7 +20,10 @@ namespace LC.Crawler.BackOffice.Articles
         public int? CommentCountMax { get; set; }
         public int? ShareCountMin { get; set; }
         public int? ShareCountMax { get; set; }
+        public Guid? FeaturedMediaId { get; set; }
+        public Guid? DataSourceId { get; set; }
         public Guid? CategoryId { get; set; }
+        public Guid? MediaId { get; set; }
 
         public GetArticlesInput()
         {

@@ -6,10 +6,6 @@ using Volo.Abp.Domain.Repositories;
 
 namespace LC.Crawler.BackOffice.Categories
 {
-    public interface ICategoryLongChauRepository : ICategoryRepository
-    {
-        
-    }
     public interface ICategoryRepository : IRepository<Category, Guid>
     {
         Task<CategoryWithNavigationProperties> GetWithNavigationPropertiesAsync(

@@ -17,6 +17,7 @@ namespace LC.Crawler.BackOffice.Web.Pages.Medias
         public string NameFilter { get; set; }
         public string ContentTypeFilter { get; set; }
         public string UrlFilter { get; set; }
+        public string DescriptionFilter { get; set; }
 
         private readonly IMediasAppService _mediasAppService;
 

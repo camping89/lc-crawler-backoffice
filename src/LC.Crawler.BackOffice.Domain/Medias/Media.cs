@@ -22,12 +22,15 @@ namespace LC.Crawler.BackOffice.Medias
         [NotNull]
         public virtual string Url { get; set; }
 
+        [CanBeNull]
+        public virtual string Description { get; set; }
+
         public Media()
         {
 
         }
 
-        public Media(Guid id, string name, string contentType, string url)
+        public Media(Guid id, string name, string contentType, string url, string description)
         {
 
             Id = id;
@@ -37,6 +40,7 @@ namespace LC.Crawler.BackOffice.Medias
             Name = name;
             ContentType = contentType;
             Url = url;
+            Description = description;
         }
 
     }

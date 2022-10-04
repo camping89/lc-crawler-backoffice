@@ -16,6 +16,9 @@ namespace LC.Crawler.BackOffice.Articles
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
         public int ShareCount { get; set; }
+        public Guid? FeaturedMediaId { get; set; }
+        public Guid DataSourceId { get; set; }
         public List<Guid> CategoryIds { get; set; }
+        public List<Guid> MediaIds { get; set; }
     }
 }

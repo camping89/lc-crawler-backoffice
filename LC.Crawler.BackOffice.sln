@@ -37,9 +37,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LC.Crawler.BackOffice.HttpA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LC.Crawler.BackOffice.DbMigrator", "src\LC.Crawler.BackOffice.DbMigrator\LC.Crawler.BackOffice.DbMigrator.csproj", "{70680696-BB1E-4383-BCB2-42C3767171FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LC.Crawler.BackOffice.MongoDB.LongChau", "src\LC.Crawler.BackOffice.MongoDB.LongChau\LC.Crawler.BackOffice.MongoDB.LongChau.csproj", "{22E9EC7D-D9D2-408C-B5FA-689615A907BF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LC.Crawler.BackOffice.MessageQueue", "src\LC.Crawler.BackOffice.MessageQueue\LC.Crawler.BackOffice.MessageQueue.csproj", "{AE032B8C-77D9-412D-8326-FC52ED8762C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LC.Crawler.BackOffice.MongoDB.PageDatasource", "src\LC.Crawler.BackOffice.MongoDB.PageDatasource\LC.Crawler.BackOffice.MongoDB.PageDatasource.csproj", "{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -107,14 +107,14 @@ Global
 		{70680696-BB1E-4383-BCB2-42C3767171FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70680696-BB1E-4383-BCB2-42C3767171FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70680696-BB1E-4383-BCB2-42C3767171FB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{22E9EC7D-D9D2-408C-B5FA-689615A907BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{22E9EC7D-D9D2-408C-B5FA-689615A907BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{22E9EC7D-D9D2-408C-B5FA-689615A907BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{22E9EC7D-D9D2-408C-B5FA-689615A907BF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AE032B8C-77D9-412D-8326-FC52ED8762C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AE032B8C-77D9-412D-8326-FC52ED8762C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE032B8C-77D9-412D-8326-FC52ED8762C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE032B8C-77D9-412D-8326-FC52ED8762C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -135,8 +135,8 @@ Global
 		{6015D17B-104B-4EC2-A9B7-D8A40C891458} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{EF480016-9127-4916-8735-D2466BDBC582} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{70680696-BB1E-4383-BCB2-42C3767171FB} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
-		{22E9EC7D-D9D2-408C-B5FA-689615A907BF} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{AE032B8C-77D9-412D-8326-FC52ED8762C6} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {516DED71-4230-607F-120F-423BB0A07293}

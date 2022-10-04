@@ -39,7 +39,22 @@
 
             <abp-input asp-for="Article.ShareCount"/>
 
-                    
+                                <label for="Media_Url">@L["FeaturedMedia"] </label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.Article.FeaturedMediaId  )" id="Media_Id" name="Article.FeaturedMediaId"/>
+                <input type="text" id="Media_Url" class="form-control" value="@Model.Media?.Url" disabled>
+                <abp-button button-type="Info" id="MediaLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+            <label for="DataSource_Url">@L["DataSource"] *</label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.Article.DataSourceId   == default ? "": Model.Article.DataSourceId.ToString()
+)" id="DataSource_Id" name="Article.DataSourceId"/>
+                <input type="text" id="DataSource_Url" class="form-control" value="@Model.DataSource?.Url" disabled>
+                <abp-button button-type="Info" id="DataSourceLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+
                 </abp-tab>
                                  <abp-tab title="@L["Categories"].Value">
                  
@@ -72,6 +87,45 @@
                                     <td style="text-align: left">@Model.Categories[index].Name</td>
                                     <td style="text-align: right">
                                         <abp-button button-type="Danger" size="Small" class="text-light categoryDeleteButton" index="@index"> <i class="fa fa-trash"></i> </abp-button>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </abp-table>
+                    </abp-row>
+
+                </abp-tab>
+                 <abp-tab title="@L["Medias"].Value">
+                 
+                    <div class="input-group mb-3">
+                        <select id="MediaLookup"
+                                        name="MediaLookup"
+                                        class="custom-select form-control"
+                                        style="width: 85%"
+                                        data-value="">
+                        </select>
+                        <abp-button button-type="Info" id="AddMediaButton" class="text-light">@L["Add"]</abp-button>
+                    </div>
+
+                    <abp-row>
+                        <abp-table style="@(Model.Medias.Any() ? "": "display:none")" id="MediaTable">
+                            <thead Theme="Dark">
+                            <tr style="text-align: center; vertical-align: middle;">
+                                <th scope="Column" style="text-align: left">@L["Url"]</th>
+                                <th scope="Column"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="MediaTableRows">
+                            @for (var index = 0; index < Model.Medias.Count; index++)
+                            {
+                                <tr style="text-align: center; vertical-align: middle;" index="@index">
+                                    <td style="display: none" name="id" display-name="@Model.Medias[index].Url" index="@index">@Model.Medias[index].Id</td>
+                                    <td style="display: none">
+                                        <input value="@Model.Medias[index].Id" id="SelectedMediaIds[@index]" name="SelectedMediaIds[@index]"/>
+                                    </td>
+                                    <td style="text-align: left">@Model.Medias[index].Url</td>
+                                    <td style="text-align: right">
+                                        <abp-button button-type="Danger" size="Small" class="text-light mediaDeleteButton" index="@index"> <i class="fa fa-trash"></i> </abp-button>
                                     </td>
                                 </tr>
                             }

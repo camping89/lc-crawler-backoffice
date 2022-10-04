@@ -3,7 +3,47 @@ $(function () {
 	
 	var articleService = window.lC.crawler.backOffice.articles.articles;
 	
-	
+        var lastNpIdId = '';
+        var lastNpDisplayNameId = '';
+
+        var _lookupModal = new abp.ModalManager({
+            viewUrl: abp.appPath + "Shared/LookupModal",
+            scriptUrl: "/Pages/Shared/lookupModal.js",
+            modalClass: "navigationPropertyLookup"
+        });
+
+        $('.lookupCleanButton').on('click', '', function () {
+            $(this).parent().find('input').val('');
+        });
+
+        _lookupModal.onClose(function () {
+            var modal = $(_lookupModal.getModal());
+            $('#' + lastNpIdId).val(modal.find('#CurrentLookupId').val());
+            $('#' + lastNpDisplayNameId).val(modal.find('#CurrentLookupDisplayName').val());
+        });
+	    $('#MediaFilterLookupOpenButton').on('click', '', function () {
+        lastNpDisplayNameId = 'Media_Filter_Url';
+        lastNpIdId = 'MediaIdFilter';
+        _lookupModal.open({
+            currentId: $('#MediaIdFilter').val(),
+            currentDisplayName: $('#Media_Filter_Url').val(),
+            serviceMethod: function () {
+                            
+                            return window.lC.crawler.backOffice.articles.articles.getMediaLookup;
+            }
+        });
+    });    $('#DataSourceFilterLookupOpenButton').on('click', '', function () {
+        lastNpDisplayNameId = 'DataSource_Filter_Url';
+        lastNpIdId = 'DataSourceIdFilter';
+        _lookupModal.open({
+            currentId: $('#DataSourceIdFilter').val(),
+            currentDisplayName: $('#DataSource_Filter_Url').val(),
+            serviceMethod: function () {
+                            
+                            return window.lC.crawler.backOffice.articles.articles.getDataSourceLookup;
+            }
+        });
+    });
     var createModal = new abp.ModalManager({
         viewUrl: abp.appPath + "Articles/CreateModal",
         scriptUrl: "/Pages/Articles/createModal.js",
@@ -32,7 +72,7 @@ $(function () {
 			commentCountMax: $("#CommentCountFilterMax").val(),
 			shareCountMin: $("#ShareCountFilterMin").val(),
 			shareCountMax: $("#ShareCountFilterMax").val(),
-			categoryId: $("#CategoryFilter").val()
+			featuredMediaId: $("#FeaturedMediaIdFilter").val(),			dataSourceId: $("#DataSourceIdFilter").val(),			categoryId: $("#CategoryFilter").val(),			mediaId: $("#MediaFilter").val()
         };
     };
 
@@ -95,7 +135,17 @@ $(function () {
 			{ data: "article.tags" },
 			{ data: "article.likeCount" },
 			{ data: "article.commentCount" },
-			{ data: "article.shareCount" }
+			{ data: "article.shareCount" },
+            {
+                data: "media.url",
+                defaultContent : "", 
+                orderable: false
+            },
+            {
+                data: "dataSource.url",
+                defaultContent : "", 
+                orderable: false
+            }
         ]
     }));
 
@@ -134,6 +184,23 @@ $(function () {
                 $('#CategoryFilter').select2({
                 ajax: {
                     url: abp.appPath + 'api/app/articles/category-lookup',
+                    type: 'GET',
+                    data: function (params) {
+                        return { filter: params.term, maxResultCount: 10 }
+                    },
+                    processResults: function (data) {
+                        var mappedItems = _.map(data.items, function (item) {
+                            return { id: item.id, text: item.displayName };
+                        });
+                        mappedItems.unshift({ id: "", text: ' - ' });
+
+                        return { results: mappedItems };
+                    }
+                }
+            });
+                    $('#MediaFilter').select2({
+                ajax: {
+                    url: abp.appPath + 'api/app/articles/media-lookup',
                     type: 'GET',
                     data: function (params) {
                         return { filter: params.term, maxResultCount: 10 }

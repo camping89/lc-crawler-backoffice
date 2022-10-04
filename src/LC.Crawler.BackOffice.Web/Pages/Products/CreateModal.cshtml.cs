@@ -19,6 +19,9 @@ namespace LC.Crawler.BackOffice.Web.Pages.Products
         public List<Guid> SelectedCategoryIds { get; set; }
         [BindProperty]
         public List<Guid> SelectedMediaIds { get; set; }
+        public List<SelectListItem> DataSourceLookupListRequired { get; set; } = new List<SelectListItem>
+        {
+        };
 
         private readonly IProductsAppService _productsAppService;
 
@@ -30,6 +33,12 @@ namespace LC.Crawler.BackOffice.Web.Pages.Products
         public async Task OnGetAsync()
         {
             Product = new ProductCreateDto();
+            DataSourceLookupListRequired.AddRange((
+                                    await _productsAppService.GetDataSourceLookupAsync(new LookupRequestDto
+                                    {
+                                        MaxResultCount = LimitedResultRequestDto.MaxMaxResultCount
+                                    })).Items.Select(t => new SelectListItem(t.DisplayName, t.Id.ToString())).ToList()
+                        );
 
             await Task.CompletedTask;
         }

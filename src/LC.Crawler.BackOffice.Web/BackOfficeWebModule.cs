@@ -19,9 +19,6 @@ using Volo.Abp.Account.Public.Web.ExternalProviders;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
-using Volo.Abp.AspNetCore.Mvc.UI;
-using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Commercial;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Lepton;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AuditLogging.Web;
@@ -32,16 +29,16 @@ using Volo.Abp.IdentityServer.Web;
 using Volo.Abp.LanguageManagement;
 using Volo.Abp.LeptonTheme.Management;
 using Volo.Abp.Modularity;
-using Volo.Abp.PermissionManagement.Web;
 using Volo.Abp.TextTemplateManagement.Web;
 using Volo.Abp.UI.Navigation.Urls;
-using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Saas.Host;
 using System;
-using LC.Crawler.BackOffice.LongChau.MongoDb;
+using System.Collections.Generic;
 using LC.Crawler.BackOffice.MessageQueue;
+using LC.Crawler.BackOffice.PageDatasource;
+using LC.Crawler.BackOffice.PageDatasource.Aladin.MongoDb;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
@@ -61,7 +58,7 @@ namespace LC.Crawler.BackOffice.Web;
     typeof(BackOfficeHttpApiModule),
     typeof(BackOfficeApplicationModule),
     typeof(BackOfficeMongoDbModule),
-    typeof(LongChauMongoDbModule),
+    typeof(PageDataSourceMongoDbModule),
 
     typeof(AbpAutofacModule),
     typeof(AbpIdentityWebModule),
@@ -78,11 +75,11 @@ namespace LC.Crawler.BackOffice.Web;
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreSerilogModule)
     )]
-    [DependsOn(
+[DependsOn(
         typeof(AbpEventBusRabbitMqModule),
         typeof(LCMessageQueueModule)
     )]
-    public class BackOfficeWebModule : AbpModule
+public class BackOfficeWebModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -113,7 +110,7 @@ namespace LC.Crawler.BackOffice.Web;
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
-        ConfigureSwaggerServices(context.Services);
+        ConfigureSwaggerServices(context, configuration);
         ConfigureExternalProviders(context);
         ConfigureHealthChecks(context);
     }
@@ -151,6 +148,7 @@ namespace LC.Crawler.BackOffice.Web;
             options.Conventions.AuthorizePage("/Articles/Index", BackOfficePermissions.Articles.Default);
             options.Conventions.AuthorizePage("/Medias/Index", BackOfficePermissions.Medias.Default);
             options.Conventions.AuthorizePage("/Products/Index", BackOfficePermissions.Products.Default);
+            options.Conventions.AuthorizePage("/ProductVariants/Index", BackOfficePermissions.ProductVariants.Default);
         });
     }
 
@@ -240,12 +238,13 @@ namespace LC.Crawler.BackOffice.Web;
         });
     }
 
-    private void ConfigureSwaggerServices(IServiceCollection services)
+    private void ConfigureSwaggerServices(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        services.AddAbpSwaggerGen(
+        context.Services.AddAbpSwaggerGenWithOAuth(configuration["AuthServer:Authority"], new Dictionary<string, string> { { "BackOffice", "BackOffice API" } },
             options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "BackOffice API", Version = "v1" });
+                options.SwaggerDoc("v1-public", new OpenApiInfo { Title = "Public API", Version = "v1-public" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
             }
@@ -327,6 +326,12 @@ namespace LC.Crawler.BackOffice.Web;
         app.UseAbpSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "BackOffice API");
+            
+            options.SwaggerEndpoint("/swagger/v1-public/swagger.json", "Public API");
+            
+            var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
+            options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
+            options.OAuthClientSecret(configuration["AuthServer:SwaggerClientSecret"]);
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();

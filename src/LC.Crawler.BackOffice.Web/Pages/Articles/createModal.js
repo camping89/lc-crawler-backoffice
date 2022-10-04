@@ -5,7 +5,49 @@ abp.modals.articleCreate = function () {
         var l = abp.localization.getResource("BackOffice");
         
         
+        var lastNpIdId = '';
+        var lastNpDisplayNameId = '';
+
+        var _lookupModal = new abp.ModalManager({
+            viewUrl: abp.appPath + "Shared/LookupModal",
+            scriptUrl: "/Pages/Shared/lookupModal.js",
+            modalClass: "navigationPropertyLookup"
+        });
+
+        $('.lookupCleanButton').on('click', '', function () {
+            $(this).parent().find('input').val('');
+        });
+
+        _lookupModal.onClose(function () {
+            var modal = $(_lookupModal.getModal());
+            $('#' + lastNpIdId).val(modal.find('#CurrentLookupId').val());
+            $('#' + lastNpDisplayNameId).val(modal.find('#CurrentLookupDisplayName').val());
+        });
         
+        $('#MediaLookupOpenButton').on('click', '', function () {
+            lastNpDisplayNameId = 'Media_Url';
+            lastNpIdId = 'Media_Id';
+            _lookupModal.open({
+                currentId: $('#Media_Id').val(),
+                currentDisplayName: $('#Media_Url').val(),
+                serviceMethod: function() {
+                    
+                    return window.lC.crawler.backOffice.articles.articles.getMediaLookup;
+                }
+            });
+        });
+        $('#DataSourceLookupOpenButton').on('click', '', function () {
+            lastNpDisplayNameId = 'DataSource_Url';
+            lastNpIdId = 'DataSource_Id';
+            _lookupModal.open({
+                currentId: $('#DataSource_Id').val(),
+                currentDisplayName: $('#DataSource_Url').val(),
+                serviceMethod: function() {
+                    
+                    return window.lC.crawler.backOffice.articles.articles.getDataSourceLookup;
+                }
+            });
+        });
         
         
         publicApi.onOpen(function () {
@@ -98,6 +140,100 @@ abp.modals.articleCreate = function () {
                         $($(rows[i]).find('td[name="id"]')).attr('index', i);
                         $($(rows[i]).find('input')).attr('id', 'SelectedCategoryIds['+i+']');
                         $($(rows[i]).find('input')).attr('name', 'SelectedCategoryIds['+i+']');
+                        $($(rows[i]).find('button')).attr('index', i);
+                    }
+                }, 200);
+        });
+        publicApi.onOpen(function () {
+            $('#MediaLookup').select2({
+                dropdownParent: $('#ArticleCreateModal'),
+                ajax: {
+                    url: abp.appPath + 'api/app/articles/media-lookup',
+                    type: 'GET',
+                    data: function (params) {
+                        return { filter: params.term, maxResultCount: 10 }
+                    },
+                    processResults: function (data) {
+                        var mappedItems = _.map(data.items, function (item) {
+                            return { id: item.id, text: item.displayName };
+                        });
+
+                        return { results: mappedItems };
+                    }
+                }
+            });
+        });
+
+        var getNewMediaIndex = function () {
+            var idTds = $($(document).find("#MediaTableRows")).find('td[name="id"]');
+
+            if (idTds.length === 0){
+                return 0;
+            }
+
+            return parseInt($(idTds[idTds.length -1]).attr("index")) +1;
+        };
+
+        var getMediaIds = function () {
+            var ids = [];
+            var idTds = $("#MediaTableRows td[name='id']");
+
+            for(var i = 0; i< idTds.length; i++){
+                ids.push(idTds[i].innerHTML.trim())
+            }
+
+            return ids;
+        };
+
+        $('#AddMediaButton').on('click', '', function(){
+            var $select = $('#MediaLookup');
+            var id = $select.val();
+            var existingIds = getMediaIds();
+            if (!id || id === '' || existingIds.indexOf(id) >= 0){
+                return;
+            }
+
+            $("#MediaTable").show();
+
+            var displayName = $select.find('option').filter(':selected')[0].innerHTML;
+
+            var newIndex = getNewMediaIndex();
+
+            $("#MediaTableRows").append(
+                '                                <tr style="text-align: center; vertical-align: middle;" index="'+newIndex+'">\n' +
+                '                                    <td style="display: none" name="id" index="'+newIndex+'">'+id+'</td>\n' +
+                '                                    <td style="display: none">' +
+                '                                        <input value="'+id+'" id="SelectedMediaIds['+newIndex+']" name="SelectedMediaIds['+newIndex+']"/>\n' +
+                '                                    </td>\n' +
+                '                                    <td style="text-align: left">'+displayName+'</td>\n' +
+                '                                    <td style="text-align: right">\n' +
+                '                                        <button class="btn btn-danger btn-sm text-light mediaDeleteButton" index="'+newIndex+'"> <i class="fa fa-trash"></i> </button>\n' +
+                '                                    </td>\n' +
+                '                                </tr>'
+            );
+        });
+
+        $(document).on('click', '.mediaDeleteButton', function (e) {
+            e.preventDefault();
+            var index = $(this).attr("index");
+            $("#MediaTableRows").find('tr[index='+index+']').remove();
+
+            setTimeout(
+                function()
+                {
+                    var rows = $(document).find("#MediaTableRows").find("tr");
+
+                    if (rows.length === 0){
+                        $("#MediaTable").hide();
+                    }
+
+                    for (var i=0; i<rows.length; i++){
+                        $(rows[i]).attr('index', i);
+                        $(rows[i]).find('th[scope="Row"]').empty();
+                        $(rows[i]).find('th[scope="Row"]').append(i+1);
+                        $($(rows[i]).find('td[name="id"]')).attr('index', i);
+                        $($(rows[i]).find('input')).attr('id', 'SelectedMediaIds['+i+']');
+                        $($(rows[i]).find('input')).attr('name', 'SelectedMediaIds['+i+']');
                         $($(rows[i]).find('button')).attr('index', i);
                     }
                 }, 200);

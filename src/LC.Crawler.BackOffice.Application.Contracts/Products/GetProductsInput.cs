@@ -8,15 +8,11 @@ namespace LC.Crawler.BackOffice.Products
         public string FilterText { get; set; }
 
         public string Name { get; set; }
-        public string Brand { get; set; }
-        public double? RatingMin { get; set; }
-        public double? RatingMax { get; set; }
-        public decimal? PriceMin { get; set; }
-        public decimal? PriceMax { get; set; }
-        public double? DiscountPercentMin { get; set; }
-        public double? DiscountPercentMax { get; set; }
+        public string Code { get; set; }
         public string ShortDescription { get; set; }
         public string Description { get; set; }
+        public Guid? FeaturedMediaId { get; set; }
+        public Guid? DataSourceId { get; set; }
         public Guid? CategoryId { get; set; }
         public Guid? MediaId { get; set; }
 

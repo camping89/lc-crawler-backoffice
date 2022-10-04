@@ -157,6 +157,15 @@ public class BackOfficeMenuContributor : IMenuContributor
                 icon: "fa fa-file-alt",
                 requiredPermissionName: BackOfficePermissions.Products.Default)
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.ProductVariants,
+                l["Menu:ProductVariants"],
+                url: "/ProductVariants",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.ProductVariants.Default)
+        );
         return Task.CompletedTask;
     }
 }

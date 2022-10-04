@@ -5,7 +5,37 @@ abp.modals.productEdit = function () {
         var l = abp.localization.getResource("BackOffice");
         
         
+        var lastNpIdId = '';
+        var lastNpDisplayNameId = '';
+
+        var _lookupModal = new abp.ModalManager({
+            viewUrl: abp.appPath + "Shared/LookupModal",
+            scriptUrl: "/Pages/Shared/lookupModal.js",
+            modalClass: "navigationPropertyLookup"
+        });
+
+        $('.lookupCleanButton').on('click', '', function () {
+            $(this).parent().find('input').val('');
+        });
+
+        _lookupModal.onClose(function () {
+            var modal = $(_lookupModal.getModal());
+            $('#' + lastNpIdId).val(modal.find('#CurrentLookupId').val());
+            $('#' + lastNpDisplayNameId).val(modal.find('#CurrentLookupDisplayName').val());
+        });
         
+        $('#MediaLookupOpenButton').on('click', '', function () {
+            lastNpDisplayNameId = 'Media_Url';
+            lastNpIdId = 'Media_Id';
+            _lookupModal.open({
+                currentId: $('#Media_Id').val(),
+                currentDisplayName: $('#Media_Url').val(),
+                serviceMethod: function() {
+                    
+                    return window.lC.crawler.backOffice.products.products.getMediaLookup;
+                }
+            });
+        });
         
         
         publicApi.onOpen(function () {

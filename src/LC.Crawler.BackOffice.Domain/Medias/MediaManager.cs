@@ -18,11 +18,11 @@ namespace LC.Crawler.BackOffice.Medias
         }
 
         public async Task<Media> CreateAsync(
-        string name, string contentType, string url)
+        string name, string contentType, string url, string description)
         {
             var media = new Media(
              GuidGenerator.Create(),
-             name, contentType, url
+             name, contentType, url, description
              );
 
             return await _mediaRepository.InsertAsync(media);
@@ -30,7 +30,7 @@ namespace LC.Crawler.BackOffice.Medias
 
         public async Task<Media> UpdateAsync(
             Guid id,
-            string name, string contentType, string url
+            string name, string contentType, string url, string description
         )
         {
             var queryable = await _mediaRepository.GetQueryableAsync();
@@ -41,6 +41,7 @@ namespace LC.Crawler.BackOffice.Medias
             media.Name = name;
             media.ContentType = contentType;
             media.Url = url;
+            media.Description = description;
 
             return await _mediaRepository.UpdateAsync(media);
         }

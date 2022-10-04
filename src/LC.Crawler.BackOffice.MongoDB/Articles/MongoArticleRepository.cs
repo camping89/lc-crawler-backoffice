@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Categories;
 using System;
 using System.Collections.Generic;
@@ -25,13 +26,20 @@ namespace LC.Crawler.BackOffice.Articles
             var article = await (await GetMongoQueryableAsync(cancellationToken))
                 .FirstOrDefaultAsync(e => e.Id == id, GetCancellationToken(cancellationToken));
 
+            var media = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().FirstOrDefaultAsync(e => e.Id == article.FeaturedMediaId, cancellationToken: cancellationToken);
+            var dataSource = await (await GetDbContextAsync(cancellationToken)).DataSources.AsQueryable().FirstOrDefaultAsync(e => e.Id == article.DataSourceId, cancellationToken: cancellationToken);
             var categoryIds = article.Categories.Select(x => x.CategoryId).ToList();
             var categories = await (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().Where(e => categoryIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
+            var mediaIds = article.Medias.Select(x => x.MediaId).ToList();
+            var medias = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().Where(e => mediaIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
 
             return new ArticleWithNavigationProperties
             {
                 Article = article,
+                Media = media,
+                DataSource = dataSource,
                 Categories = categories,
+                Medias = medias,
 
             };
         }
@@ -51,13 +59,16 @@ namespace LC.Crawler.BackOffice.Articles
             int? commentCountMax = null,
             int? shareCountMin = null,
             int? shareCountMax = null,
+            Guid? featuredMediaId = null,
+            Guid? dataSourceId = null,
             Guid? categoryId = null,
+            Guid? mediaId = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
             CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, title, excerpt, content, createdAtMin, createdAtMax, author, tags, likeCountMin, likeCountMax, commentCountMin, commentCountMax, shareCountMin, shareCountMax, categoryId);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, title, excerpt, content, createdAtMin, createdAtMax, author, tags, likeCountMin, likeCountMax, commentCountMin, commentCountMax, shareCountMin, shareCountMax, featuredMediaId, dataSourceId, categoryId, mediaId);
             var articles = await query.OrderBy(string.IsNullOrWhiteSpace(sorting) ? ArticleConsts.GetDefaultSorting(false) : sorting.Split('.').Last())
                 .As<IMongoQueryable<Article>>()
                 .PageBy<Article, IMongoQueryable<Article>>(skipCount, maxResultCount)
@@ -67,7 +78,10 @@ namespace LC.Crawler.BackOffice.Articles
             return articles.Select(s => new ArticleWithNavigationProperties
             {
                 Article = s,
+                Media = dbContext.Medias.AsQueryable().FirstOrDefault(e => e.Id == s.FeaturedMediaId),
+                DataSource = dbContext.DataSources.AsQueryable().FirstOrDefault(e => e.Id == s.DataSourceId),
                 Categories = new List<Category>(),
+                Medias = new List<Media>(),
 
             }).ToList();
         }
@@ -114,10 +128,13 @@ namespace LC.Crawler.BackOffice.Articles
            int? commentCountMax = null,
            int? shareCountMin = null,
            int? shareCountMax = null,
+           Guid? featuredMediaId = null,
+           Guid? dataSourceId = null,
            Guid? categoryId = null,
+           Guid? mediaId = null,
            CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, title, excerpt, content, createdAtMin, createdAtMax, author, tags, likeCountMin, likeCountMax, commentCountMin, commentCountMax, shareCountMin, shareCountMax, categoryId);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, title, excerpt, content, createdAtMin, createdAtMax, author, tags, likeCountMin, likeCountMax, commentCountMin, commentCountMax, shareCountMin, shareCountMax, featuredMediaId, dataSourceId, categoryId, mediaId);
             return await query.As<IMongoQueryable<Article>>().LongCountAsync(GetCancellationToken(cancellationToken));
         }
 
@@ -137,7 +154,10 @@ namespace LC.Crawler.BackOffice.Articles
             int? commentCountMax = null,
             int? shareCountMin = null,
             int? shareCountMax = null,
-            Guid? categoryId = null)
+            Guid? featuredMediaId = null,
+            Guid? dataSourceId = null,
+            Guid? categoryId = null,
+            Guid? mediaId = null)
         {
             return query
                 .WhereIf(!string.IsNullOrWhiteSpace(filterText), e => e.Title.Contains(filterText) || e.Excerpt.Contains(filterText) || e.Content.Contains(filterText) || e.Author.Contains(filterText) || e.Tags.Contains(filterText))
@@ -154,7 +174,10 @@ namespace LC.Crawler.BackOffice.Articles
                     .WhereIf(commentCountMax.HasValue, e => e.CommentCount <= commentCountMax.Value)
                     .WhereIf(shareCountMin.HasValue, e => e.ShareCount >= shareCountMin.Value)
                     .WhereIf(shareCountMax.HasValue, e => e.ShareCount <= shareCountMax.Value)
-                    .WhereIf(categoryId != null && categoryId != Guid.Empty, e => e.Categories.Any(x => x.CategoryId == categoryId));
+                    .WhereIf(featuredMediaId != null && featuredMediaId != Guid.Empty, e => e.FeaturedMediaId == featuredMediaId)
+                    .WhereIf(dataSourceId != null && dataSourceId != Guid.Empty, e => e.DataSourceId == dataSourceId)
+                    .WhereIf(categoryId != null && categoryId != Guid.Empty, e => e.Categories.Any(x => x.CategoryId == categoryId))
+                    .WhereIf(mediaId != null && mediaId != Guid.Empty, e => e.Medias.Any(x => x.MediaId == mediaId));
         }
     }
 }

@@ -56,6 +56,16 @@ public class BackOfficePermissionDefinitionProvider : PermissionDefinitionProvid
         productPermission.AddChild(BackOfficePermissions.Products.Create, L("Permission:Create"));
         productPermission.AddChild(BackOfficePermissions.Products.Edit, L("Permission:Edit"));
         productPermission.AddChild(BackOfficePermissions.Products.Delete, L("Permission:Delete"));
+
+        var productVariantPermission = myGroup.AddPermission(BackOfficePermissions.ProductVariants.Default, L("Permission:ProductVariants"));
+        productVariantPermission.AddChild(BackOfficePermissions.ProductVariants.Create, L("Permission:Create"));
+        productVariantPermission.AddChild(BackOfficePermissions.ProductVariants.Edit, L("Permission:Edit"));
+        productVariantPermission.AddChild(BackOfficePermissions.ProductVariants.Delete, L("Permission:Delete"));
+
+        var productAttributePermission = myGroup.AddPermission(BackOfficePermissions.ProductAttributes.Default, L("Permission:ProductAttributes"));
+        productAttributePermission.AddChild(BackOfficePermissions.ProductAttributes.Create, L("Permission:Create"));
+        productAttributePermission.AddChild(BackOfficePermissions.ProductAttributes.Edit, L("Permission:Edit"));
+        productAttributePermission.AddChild(BackOfficePermissions.ProductAttributes.Delete, L("Permission:Delete"));
     }
 
     private static LocalizableString L(string name)

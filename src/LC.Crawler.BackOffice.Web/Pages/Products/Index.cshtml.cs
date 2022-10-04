@@ -15,18 +15,15 @@ namespace LC.Crawler.BackOffice.Web.Pages.Products
     public class IndexModel : AbpPageModel
     {
         public string NameFilter { get; set; }
-        public string BrandFilter { get; set; }
-        public double? RatingFilterMin { get; set; }
-
-        public double? RatingFilterMax { get; set; }
-        public decimal? PriceFilterMin { get; set; }
-
-        public decimal? PriceFilterMax { get; set; }
-        public double? DiscountPercentFilterMin { get; set; }
-
-        public double? DiscountPercentFilterMax { get; set; }
+        public string CodeFilter { get; set; }
         public string ShortDescriptionFilter { get; set; }
         public string DescriptionFilter { get; set; }
+        [SelectItems(nameof(DataSourceLookupList))]
+        public Guid DataSourceIdFilter { get; set; }
+        public List<SelectListItem> DataSourceLookupList { get; set; } = new List<SelectListItem>
+        {
+            new SelectListItem(string.Empty, "")
+        };
 
         private readonly IProductsAppService _productsAppService;
 
@@ -37,6 +34,12 @@ namespace LC.Crawler.BackOffice.Web.Pages.Products
 
         public async Task OnGetAsync()
         {
+            DataSourceLookupList.AddRange((
+                    await _productsAppService.GetDataSourceLookupAsync(new LookupRequestDto
+                    {
+                        MaxResultCount = LimitedResultRequestDto.MaxMaxResultCount
+                    })).Items.Select(t => new SelectListItem(t.DisplayName, t.Id.ToString())).ToList()
+            );
 
             await Task.CompletedTask;
         }

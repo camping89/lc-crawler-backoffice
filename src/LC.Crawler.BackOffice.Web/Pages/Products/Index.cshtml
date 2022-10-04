@@ -48,31 +48,25 @@
                 <abp-input asp-for="NameFilter" label="@L["Name"].Value" />
             </abp-column>
             <abp-column size="_3">
-                <abp-input asp-for="BrandFilter" label="@L["Brand"].Value" />
-            </abp-column>
-            <abp-column size="_3">
-                <abp-input asp-for="RatingFilterMin" label="@L["MinRating"].Value" />
-            </abp-column>
-            <abp-column size="_3">
-                <abp-input asp-for="RatingFilterMax" label="@L["MaxRating"].Value" />
-            </abp-column>
-            <abp-column size="_3">
-                <abp-input asp-for="PriceFilterMin" label="@L["MinPrice"].Value" />
-            </abp-column>
-            <abp-column size="_3">
-                <abp-input asp-for="PriceFilterMax" label="@L["MaxPrice"].Value" />
-            </abp-column>
-            <abp-column size="_3">
-                <abp-input asp-for="DiscountPercentFilterMin" label="@L["MinDiscountPercent"].Value" />
-            </abp-column>
-            <abp-column size="_3">
-                <abp-input asp-for="DiscountPercentFilterMax" label="@L["MaxDiscountPercent"].Value" />
+                <abp-input asp-for="CodeFilter" label="@L["Code"].Value" />
             </abp-column>
             <abp-column size="_3">
                 <abp-input asp-for="ShortDescriptionFilter" label="@L["ShortDescription"].Value" />
             </abp-column>
             <abp-column size="_3">
                 <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
+            </abp-column>
+                <abp-column size="_3">
+                    <label for="Media_Filter_Url">@L["FeaturedMedia"]</label>
+                    <div class="input-group mb-3 mt-2">
+                        <input hidden id="MediaIdFilter" />
+                        <input type="text" id="Media_Filter_Url" class="form-control" disabled>
+                        <abp-button button-type="Info" id="MediaFilterLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                        <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+                    </div>
+                </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="DataSourceIdFilter" label="@L["DataSource"].Value" />
             </abp-column>
             <abp-column size="_3">
                 <div class="form-group">
@@ -103,13 +97,11 @@
 				<tr>
 					<th>@L["Actions"]</th>
 					<th>@L["Name"]</th>
-					<th>@L["Brand"]</th>
-					<th>@L["Rating"]</th>
-					<th>@L["Price"]</th>
-					<th>@L["DiscountPercent"]</th>
+					<th>@L["Code"]</th>
 					<th>@L["ShortDescription"]</th>
 					<th>@L["Description"]</th>
-
+					<th>@L["FeaturedMedia"]</th>
+					<th>@L["DataSource"]</th>
 				</tr>
             </thead>
         </abp-table>

@@ -8,3 +8,15 @@ public enum DataSourceType
     Website = 3,
     Video = 4,
 }
+
+public enum PageDataSource
+{
+    LongChau,
+    Aladin,
+    SieuThiSongKhoe,
+    SucKhoeDoiSong,
+    SongKhoeMedplus,
+    BlogSucKhoe,
+    SucKhoeGiaDinh,
+    AloBacSi
+}

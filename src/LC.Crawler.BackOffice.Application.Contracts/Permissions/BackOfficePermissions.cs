@@ -77,4 +77,20 @@ public static class BackOfficePermissions
         public const string Create = Default + ".Create";
         public const string Delete = Default + ".Delete";
     }
+
+    public class ProductVariants
+    {
+        public const string Default = GroupName + ".ProductVariants";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public class ProductAttributes
+    {
+        public const string Default = GroupName + ".ProductAttributes";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
 }

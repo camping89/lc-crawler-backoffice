@@ -83,11 +83,40 @@
             <abp-column size="_3">
                 <abp-input asp-for="ShareCountFilterMax" label="@L["MaxShareCount"].Value" />
             </abp-column>
+                <abp-column size="_3">
+                    <label for="Media_Filter_Url">@L["FeaturedMedia"]</label>
+                    <div class="input-group mb-3 mt-2">
+                        <input hidden id="MediaIdFilter" />
+                        <input type="text" id="Media_Filter_Url" class="form-control" disabled>
+                        <abp-button button-type="Info" id="MediaFilterLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                        <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+                    </div>
+                </abp-column>
+                <abp-column size="_3">
+                    <label for="DataSource_Filter_Url">@L["DataSource"]</label>
+                    <div class="input-group mb-3 mt-2">
+                        <input hidden id="DataSourceIdFilter" />
+                        <input type="text" id="DataSource_Filter_Url" class="form-control" disabled>
+                        <abp-button button-type="Info" id="DataSourceFilterLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                        <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+                    </div>
+                </abp-column>
             <abp-column size="_3">
                 <div class="form-group">
                     <label class="mb-2" id-for="CategoryFilter">@L["Category"]</label>
                     <select id="CategoryFilter"
                             name="CategoryFilter"
+                            class="custom-select form-control"
+                            style="width: 100%"
+                            data-value="">
+                    </select>
+                </div>
+            </abp-column> 
+            <abp-column size="_3">
+                <div class="form-group">
+                    <label class="mb-2" id-for="MediaFilter">@L["Media"]</label>
+                    <select id="MediaFilter"
+                            name="MediaFilter"
                             class="custom-select form-control"
                             style="width: 100%"
                             data-value="">
@@ -109,7 +138,8 @@
 					<th>@L["LikeCount"]</th>
 					<th>@L["CommentCount"]</th>
 					<th>@L["ShareCount"]</th>
-
+					<th>@L["FeaturedMedia"]</th>
+					<th>@L["DataSource"]</th>
 				</tr>
             </thead>
         </abp-table>

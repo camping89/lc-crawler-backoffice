@@ -53,6 +53,9 @@
             <abp-column size="_3">
                 <abp-input asp-for="UrlFilter" label="@L["Url"].Value" />
             </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
+            </abp-column>
         </abp-row>
 
         <abp-table striped-rows="true" id="MediasTable">
@@ -62,6 +65,7 @@
 					<th>@L["Name"]</th>
 					<th>@L["ContentType"]</th>
 					<th>@L["Url"]</th>
+					<th>@L["Description"]</th>
 
 				</tr>
             </thead>

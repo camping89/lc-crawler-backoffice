@@ -1,3 +1,5 @@
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.DataSources;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -36,8 +38,10 @@ namespace LC.Crawler.BackOffice.Articles
         public virtual int CommentCount { get; set; }
 
         public virtual int ShareCount { get; set; }
-
+        public Guid? FeaturedMediaId { get; set; }
+        public Guid DataSourceId { get; set; }
         public ICollection<ArticleCategory> Categories { get; private set; }
+        public ICollection<ArticleMedia> Medias { get; private set; }
 
         public string ConcurrencyStamp { get; set; }
 
@@ -46,7 +50,7 @@ namespace LC.Crawler.BackOffice.Articles
 
         }
 
-        public Article(Guid id, string title, string excerpt, string content, DateTime createdAt, string author, string tags, int likeCount, int commentCount, int shareCount)
+        public Article(Guid id, Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, string tags, int likeCount, int commentCount, int shareCount)
         {
             ConcurrencyStamp = Guid.NewGuid().ToString("N");
             Id = id;
@@ -60,7 +64,10 @@ namespace LC.Crawler.BackOffice.Articles
             LikeCount = likeCount;
             CommentCount = commentCount;
             ShareCount = shareCount;
+            FeaturedMediaId = featuredMediaId;
+            DataSourceId = dataSourceId;
             Categories = new Collection<ArticleCategory>();
+            Medias = new Collection<ArticleMedia>();
         }
         public void AddCategory(Guid categoryId)
         {
@@ -101,6 +108,47 @@ namespace LC.Crawler.BackOffice.Articles
         private bool IsInCategories(Guid categoryId)
         {
             return Categories.Any(x => x.CategoryId == categoryId);
+        }
+
+        public void AddMedia(Guid mediaId)
+        {
+            Check.NotNull(mediaId, nameof(mediaId));
+
+            if (IsInMedias(mediaId))
+            {
+                return;
+            }
+
+            Medias.Add(new ArticleMedia(Id, mediaId));
+        }
+
+        public void RemoveMedia(Guid mediaId)
+        {
+            Check.NotNull(mediaId, nameof(mediaId));
+
+            if (!IsInMedias(mediaId))
+            {
+                return;
+            }
+
+            Medias.RemoveAll(x => x.MediaId == mediaId);
+        }
+
+        public void RemoveAllMediasExceptGivenIds(List<Guid> mediaIds)
+        {
+            Check.NotNullOrEmpty(mediaIds, nameof(mediaIds));
+
+            Medias.RemoveAll(x => !mediaIds.Contains(x.MediaId));
+        }
+
+        public void RemoveAllMedias()
+        {
+            Medias.RemoveAll(x => x.ArticleId == Id);
+        }
+
+        private bool IsInMedias(Guid mediaId)
+        {
+            return Medias.Any(x => x.MediaId == mediaId);
         }
     }
 }

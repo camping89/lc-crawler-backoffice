@@ -14,10 +14,11 @@ namespace LC.Crawler.BackOffice.Products
 
         Task<ProductDto> GetAsync(Guid id);
 
+        Task<PagedResultDto<LookupDto<Guid?>>> GetMediaLookupAsync(LookupRequestDto input);
+
+        Task<PagedResultDto<LookupDto<Guid>>> GetDataSourceLookupAsync(LookupRequestDto input);
+
         Task<PagedResultDto<LookupDto<Guid>>> GetCategoryLookupAsync(LookupRequestDto input);
-
-        Task<PagedResultDto<LookupDto<Guid>>> GetMediaLookupAsync(LookupRequestDto input);
-
         Task DeleteAsync(Guid id);
 
         Task<ProductDto> CreateAsync(ProductCreateDto input);

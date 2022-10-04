@@ -17,6 +17,8 @@ namespace LC.Crawler.BackOffice.Web.Pages.Articles
 
         [BindProperty]
         public List<Guid> SelectedCategoryIds { get; set; }
+        [BindProperty]
+        public List<Guid> SelectedMediaIds { get; set; }
 
         private readonly IArticlesAppService _articlesAppService;
 
@@ -36,6 +38,8 @@ namespace LC.Crawler.BackOffice.Web.Pages.Articles
         {
 
             Article.CategoryIds = SelectedCategoryIds;
+
+            Article.MediaIds = SelectedMediaIds;
 
             await _articlesAppService.CreateAsync(Article);
             return NoContent();

@@ -1,5 +1,8 @@
 using LC.Crawler.BackOffice.Shared;
+using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Medias;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -20,9 +23,14 @@ namespace LC.Crawler.BackOffice.Web.Pages.Articles
         [BindProperty]
         public ArticleUpdateDto Article { get; set; }
 
+        public MediaDto Media { get; set; }
+        public DataSourceDto DataSource { get; set; }
         public List<CategoryDto> Categories { get; set; }
+        public List<MediaDto> Medias { get; set; }
         [BindProperty]
         public List<Guid> SelectedCategoryIds { get; set; }
+        [BindProperty]
+        public List<Guid> SelectedMediaIds { get; set; }
 
         private readonly IArticlesAppService _articlesAppService;
 
@@ -36,7 +44,10 @@ namespace LC.Crawler.BackOffice.Web.Pages.Articles
             var articleWithNavigationPropertiesDto = await _articlesAppService.GetWithNavigationPropertiesAsync(Id);
             Article = ObjectMapper.Map<ArticleDto, ArticleUpdateDto>(articleWithNavigationPropertiesDto.Article);
 
+            Media = articleWithNavigationPropertiesDto.Media;
+            DataSource = articleWithNavigationPropertiesDto.DataSource;
             Categories = articleWithNavigationPropertiesDto.Categories;
+            Medias = articleWithNavigationPropertiesDto.Medias;
 
         }
 
@@ -44,6 +55,8 @@ namespace LC.Crawler.BackOffice.Web.Pages.Articles
         {
 
             Article.CategoryIds = SelectedCategoryIds;
+
+            Article.MediaIds = SelectedMediaIds;
 
             await _articlesAppService.UpdateAsync(Id, Article);
             return NoContent();

@@ -21,7 +21,8 @@ $(function () {
             filterText: $("#FilterText").val(),
             name: $("#NameFilter").val(),
 			contentType: $("#ContentTypeFilter").val(),
-			url: $("#UrlFilter").val()
+			url: $("#UrlFilter").val(),
+			description: $("#DescriptionFilter").val()
         };
     };
 
@@ -68,7 +69,8 @@ $(function () {
             },
 			{ data: "name" },
 			{ data: "contentType" },
-			{ data: "url" }
+			{ data: "url" },
+			{ data: "description" }
         ]
     }));
 

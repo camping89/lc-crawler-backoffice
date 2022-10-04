@@ -1,3 +1,5 @@
+using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Articles;
@@ -15,6 +17,8 @@ namespace LC.Crawler.BackOffice.MongoDB;
 [ConnectionStringName("Default")]
 public class BackOfficeMongoDbContext : AbpMongoDbContext
 {
+    public IMongoCollection<ProductAttribute> ProductAttributes => Collection<ProductAttribute>();
+    public IMongoCollection<ProductVariant> ProductVariants => Collection<ProductVariant>();
     public IMongoCollection<Product> Products => Collection<Product>();
     public IMongoCollection<Media> Medias => Collection<Media>();
     public IMongoCollection<Article> Articles => Collection<Article>();
@@ -52,5 +56,9 @@ public class BackOfficeMongoDbContext : AbpMongoDbContext
         modelBuilder.Entity<Media>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "Medias"; });
 
         modelBuilder.Entity<Product>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "Products"; });
+
+        modelBuilder.Entity<ProductVariant>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductVariants"; });
+
+        modelBuilder.Entity<ProductAttribute>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductAttributes"; });
     }
 }

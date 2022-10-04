@@ -6,10 +6,6 @@ using Volo.Abp.Domain.Repositories;
 
 namespace LC.Crawler.BackOffice.Articles
 {
-    public interface IArticleLongChauRepository : IArticleRepository
-    {
-        
-    }
     public interface IArticleRepository : IRepository<Article, Guid>
     {
         Task<ArticleWithNavigationProperties> GetWithNavigationPropertiesAsync(
@@ -32,7 +28,10 @@ namespace LC.Crawler.BackOffice.Articles
             int? commentCountMax = null,
             int? shareCountMin = null,
             int? shareCountMax = null,
+            Guid? featuredMediaId = null,
+            Guid? dataSourceId = null,
             Guid? categoryId = null,
+            Guid? mediaId = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
@@ -75,7 +74,10 @@ namespace LC.Crawler.BackOffice.Articles
             int? commentCountMax = null,
             int? shareCountMin = null,
             int? shareCountMax = null,
+            Guid? featuredMediaId = null,
+            Guid? dataSourceId = null,
             Guid? categoryId = null,
+            Guid? mediaId = null,
             CancellationToken cancellationToken = default);
     }
 }

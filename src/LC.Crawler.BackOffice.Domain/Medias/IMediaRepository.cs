@@ -6,10 +6,6 @@ using Volo.Abp.Domain.Repositories;
 
 namespace LC.Crawler.BackOffice.Medias
 {
-    public interface IMediaLongChauRepository : IMediaRepository
-    {
-        
-    }
     public interface IMediaRepository : IRepository<Media, Guid>
     {
         Task<List<Media>> GetListAsync(
@@ -17,6 +13,7 @@ namespace LC.Crawler.BackOffice.Medias
             string name = null,
             string contentType = null,
             string url = null,
+            string description = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
@@ -28,6 +25,7 @@ namespace LC.Crawler.BackOffice.Medias
             string name = null,
             string contentType = null,
             string url = null,
+            string description = null,
             CancellationToken cancellationToken = default);
     }
 }

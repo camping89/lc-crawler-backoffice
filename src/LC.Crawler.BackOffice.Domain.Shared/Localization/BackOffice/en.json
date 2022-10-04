@@ -140,6 +140,25 @@
     "MaxRating": "Max Rating",
     "MaxPrice": "Max Price",
     "MaxDiscountPercent": "Max Discount Percent",
-    "Menu:Products": "Products"
+    "Menu:Products": "Products",
+    "Product": "Product",
+    "Permission:ProductVariants": "Product Variants",
+    "ProductVariants": "Product Variants",
+    "NewProductVariant": "New Product Variant",
+    "SKU": "S K U",
+    "RetailPrice": "Retail Price",
+    "DiscountRate": "Discount Rate",
+    "DiscountedPrice": "Discounted Price",
+    "MinRetailPrice": "Min Retail Price",
+    "MinDiscountRate": "Min Discount Rate",
+    "MinDiscountedPrice": "Min Discounted Price",
+    "MaxRetailPrice": "Max Retail Price",
+    "MaxDiscountRate": "Max Discount Rate",
+    "MaxDiscountedPrice": "Max Discounted Price",
+    "Menu:ProductVariants": "Product Variants",
+    "Code": "Code",
+    "Permission:ProductAttributes": "Product Attributes",
+    "FeaturedMedia": "Featured media",
+    "DataSource": "Data source"
   }
 }

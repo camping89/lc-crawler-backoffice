@@ -1,0 +1,34 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Web.Pages.ProductVariants
+@using LC.Crawler.BackOffice.ProductVariants;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model CreateModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/ProductVariants/CreateModal" autocomplete="off">
+    <abp-modal id="ProductVariantCreateModal">
+        <abp-modal-header title="@L["NewProductVariant"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    
+            <abp-input asp-for="ProductVariant.SKU"/>
+
+            <abp-input asp-for="ProductVariant.RetailPrice"/>
+
+            <abp-input asp-for="ProductVariant.DiscountRate"/>
+
+            <abp-input asp-for="ProductVariant.DiscountedPrice"/>
+
+                                <abp-select asp-for="ProductVariant.ProductId" asp-items="Model.ProductLookupListRequired" label="@L["Product"].Value"/>
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

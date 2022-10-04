@@ -14,6 +14,10 @@ namespace LC.Crawler.BackOffice.Articles
 
         Task<ArticleDto> GetAsync(Guid id);
 
+        Task<PagedResultDto<LookupDto<Guid?>>> GetMediaLookupAsync(LookupRequestDto input);
+
+        Task<PagedResultDto<LookupDto<Guid>>> GetDataSourceLookupAsync(LookupRequestDto input);
+
         Task<PagedResultDto<LookupDto<Guid>>> GetCategoryLookupAsync(LookupRequestDto input);
 
         Task DeleteAsync(Guid id);

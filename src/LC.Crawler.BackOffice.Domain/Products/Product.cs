@@ -1,3 +1,5 @@
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.DataSources;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -18,20 +20,15 @@ namespace LC.Crawler.BackOffice.Products
         public virtual string Name { get; set; }
 
         [CanBeNull]
-        public virtual string Brand { get; set; }
-
-        public virtual double Rating { get; set; }
-
-        public virtual decimal Price { get; set; }
-
-        public virtual double DiscountPercent { get; set; }
+        public virtual string Code { get; set; }
 
         [CanBeNull]
         public virtual string ShortDescription { get; set; }
 
         [CanBeNull]
         public virtual string Description { get; set; }
-
+        public Guid? FeaturedMediaId { get; set; }
+        public Guid DataSourceId { get; set; }
         public ICollection<ProductCategory> Categories { get; private set; }
         public ICollection<ProductMedia> Medias { get; private set; }
 
@@ -42,18 +39,17 @@ namespace LC.Crawler.BackOffice.Products
 
         }
 
-        public Product(Guid id, string name, string brand, double rating, decimal price, double discountPercent, string shortDescription, string description)
+        public Product(Guid id, Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description)
         {
             ConcurrencyStamp = Guid.NewGuid().ToString("N");
             Id = id;
             Check.NotNull(name, nameof(name));
             Name = name;
-            Brand = brand;
-            Rating = rating;
-            Price = price;
-            DiscountPercent = discountPercent;
+            Code = code;
             ShortDescription = shortDescription;
             Description = description;
+            FeaturedMediaId = featuredMediaId;
+            DataSourceId = dataSourceId;
             Categories = new Collection<ProductCategory>();
             Medias = new Collection<ProductMedia>();
         }

@@ -23,19 +23,20 @@
                     
             <abp-input asp-for="Product.Name"/>
 
-            <abp-input asp-for="Product.Brand"/>
-
-            <abp-input asp-for="Product.Rating"/>
-
-            <abp-input asp-for="Product.Price"/>
-
-            <abp-input asp-for="Product.DiscountPercent"/>
+            <abp-input asp-for="Product.Code"/>
 
             <abp-input asp-for="Product.ShortDescription"/>
 
             <abp-input asp-for="Product.Description"/>
 
-                    
+                                <label for="Media_Url">@L["FeaturedMedia"] </label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.Product.FeaturedMediaId  )" id="Media_Id" name="Product.FeaturedMediaId"/>
+                <input type="text" id="Media_Url" class="form-control" value="@Model.Media?.Url" disabled>
+                <abp-button button-type="Info" id="MediaLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+            <abp-select asp-for="Product.DataSourceId" asp-items="Model.DataSourceLookupListRequired" label="@L["DataSource"].Value"/>
                 </abp-tab>
                                  <abp-tab title="@L["Categories"].Value">
                  

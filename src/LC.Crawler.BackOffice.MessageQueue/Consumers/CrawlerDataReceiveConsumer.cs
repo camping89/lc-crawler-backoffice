@@ -36,9 +36,18 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
         {
             var articles = _objectMapper.Map<List<CrawlPayload>, List<Article>>(eventData.Items);
             //TODO: Dựa vào urlsite trả về từ Crawler để xác định lưu vào DB nào
-            if (true) // long chau
+            switch (eventData.DomainSite)
             {
-                await _articleLongChauRepository.InsertManyAsync(articles);
+                case  DataSourceConsts.LongChauUrl : // long chau
+                {
+                    await _articleLongChauRepository.InsertManyAsync(articles);
+                    break;
+                }
+                case  DataSourceConsts.AladinUrl : 
+                {
+                    await _articleLongChauRepository.InsertManyAsync(articles);
+                    break;
+                }
             }
         }
 

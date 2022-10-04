@@ -196,7 +196,38 @@
       "OrdinalIndex": 0
     }
   ],
-  "NavigationProperties": [],
+  "NavigationProperties": [
+    {
+      "EntityNameWithDuplicationNumber": "Media",
+      "EntitySetNameWithDuplicationNumber": "Medias",
+      "ReferencePropertyName": "FeaturedMedia",
+      "UiPickType": "Modal",
+      "IsRequired": false,
+      "Name": "FeaturedMediaId",
+      "DisplayProperty": "Url",
+      "Namespace": "LC.Crawler.BackOffice.Medias",
+      "EntityName": "Media",
+      "EntitySetName": "Medias",
+      "DtoNamespace": "LC.Crawler.BackOffice.Medias",
+      "DtoEntityName": "MediaDto",
+      "Type": "Guid"
+    },
+    {
+      "EntityNameWithDuplicationNumber": "DataSource",
+      "EntitySetNameWithDuplicationNumber": "DataSources",
+      "ReferencePropertyName": "DataSource",
+      "UiPickType": "Modal",
+      "IsRequired": true,
+      "Name": "DataSourceId",
+      "DisplayProperty": "Url",
+      "Namespace": "LC.Crawler.BackOffice.DataSources",
+      "EntityName": "DataSource",
+      "EntitySetName": "DataSources",
+      "DtoNamespace": "LC.Crawler.BackOffice.DataSources",
+      "DtoEntityName": "DataSourceDto",
+      "Type": "Guid"
+    }
+  ],
   "NavigationConnections": [
     {
       "Name": "Categories",
@@ -206,6 +237,16 @@
       "EntitySetName": "Categories",
       "DtoNamespace": "LC.Crawler.BackOffice.Categories",
       "DtoEntityName": "CategoryDto",
+      "Type": "Guid"
+    },
+    {
+      "Name": "Medias",
+      "DisplayProperty": "Url",
+      "Namespace": "LC.Crawler.BackOffice.Medias",
+      "EntityName": "Media",
+      "EntitySetName": "Medias",
+      "DtoNamespace": "LC.Crawler.BackOffice.Medias",
+      "DtoEntityName": "MediaDto",
       "Type": "Guid"
     }
   ],

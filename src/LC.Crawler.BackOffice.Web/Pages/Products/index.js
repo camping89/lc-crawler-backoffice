@@ -3,7 +3,36 @@ $(function () {
 	
 	var productService = window.lC.crawler.backOffice.products.products;
 	
-	
+        var lastNpIdId = '';
+        var lastNpDisplayNameId = '';
+
+        var _lookupModal = new abp.ModalManager({
+            viewUrl: abp.appPath + "Shared/LookupModal",
+            scriptUrl: "/Pages/Shared/lookupModal.js",
+            modalClass: "navigationPropertyLookup"
+        });
+
+        $('.lookupCleanButton').on('click', '', function () {
+            $(this).parent().find('input').val('');
+        });
+
+        _lookupModal.onClose(function () {
+            var modal = $(_lookupModal.getModal());
+            $('#' + lastNpIdId).val(modal.find('#CurrentLookupId').val());
+            $('#' + lastNpDisplayNameId).val(modal.find('#CurrentLookupDisplayName').val());
+        });
+	    $('#MediaFilterLookupOpenButton').on('click', '', function () {
+        lastNpDisplayNameId = 'Media_Filter_Url';
+        lastNpIdId = 'MediaIdFilter';
+        _lookupModal.open({
+            currentId: $('#MediaIdFilter').val(),
+            currentDisplayName: $('#Media_Filter_Url').val(),
+            serviceMethod: function () {
+                            
+                            return window.lC.crawler.backOffice.products.products.getMediaLookup;
+            }
+        });
+    });
     var createModal = new abp.ModalManager({
         viewUrl: abp.appPath + "Products/CreateModal",
         scriptUrl: "/Pages/Products/createModal.js",
@@ -20,16 +49,10 @@ $(function () {
         return {
             filterText: $("#FilterText").val(),
             name: $("#NameFilter").val(),
-			brand: $("#BrandFilter").val(),
-			ratingMin: $("#RatingFilterMin").val(),
-			ratingMax: $("#RatingFilterMax").val(),
-			priceMin: $("#PriceFilterMin").val(),
-			priceMax: $("#PriceFilterMax").val(),
-			discountPercentMin: $("#DiscountPercentFilterMin").val(),
-			discountPercentMax: $("#DiscountPercentFilterMax").val(),
+			code: $("#CodeFilter").val(),
 			shortDescription: $("#ShortDescriptionFilter").val(),
 			description: $("#DescriptionFilter").val(),
-			categoryId: $("#CategoryFilter").val(),			mediaId: $("#MediaFilter").val()
+			featuredMediaId: $("#FeaturedMediaIdFilter").val(),			dataSourceId: $("#DataSourceIdFilter").val(),			categoryId: $("#CategoryFilter").val(),			mediaId: $("#MediaFilter").val()
         };
     };
 
@@ -75,12 +98,19 @@ $(function () {
                 }
             },
 			{ data: "product.name" },
-			{ data: "product.brand" },
-			{ data: "product.rating" },
-			{ data: "product.price" },
-			{ data: "product.discountPercent" },
+			{ data: "product.code" },
 			{ data: "product.shortDescription" },
-			{ data: "product.description" }
+			{ data: "product.description" },
+            {
+                data: "media.url",
+                defaultContent : "", 
+                orderable: false
+            },
+            {
+                data: "dataSource.url",
+                defaultContent : "", 
+                orderable: false
+            }
         ]
     }));
 

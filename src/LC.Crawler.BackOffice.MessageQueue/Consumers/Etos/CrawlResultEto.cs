@@ -65,6 +65,7 @@ public class CrawlPayload
 [EventName("Veek.DataProvider.Social.CrawlDataResultEto")]
 public class CrawlResultEto
 {
+    public string DomainSite { get; set; } = string.Empty;
     public List<CrawlPayload> Items { get; set; }
     public DataSourceType DataSourceType { get; set; }
     public SourceType SourceType { get; set; }

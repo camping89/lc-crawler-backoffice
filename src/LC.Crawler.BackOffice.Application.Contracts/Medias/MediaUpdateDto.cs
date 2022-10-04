@@ -12,6 +12,7 @@ namespace LC.Crawler.BackOffice.Medias
         public string ContentType { get; set; }
         [Required]
         public string Url { get; set; }
+        public string Description { get; set; }
 
     }
 }
