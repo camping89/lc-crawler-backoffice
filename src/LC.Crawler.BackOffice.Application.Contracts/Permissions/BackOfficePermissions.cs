@@ -93,4 +93,28 @@ public static class BackOfficePermissions
         public const string Create = Default + ".Create";
         public const string Delete = Default + ".Delete";
     }
+
+    public class ProductReviews
+    {
+        public const string Default = GroupName + ".ProductReviews";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public class ProductComments
+    {
+        public const string Default = GroupName + ".ProductComments";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public class ArticleComments
+    {
+        public const string Default = GroupName + ".ArticleComments";
+        public const string Edit = Default + ".Edit";
+        public const string Create = Default + ".Create";
+        public const string Delete = Default + ".Delete";
+    }
 }

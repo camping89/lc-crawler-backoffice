@@ -18,6 +18,16 @@ namespace LC.Crawler.BackOffice.Web.Pages.Medias
         public string ContentTypeFilter { get; set; }
         public string UrlFilter { get; set; }
         public string DescriptionFilter { get; set; }
+        [SelectItems(nameof(IsDowloadedBoolFilterItems))]
+        public string IsDowloadedFilter { get; set; }
+
+        public List<SelectListItem> IsDowloadedBoolFilterItems { get; set; } =
+            new List<SelectListItem>
+            {
+                new SelectListItem("", ""),
+                new SelectListItem("Yes", "true"),
+                new SelectListItem("No", "false"),
+            };
 
         private readonly IMediasAppService _mediasAppService;
 

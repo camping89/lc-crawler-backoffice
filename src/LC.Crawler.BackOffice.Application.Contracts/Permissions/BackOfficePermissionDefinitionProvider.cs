@@ -66,6 +66,21 @@ public class BackOfficePermissionDefinitionProvider : PermissionDefinitionProvid
         productAttributePermission.AddChild(BackOfficePermissions.ProductAttributes.Create, L("Permission:Create"));
         productAttributePermission.AddChild(BackOfficePermissions.ProductAttributes.Edit, L("Permission:Edit"));
         productAttributePermission.AddChild(BackOfficePermissions.ProductAttributes.Delete, L("Permission:Delete"));
+
+        var productReviewPermission = myGroup.AddPermission(BackOfficePermissions.ProductReviews.Default, L("Permission:ProductReviews"));
+        productReviewPermission.AddChild(BackOfficePermissions.ProductReviews.Create, L("Permission:Create"));
+        productReviewPermission.AddChild(BackOfficePermissions.ProductReviews.Edit, L("Permission:Edit"));
+        productReviewPermission.AddChild(BackOfficePermissions.ProductReviews.Delete, L("Permission:Delete"));
+
+        var productCommentPermission = myGroup.AddPermission(BackOfficePermissions.ProductComments.Default, L("Permission:ProductComments"));
+        productCommentPermission.AddChild(BackOfficePermissions.ProductComments.Create, L("Permission:Create"));
+        productCommentPermission.AddChild(BackOfficePermissions.ProductComments.Edit, L("Permission:Edit"));
+        productCommentPermission.AddChild(BackOfficePermissions.ProductComments.Delete, L("Permission:Delete"));
+
+        var articleCommentPermission = myGroup.AddPermission(BackOfficePermissions.ArticleComments.Default, L("Permission:ArticleComments"));
+        articleCommentPermission.AddChild(BackOfficePermissions.ArticleComments.Create, L("Permission:Create"));
+        articleCommentPermission.AddChild(BackOfficePermissions.ArticleComments.Edit, L("Permission:Edit"));
+        articleCommentPermission.AddChild(BackOfficePermissions.ArticleComments.Delete, L("Permission:Delete"));
     }
 
     private static LocalizableString L(string name)

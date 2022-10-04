@@ -1,0 +1,42 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.Web.Pages.ArticleComments
+@using LC.Crawler.BackOffice.ArticleComments;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model CreateModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/ArticleComments/CreateModal" autocomplete="off">
+    <abp-modal id="ArticleCommentCreateModal">
+        <abp-modal-header title="@L["NewArticleComment"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    
+            <abp-input asp-for="ArticleComment.Name"/>
+
+            <abp-input asp-for="ArticleComment.Content"/>
+
+            <abp-input asp-for="ArticleComment.Likes"/>
+
+            <abp-input asp-for="ArticleComment.CreatedAt" value="" type="date"/>
+
+                                <label for="Article_Title">@L["Article"] *</label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.ArticleComment.ArticleId  == default ? "": Model.ArticleComment.ArticleId.ToString()
+)" id="Article_Id" name="ArticleComment.ArticleId"/>
+                <input type="text" id="Article_Title" class="form-control" disabled>
+                <abp-button button-type="Info" id="ArticleLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

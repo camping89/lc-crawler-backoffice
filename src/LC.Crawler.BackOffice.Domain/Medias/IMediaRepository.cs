@@ -14,6 +14,7 @@ namespace LC.Crawler.BackOffice.Medias
             string contentType = null,
             string url = null,
             string description = null,
+            bool? isDowloaded = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
@@ -26,6 +27,7 @@ namespace LC.Crawler.BackOffice.Medias
             string contentType = null,
             string url = null,
             string description = null,
+            bool? isDowloaded = null,
             CancellationToken cancellationToken = default);
     }
 }

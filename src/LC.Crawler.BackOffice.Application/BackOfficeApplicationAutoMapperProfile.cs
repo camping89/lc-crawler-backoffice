@@ -1,3 +1,6 @@
+using LC.Crawler.BackOffice.ArticleComments;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.Products;
@@ -8,6 +11,7 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
 using System;
+using System.Linq;
 using LC.Crawler.BackOffice.Shared;
 using Volo.Abp.AutoMapper;
 using LC.Crawler.BackOffice.CrawlerAccounts;
@@ -41,8 +45,8 @@ public class BackOfficeApplicationAutoMapperProfile : Profile
         CreateMap<Category, LookupDto<Guid?>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Name));
 
         CreateMap<Article, ArticleDto>();
-        CreateMap<Article, ArticleResultDto>().Ignore(x=>x.FeatureImageUrl);
-        
+        CreateMap<Article, ArticleResultDto>().Ignore(x => x.FeatureImageUrl).Ignore(x => x.Tags);
+
         CreateMap<ArticleWithNavigationProperties, ArticleWithNavigationPropertiesDto>();
         CreateMap<Category, LookupDto<Guid>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Name));
 
@@ -68,5 +72,21 @@ public class BackOfficeApplicationAutoMapperProfile : Profile
         CreateMap<Media, LookupDto<Guid?>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Url));
 
         CreateMap<DataSource, LookupDto<Guid>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Url));
+
+        CreateMap<ProductReview, ProductReviewDto>();
+        CreateMap<ProductReview, ProductReviewResultDto>();
+
+        CreateMap<ProductReviewWithNavigationProperties, ProductReviewWithNavigationPropertiesDto>();
+
+        CreateMap<ProductComment, ProductCommentDto>();
+        CreateMap<ProductComment, ProductCommentResultDto>();
+
+        CreateMap<ProductCommentWithNavigationProperties, ProductCommentWithNavigationPropertiesDto>();
+
+        CreateMap<ArticleComment, ArticleCommentDto>();
+        CreateMap<ArticleComment, ArticleCommentResultDto>();
+
+        CreateMap<ArticleCommentWithNavigationProperties, ArticleCommentWithNavigationPropertiesDto>();
+        CreateMap<Article, LookupDto<Guid>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Title));
     }
 }

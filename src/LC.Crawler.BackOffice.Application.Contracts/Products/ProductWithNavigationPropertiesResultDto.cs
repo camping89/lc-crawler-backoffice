@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductVariants;
 using Volo.Abp.Application.Dtos;
 
@@ -16,6 +18,8 @@ public class ProductWithNavigationPropertiesResultDto
     public List<MediaResultDto> Images { get; set; }
     public List<ProductVariantResultDto> Variants { get; set; }
     public List<ProductAttributeResultDto> Attributes { get; set; }
+    // public List<ProductCommentResultDto> Comments { get; set; }
+    // public List<ProductReviewResultDto> Reviews { get; set; }
 }
 
 public class ProductResultDto : AuditedEntityDto<Guid>

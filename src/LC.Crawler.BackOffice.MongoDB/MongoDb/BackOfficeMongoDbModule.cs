@@ -1,3 +1,6 @@
+using LC.Crawler.BackOffice.ArticleComments;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.Products;
@@ -67,6 +70,12 @@ public class BackOfficeMongoDbModule : AbpModule
             options.AddRepository<ProductVariant, ProductVariants.MongoProductVariantRepository>();
 
             options.AddRepository<ProductAttribute, ProductAttributes.MongoProductAttributeRepository>();
+
+            options.AddRepository<ProductReview, ProductReviews.MongoProductReviewRepository>();
+
+            options.AddRepository<ProductComment, ProductComments.MongoProductCommentRepository>();
+
+            options.AddRepository<ArticleComment, ArticleComments.MongoArticleCommentRepository>();
 
         });
 

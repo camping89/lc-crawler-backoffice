@@ -27,4 +27,10 @@ public class BackOfficeMenus
 
     public const string ProductVariants = Prefix + ".ProductVariants";
 
+    public const string ProductReviews = Prefix + ".ProductReviews";
+
+    public const string ProductComments = Prefix + ".ProductComments";
+
+    public const string ArticleComments = Prefix + ".ArticleComments";
+
 }

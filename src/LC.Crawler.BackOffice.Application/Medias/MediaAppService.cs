@@ -28,8 +28,8 @@ namespace LC.Crawler.BackOffice.Medias
 
         public virtual async Task<PagedResultDto<MediaDto>> GetListAsync(GetMediasInput input)
         {
-            var totalCount = await _mediaRepository.GetCountAsync(input.FilterText, input.Name, input.ContentType, input.Url, input.Description);
-            var items = await _mediaRepository.GetListAsync(input.FilterText, input.Name, input.ContentType, input.Url, input.Description, input.Sorting, input.MaxResultCount, input.SkipCount);
+            var totalCount = await _mediaRepository.GetCountAsync(input.FilterText, input.Name, input.ContentType, input.Url, input.Description, input.IsDowloaded);
+            var items = await _mediaRepository.GetListAsync(input.FilterText, input.Name, input.ContentType, input.Url, input.Description, input.IsDowloaded, input.Sorting, input.MaxResultCount, input.SkipCount);
 
             return new PagedResultDto<MediaDto>
             {
@@ -54,7 +54,7 @@ namespace LC.Crawler.BackOffice.Medias
         {
 
             var media = await _mediaManager.CreateAsync(
-            input.Name, input.ContentType, input.Url, input.Description
+            input.Name, input.ContentType, input.Url, input.Description, input.IsDowloaded
             );
 
             return ObjectMapper.Map<Media, MediaDto>(media);
@@ -66,7 +66,7 @@ namespace LC.Crawler.BackOffice.Medias
 
             var media = await _mediaManager.UpdateAsync(
             id,
-            input.Name, input.ContentType, input.Url, input.Description
+            input.Name, input.ContentType, input.Url, input.Description, input.IsDowloaded
             );
 
             return ObjectMapper.Map<Media, MediaDto>(media);

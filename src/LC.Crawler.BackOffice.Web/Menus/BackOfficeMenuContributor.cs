@@ -166,6 +166,33 @@ public class BackOfficeMenuContributor : IMenuContributor
                 icon: "fa fa-file-alt",
                 requiredPermissionName: BackOfficePermissions.ProductVariants.Default)
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.ProductReviews,
+                l["Menu:ProductReviews"],
+                url: "/ProductReviews",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.ProductReviews.Default)
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.ProductComments,
+                l["Menu:ProductComments"],
+                url: "/ProductComments",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.ProductComments.Default)
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                BackOfficeMenus.ArticleComments,
+                l["Menu:ArticleComments"],
+                url: "/ArticleComments",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: BackOfficePermissions.ArticleComments.Default)
+        );
         return Task.CompletedTask;
     }
 }

@@ -149,6 +149,9 @@ public class BackOfficeWebModule : AbpModule
             options.Conventions.AuthorizePage("/Medias/Index", BackOfficePermissions.Medias.Default);
             options.Conventions.AuthorizePage("/Products/Index", BackOfficePermissions.Products.Default);
             options.Conventions.AuthorizePage("/ProductVariants/Index", BackOfficePermissions.ProductVariants.Default);
+            options.Conventions.AuthorizePage("/ProductReviews/Index", BackOfficePermissions.ProductReviews.Default);
+            options.Conventions.AuthorizePage("/ProductComments/Index", BackOfficePermissions.ProductComments.Default);
+            options.Conventions.AuthorizePage("/ArticleComments/Index", BackOfficePermissions.ArticleComments.Default);
         });
     }
 
@@ -326,9 +329,9 @@ public class BackOfficeWebModule : AbpModule
         app.UseAbpSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "BackOffice API");
-            
+
             options.SwaggerEndpoint("/swagger/v1-public/swagger.json", "Public API");
-            
+
             var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
             options.OAuthClientSecret(configuration["AuthServer:SwaggerClientSecret"]);

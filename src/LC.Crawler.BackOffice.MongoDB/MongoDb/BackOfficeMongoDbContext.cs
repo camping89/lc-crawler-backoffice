@@ -1,3 +1,6 @@
+using LC.Crawler.BackOffice.ArticleComments;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.Products;
@@ -17,6 +20,9 @@ namespace LC.Crawler.BackOffice.MongoDB;
 [ConnectionStringName("Default")]
 public class BackOfficeMongoDbContext : AbpMongoDbContext
 {
+    public IMongoCollection<ArticleComment> ArticleComments => Collection<ArticleComment>();
+    public IMongoCollection<ProductComment> ProductComments => Collection<ProductComment>();
+    public IMongoCollection<ProductReview> ProductReviews => Collection<ProductReview>();
     public IMongoCollection<ProductAttribute> ProductAttributes => Collection<ProductAttribute>();
     public IMongoCollection<ProductVariant> ProductVariants => Collection<ProductVariant>();
     public IMongoCollection<Product> Products => Collection<Product>();
@@ -60,5 +66,11 @@ public class BackOfficeMongoDbContext : AbpMongoDbContext
         modelBuilder.Entity<ProductVariant>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductVariants"; });
 
         modelBuilder.Entity<ProductAttribute>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductAttributes"; });
+
+        modelBuilder.Entity<ProductReview>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductReviews"; });
+
+        modelBuilder.Entity<ProductComment>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductComments"; });
+
+        modelBuilder.Entity<ArticleComment>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ArticleComments"; });
     }
 }

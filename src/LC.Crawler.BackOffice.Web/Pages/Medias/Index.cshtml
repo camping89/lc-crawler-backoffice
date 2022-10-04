@@ -56,6 +56,9 @@
             <abp-column size="_3">
                 <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
             </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="IsDowloadedFilter" label="@L["IsDowloaded"].Value" />
+            </abp-column>
         </abp-row>
 
         <abp-table striped-rows="true" id="MediasTable">
@@ -66,6 +69,7 @@
 					<th>@L["ContentType"]</th>
 					<th>@L["Url"]</th>
 					<th>@L["Description"]</th>
+					<th>@L["IsDowloaded"]</th>
 
 				</tr>
             </thead>

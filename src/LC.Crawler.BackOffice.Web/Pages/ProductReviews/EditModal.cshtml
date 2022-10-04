@@ -1,0 +1,46 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using LC.Crawler.BackOffice.Localization
+@using LC.Crawler.BackOffice.Web.Pages.ProductReviews
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using LC.Crawler.BackOffice.ProductReviews;
+@using System.Globalization
+@inject IHtmlLocalizer<BackOfficeResource> L
+@model EditModalModel
+@{
+    Layout = null;
+}
+
+<form data-ajaxForm="true" asp-page="/ProductReviews/EditModal" autocomplete="off">
+    <abp-modal id="ProductReviewEditModal">
+        <abp-modal-header title="@L["Update"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+                    <abp-input asp-for="Id" />
+
+                    
+            <abp-input asp-for="ProductReview.Name"/>
+
+            <abp-input asp-for="ProductReview.Content"/>
+
+            <abp-input asp-for="ProductReview.Rating"/>
+
+            <abp-input asp-for="ProductReview.CreatedAt" value="@(Model.ProductReview.CreatedAt?.ToString("yyyy-MM-dd"))" type="date"/>
+
+            <abp-input asp-for="ProductReview.Likes"/>
+
+                                <label for="Product_Name">@L["Product"] *</label>
+            <div class="input-group mb-3">
+                <input hidden value="@(Model.ProductReview.ProductId   == default ? "": Model.ProductReview.ProductId.ToString()
+)" id="Product_Id" name="ProductReview.ProductId"/>
+                <input type="text" id="Product_Name" class="form-control" value="@Model.Product?.Name" disabled>
+                <abp-button button-type="Info" id="ProductLookupOpenButton" class="text-light">@L["Pick"]</abp-button>
+                <abp-button button-type="Danger" class="lookupCleanButton ms-1"><i class="fa fa-times"></i></abp-button>
+            </div>
+
+                
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

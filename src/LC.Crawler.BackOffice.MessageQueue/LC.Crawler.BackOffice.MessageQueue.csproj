@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\LC.Crawler.BackOffice.Core\LC.Crawler.BackOffice.Core.csproj" />
       <ProjectReference Include="..\LC.Crawler.BackOffice.Domain.Shared\LC.Crawler.BackOffice.Domain.Shared.csproj" />
       <ProjectReference Include="..\LC.Crawler.BackOffice.Domain\LC.Crawler.BackOffice.Domain.csproj" />
     </ItemGroup>

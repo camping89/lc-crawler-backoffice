@@ -25,12 +25,14 @@ namespace LC.Crawler.BackOffice.Medias
         [CanBeNull]
         public virtual string Description { get; set; }
 
+        public virtual bool IsDowloaded { get; set; }
+
         public Media()
         {
 
         }
 
-        public Media(Guid id, string name, string contentType, string url, string description)
+        public Media(Guid id, string name, string contentType, string url, string description, bool isDowloaded)
         {
 
             Id = id;
@@ -41,6 +43,7 @@ namespace LC.Crawler.BackOffice.Medias
             ContentType = contentType;
             Url = url;
             Description = description;
+            IsDowloaded = isDowloaded;
         }
 
     }

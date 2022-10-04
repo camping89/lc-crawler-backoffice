@@ -159,6 +159,23 @@
     "Code": "Code",
     "Permission:ProductAttributes": "Product Attributes",
     "FeaturedMedia": "Featured media",
-    "DataSource": "Data source"
+    "DataSource": "Data source",
+    "Permission:ProductReviews": "Product Reviews",
+    "ProductReviews": "Product Reviews",
+    "NewProductReview": "New Product Review",
+    "Likes": "Likes",
+    "MinLikes": "Min Likes",
+    "MaxLikes": "Max Likes",
+    "Menu:ProductReviews": "Product Reviews",
+    "Permission:ProductComments": "Product Comments",
+    "ProductComments": "Product Comments",
+    "NewProductComment": "New Product Comment",
+    "Menu:ProductComments": "Product Comments",
+    "Article": "Article",
+    "Permission:ArticleComments": "Article Comments",
+    "ArticleComments": "Article Comments",
+    "NewArticleComment": "New Article Comment",
+    "Menu:ArticleComments": "Article Comments",
+    "IsDowloaded": "Is Dowloaded"
   }
 }

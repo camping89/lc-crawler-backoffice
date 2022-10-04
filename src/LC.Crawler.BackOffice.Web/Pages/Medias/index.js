@@ -22,7 +22,14 @@ $(function () {
             name: $("#NameFilter").val(),
 			contentType: $("#ContentTypeFilter").val(),
 			url: $("#UrlFilter").val(),
-			description: $("#DescriptionFilter").val()
+			description: $("#DescriptionFilter").val(),
+            isDowloaded: (function () {
+                var value = $("#IsDowloadedFilter").val();
+                if (value === undefined || value === null || value === '') {
+                    return '';
+                }
+                return value === 'true';
+            })()
         };
     };
 
@@ -70,7 +77,13 @@ $(function () {
 			{ data: "name" },
 			{ data: "contentType" },
 			{ data: "url" },
-			{ data: "description" }
+			{ data: "description" },
+            {
+                data: "isDowloaded",
+                render: function (isDowloaded) {
+                    return isDowloaded ? l("Yes") : l("No");
+                }
+            }
         ]
     }));
 

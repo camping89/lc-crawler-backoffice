@@ -11,6 +11,7 @@ namespace LC.Crawler.BackOffice.Medias
         public string ContentType { get; set; }
         public string Url { get; set; }
         public string Description { get; set; }
+        public bool? IsDowloaded { get; set; }
 
         public GetMediasInput()
         {
