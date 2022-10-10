@@ -102,7 +102,10 @@ namespace LC.Crawler.BackOffice.Articles
 
         public void RemoveAllCategories()
         {
-            Categories.RemoveAll(x => x.ArticleId == Id);
+            if (Categories != null)
+            {
+                Categories.RemoveAll(x => x.ArticleId == Id);
+            }
         }
 
         private bool IsInCategories(Guid categoryId)
@@ -119,7 +122,14 @@ namespace LC.Crawler.BackOffice.Articles
                 return;
             }
 
-            Medias.Add(new ArticleMedia(Id, mediaId));
+            if (Medias != null)
+            {
+                Medias.Add(new ArticleMedia(Id, mediaId));
+            }
+            else
+            {
+                Medias = new List<ArticleMedia>() { new ArticleMedia(Id, mediaId) };
+            }
         }
 
         public void RemoveMedia(Guid mediaId)
@@ -148,7 +158,7 @@ namespace LC.Crawler.BackOffice.Articles
 
         private bool IsInMedias(Guid mediaId)
         {
-            return Medias.Any(x => x.MediaId == mediaId);
+            return Medias != null && Medias.Any(x => x.MediaId == mediaId);
         }
     }
 }

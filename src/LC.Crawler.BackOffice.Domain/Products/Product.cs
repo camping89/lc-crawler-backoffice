@@ -27,6 +27,8 @@ namespace LC.Crawler.BackOffice.Products
 
         [CanBeNull]
         public virtual string Description { get; set; }
+
+        public virtual int? ExternalId { get; set; }
         public Guid? FeaturedMediaId { get; set; }
         public Guid DataSourceId { get; set; }
         public ICollection<ProductCategory> Categories { get; private set; }
@@ -39,7 +41,7 @@ namespace LC.Crawler.BackOffice.Products
 
         }
 
-        public Product(Guid id, Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description)
+        public Product(Guid id, Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description, int? externalId = null)
         {
             ConcurrencyStamp = Guid.NewGuid().ToString("N");
             Id = id;
@@ -48,6 +50,7 @@ namespace LC.Crawler.BackOffice.Products
             Code = code;
             ShortDescription = shortDescription;
             Description = description;
+            ExternalId = externalId;
             FeaturedMediaId = featuredMediaId;
             DataSourceId = dataSourceId;
             Categories = new Collection<ProductCategory>();

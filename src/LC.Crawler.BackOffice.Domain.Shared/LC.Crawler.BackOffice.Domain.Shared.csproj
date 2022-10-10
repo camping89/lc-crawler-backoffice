@@ -18,6 +18,7 @@
     <PackageReference Include="Volo.Abp.BlobStoring.Database.Domain.Shared" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.Identity.Pro.Domain.Shared" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.LanguageManagement.Domain.Shared" Version="5.3.4" />
+    <PackageReference Include="Volo.FileManagement.Domain.Shared" Version="5.3.4" />
     <PackageReference Include="Volo.Saas.Domain.Shared" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.TextTemplateManagement.Domain.Shared" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.LeptonTheme.Management.Domain.Shared" Version="5.3.4" />

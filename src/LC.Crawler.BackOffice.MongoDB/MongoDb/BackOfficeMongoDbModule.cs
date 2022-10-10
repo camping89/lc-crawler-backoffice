@@ -26,6 +26,7 @@ using Volo.Saas.MongoDB;
 using Volo.Abp.BlobStoring.Database.MongoDB;
 using Volo.Abp.Uow;
 using Volo.Abp.Gdpr;
+using Volo.FileManagement.MongoDB;
 
 namespace LC.Crawler.BackOffice.MongoDB;
 
@@ -44,7 +45,8 @@ namespace LC.Crawler.BackOffice.MongoDB;
     typeof(AbpGdprMongoDbModule),
     typeof(BlobStoringDatabaseMongoDbModule)
 )]
-public class BackOfficeMongoDbModule : AbpModule
+[DependsOn(typeof(FileManagementMongoDbModule))]
+    public class BackOfficeMongoDbModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

@@ -18,6 +18,7 @@ using Volo.Saas;
 using Volo.Abp.BlobStoring.Database;
 using Volo.Abp.Gdpr;
 using Volo.Abp.GlobalFeatures;
+using Volo.FileManagement;
 
 namespace LC.Crawler.BackOffice;
 
@@ -37,7 +38,8 @@ namespace LC.Crawler.BackOffice;
     typeof(AbpGlobalFeaturesModule),
     typeof(BlobStoringDatabaseDomainSharedModule)
     )]
-public class BackOfficeDomainSharedModule : AbpModule
+[DependsOn(typeof(FileManagementDomainSharedModule))]
+    public class BackOfficeDomainSharedModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {

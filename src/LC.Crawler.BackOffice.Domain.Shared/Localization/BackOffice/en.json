@@ -176,6 +176,9 @@
     "ArticleComments": "Article Comments",
     "NewArticleComment": "New Article Comment",
     "Menu:ArticleComments": "Article Comments",
-    "IsDowloaded": "Is Dowloaded"
+    "IsDowloaded": "Is Dowloaded",
+    "ExternalId": "External Id",
+    "MinExternalId": "Min External Id",
+    "MaxExternalId": "Max External Id"
   }
 }

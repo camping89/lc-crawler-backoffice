@@ -23,11 +23,12 @@ namespace LC.Crawler.BackOffice.Products
         public List<Category> Categories { get; set; }
         public List<Media> Medias { get; set; }
         
+        
         public List<ProductAttribute> Attributes { get; set; }
         public List<ProductVariant> Variants { get; set; }
         
         public List<ProductComment> Comments { get; set; }
         public List<ProductReview> Reviews { get; set; }
-
+        
     }
 }

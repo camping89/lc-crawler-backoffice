@@ -4,6 +4,7 @@ using LC.Crawler.BackOffice.Localization;
 using LC.Crawler.BackOffice.MultiTenancy;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -21,6 +22,9 @@ using Volo.Saas;
 using Volo.Abp.BlobStoring.Database;
 using Volo.Abp.Commercial.SuiteTemplates;
 using Volo.Abp.Gdpr;
+using Volo.FileManagement;
+using Volo.Abp.BlobStoring.FileSystem;
+using Volo.Abp.BackgroundWorkers.Hangfire;
 
 namespace LC.Crawler.BackOffice;
 
@@ -43,10 +47,13 @@ namespace LC.Crawler.BackOffice;
     typeof(AbpGdprDomainModule),
     typeof(BlobStoringDatabaseDomainModule)
     )]
-public class BackOfficeDomainModule : AbpModule
+    [DependsOn(typeof(FileManagementDomainModule))]
+    [DependsOn(typeof(AbpBlobStoringFileSystemModule))]
+    public class BackOfficeDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = MultiTenancyConsts.IsEnabled;
@@ -54,21 +61,19 @@ public class BackOfficeDomainModule : AbpModule
 
         Configure<AbpLocalizationOptions>(options =>
         {
-            options.Languages.Add(new LanguageInfo("ar", "ar", "العربية", "ae"));
             options.Languages.Add(new LanguageInfo("en", "en", "English", "gb"));
-            options.Languages.Add(new LanguageInfo("fi", "fi", "Finnish", "fi"));
-            options.Languages.Add(new LanguageInfo("fr", "fr", "Français", "fr"));
-            options.Languages.Add(new LanguageInfo("hi", "hi", "Hindi", "in"));
-            options.Languages.Add(new LanguageInfo("it", "it", "Italiano", "it"));
-            options.Languages.Add(new LanguageInfo("sk", "sk", "Slovak", "sk"));
-            options.Languages.Add(new LanguageInfo("ru", "ru", "Русский", "ru"));
-            options.Languages.Add(new LanguageInfo("tr", "tr", "Türkçe", "tr"));
-            options.Languages.Add(new LanguageInfo("sl", "sl", "Slovenščina", "si"));
-            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文", "cn"));
-            options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "繁體中文", "tw"));
-            options.Languages.Add(new LanguageInfo("de-DE", "de-DE", "Deutsch", "de"));
-            options.Languages.Add(new LanguageInfo("es", "es", "Español", "es"));
-            options.Languages.Add(new LanguageInfo("nl", "nl", "Dutch", "nl"));
+        });
+
+        
+        Configure<AbpBlobStoringOptions>(options =>
+        {
+            options.Containers.ConfigureDefault(container =>
+            {
+                container.UseFileSystem(fileSystem =>
+                {
+                    fileSystem.BasePath = configuration["MediaPath"];
+                });
+            });
         });
 
 #if DEBUG

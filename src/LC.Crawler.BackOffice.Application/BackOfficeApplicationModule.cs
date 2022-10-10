@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp.Account;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BlobStoring;
+using Volo.Abp.BlobStoring.Database;
 using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Gdpr;
@@ -15,6 +17,7 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TextTemplateManagement;
 using Volo.Saas.Host;
+using Volo.FileManagement;
 
 namespace LC.Crawler.BackOffice;
 
@@ -35,7 +38,8 @@ namespace LC.Crawler.BackOffice;
     typeof(AbpGdprApplicationModule),
     typeof(TextTemplateManagementApplicationModule)
     )]
-public class BackOfficeApplicationModule : AbpModule
+[DependsOn(typeof(FileManagementApplicationModule))]
+    public class BackOfficeApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

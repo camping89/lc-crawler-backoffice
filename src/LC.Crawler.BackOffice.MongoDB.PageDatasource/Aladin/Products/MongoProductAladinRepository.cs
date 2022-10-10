@@ -42,6 +42,7 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
                 //DataSource = dataSource,
                 Categories = categories,
                 Medias = medias,
+
             };
         }
 
@@ -51,6 +52,8 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
             string code = null,
             string shortDescription = null,
             string description = null,
+            int? externalIdMin = null,
+            int? externalIdMax = null,
             Guid? featuredMediaId = null,
             Guid? dataSourceId = null,
             Guid? categoryId = null,
@@ -60,16 +63,7 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
             int skipCount = 0,
             CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)),
-                filterText,
-                name,
-                code,
-                shortDescription,
-                description,
-                featuredMediaId,
-                dataSourceId,
-                categoryId,
-                mediaId);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, code, shortDescription, description, externalIdMin, externalIdMax, featuredMediaId, dataSourceId, categoryId, mediaId);
             var products = await query.OrderBy(string.IsNullOrWhiteSpace(sorting) ? ProductConsts.GetDefaultSorting(false) : sorting.Split('.').Last())
                 .As<IMongoQueryable<Product>>()
                 .PageBy<Product, IMongoQueryable<Product>>(skipCount, maxResultCount)
@@ -81,10 +75,9 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
                 Product = s,
                 Media = dbContext.Medias.AsQueryable().FirstOrDefault(e => e.Id == s.FeaturedMediaId),
                 //DataSource = dbContext.DataSources.AsQueryable().FirstOrDefault(e => e.Id == s.DataSourceId),
-                Categories = dbContext.Categories.AsQueryable().Where(x => s.Categories.Select(e => e.CategoryId).Contains(x.Id)).ToList(),
-                Medias = dbContext.Medias.AsQueryable().Where(x => s.Medias.Select(e => e.MediaId).Contains(x.Id)).ToList(),
-                Attributes = dbContext.ProductAttributes.AsQueryable().Where(x => x.ProductId == s.Id).ToList(),
-                Variants = dbContext.ProductVariants.AsQueryable().Where(x => x.ProductId == s.Id).ToList()
+                Categories = new List<Category>(),
+                Medias = new List<Media>(),
+
             }).ToList();
         }
 
@@ -94,17 +87,14 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
             string code = null,
             string shortDescription = null,
             string description = null,
+            int? externalIdMin = null,
+            int? externalIdMax = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
             CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)),
-                filterText,
-                name,
-                code,
-                shortDescription,
-                description);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, code, shortDescription, description, externalIdMin, externalIdMax);
             query = query.OrderBy(string.IsNullOrWhiteSpace(sorting) ? ProductConsts.GetDefaultSorting(false) : sorting);
             return await query.As<IMongoQueryable<Product>>()
                 .PageBy<Product, IMongoQueryable<Product>>(skipCount, maxResultCount)
@@ -112,27 +102,20 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
         }
 
         public async Task<long> GetCountAsync(
-            string filterText = null,
-            string name = null,
-            string code = null,
-            string shortDescription = null,
-            string description = null,
-            Guid? featuredMediaId = null,
-            Guid? dataSourceId = null,
-            Guid? categoryId = null,
-            Guid? mediaId = null,
-            CancellationToken cancellationToken = default)
+           string filterText = null,
+           string name = null,
+           string code = null,
+           string shortDescription = null,
+           string description = null,
+           int? externalIdMin = null,
+           int? externalIdMax = null,
+           Guid? featuredMediaId = null,
+           Guid? dataSourceId = null,
+           Guid? categoryId = null,
+           Guid? mediaId = null,
+           CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)),
-                filterText,
-                name,
-                code,
-                shortDescription,
-                description,
-                featuredMediaId,
-                dataSourceId,
-                categoryId,
-                mediaId);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, code, shortDescription, description, externalIdMin, externalIdMax, featuredMediaId, dataSourceId, categoryId, mediaId);
             return await query.As<IMongoQueryable<Product>>().LongCountAsync(GetCancellationToken(cancellationToken));
         }
 
@@ -143,6 +126,8 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
             string code = null,
             string shortDescription = null,
             string description = null,
+            int? externalIdMin = null,
+            int? externalIdMax = null,
             Guid? featuredMediaId = null,
             Guid? dataSourceId = null,
             Guid? categoryId = null,
@@ -150,14 +135,16 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
         {
             return query
                 .WhereIf(!string.IsNullOrWhiteSpace(filterText), e => e.Name.Contains(filterText) || e.Code.Contains(filterText) || e.ShortDescription.Contains(filterText) || e.Description.Contains(filterText))
-                .WhereIf(!string.IsNullOrWhiteSpace(name), e => e.Name.Contains(name))
-                .WhereIf(!string.IsNullOrWhiteSpace(code), e => e.Code.Contains(code))
-                .WhereIf(!string.IsNullOrWhiteSpace(shortDescription), e => e.ShortDescription.Contains(shortDescription))
-                .WhereIf(!string.IsNullOrWhiteSpace(description), e => e.Description.Contains(description))
-                .WhereIf(featuredMediaId != null && featuredMediaId != Guid.Empty, e => e.FeaturedMediaId == featuredMediaId)
-                .WhereIf(dataSourceId != null && dataSourceId != Guid.Empty, e => e.DataSourceId == dataSourceId)
-                .WhereIf(categoryId != null && categoryId != Guid.Empty, e => e.Categories.Any(x => x.CategoryId == categoryId))
-                .WhereIf(mediaId != null && mediaId != Guid.Empty, e => e.Medias.Any(x => x.MediaId == mediaId));
+                    .WhereIf(!string.IsNullOrWhiteSpace(name), e => e.Name.Contains(name))
+                    .WhereIf(!string.IsNullOrWhiteSpace(code), e => e.Code.Contains(code))
+                    .WhereIf(!string.IsNullOrWhiteSpace(shortDescription), e => e.ShortDescription.Contains(shortDescription))
+                    .WhereIf(!string.IsNullOrWhiteSpace(description), e => e.Description.Contains(description))
+                    .WhereIf(externalIdMin.HasValue, e => e.ExternalId >= externalIdMin.Value)
+                    .WhereIf(externalIdMax.HasValue, e => e.ExternalId <= externalIdMax.Value)
+                    .WhereIf(featuredMediaId != null && featuredMediaId != Guid.Empty, e => e.FeaturedMediaId == featuredMediaId)
+                    .WhereIf(dataSourceId != null && dataSourceId != Guid.Empty, e => e.DataSourceId == dataSourceId)
+                    .WhereIf(categoryId != null && categoryId != Guid.Empty, e => e.Categories.Any(x => x.CategoryId == categoryId))
+                    .WhereIf(mediaId != null && mediaId != Guid.Empty, e => e.Medias.Any(x => x.MediaId == mediaId));
         }
     }
 }

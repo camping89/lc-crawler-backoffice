@@ -18,6 +18,9 @@ namespace LC.Crawler.BackOffice.Web.Pages.Products
         public string CodeFilter { get; set; }
         public string ShortDescriptionFilter { get; set; }
         public string DescriptionFilter { get; set; }
+        public int? ExternalIdFilterMin { get; set; }
+
+        public int? ExternalIdFilterMax { get; set; }
         [SelectItems(nameof(DataSourceLookupList))]
         public Guid DataSourceIdFilter { get; set; }
         public List<SelectListItem> DataSourceLookupList { get; set; } = new List<SelectListItem>

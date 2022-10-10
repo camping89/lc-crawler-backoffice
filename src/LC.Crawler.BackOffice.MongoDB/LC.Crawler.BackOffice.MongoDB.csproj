@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Volo.FileManagement.MongoDB" Version="5.3.4" />
     <ProjectReference Include="..\LC.Crawler.BackOffice.Domain\LC.Crawler.BackOffice.Domain.csproj" />
     <PackageReference Include="Volo.Abp.PermissionManagement.MongoDB" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.SettingManagement.MongoDB" Version="5.3.4" />

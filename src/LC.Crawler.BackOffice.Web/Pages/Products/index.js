@@ -52,6 +52,8 @@ $(function () {
 			code: $("#CodeFilter").val(),
 			shortDescription: $("#ShortDescriptionFilter").val(),
 			description: $("#DescriptionFilter").val(),
+			externalIdMin: $("#ExternalIdFilterMin").val(),
+			externalIdMax: $("#ExternalIdFilterMax").val(),
 			featuredMediaId: $("#FeaturedMediaIdFilter").val(),			dataSourceId: $("#DataSourceIdFilter").val(),			categoryId: $("#CategoryFilter").val(),			mediaId: $("#MediaFilter").val()
         };
     };
@@ -101,6 +103,7 @@ $(function () {
 			{ data: "product.code" },
 			{ data: "product.shortDescription" },
 			{ data: "product.description" },
+			{ data: "product.externalId" },
             {
                 data: "media.url",
                 defaultContent : "", 

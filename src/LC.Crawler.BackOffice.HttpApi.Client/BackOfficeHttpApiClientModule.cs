@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Account;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.FeatureManagement;
@@ -13,6 +13,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Saas.Host;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Gdpr;
+using Volo.FileManagement;
 
 namespace LC.Crawler.BackOffice;
 
@@ -32,7 +33,8 @@ namespace LC.Crawler.BackOffice;
     typeof(AbpGdprHttpApiClientModule),
     typeof(TextTemplateManagementHttpApiClientModule)
 )]
-public class BackOfficeHttpApiClientModule : AbpModule
+[DependsOn(typeof(FileManagementHttpApiClientModule))]
+    public class BackOfficeHttpApiClientModule : AbpModule
 {
     public const string RemoteServiceName = "Default";
 

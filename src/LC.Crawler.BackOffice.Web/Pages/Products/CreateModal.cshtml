@@ -27,6 +27,8 @@
 
             <abp-input asp-for="Product.Description"/>
 
+            <abp-input asp-for="Product.ExternalId"/>
+
                                 <label for="Media_Url">@L["FeaturedMedia"] </label>
             <div class="input-group mb-3">
                 <input hidden value="@(Model.Product.FeaturedMediaId )" id="Media_Id" name="Product.FeaturedMediaId"/>

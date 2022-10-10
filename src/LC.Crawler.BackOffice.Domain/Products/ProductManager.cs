@@ -29,11 +29,11 @@ namespace LC.Crawler.BackOffice.Products
         public async Task<Product> CreateAsync(
         List<Guid> categoryIds,
         List<Guid> mediaIds,
-        Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description)
+        Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description, int? externalId = null)
         {
             var product = new Product(
              GuidGenerator.Create(),
-             featuredMediaId, dataSourceId, name, code, shortDescription, description
+             featuredMediaId, dataSourceId, name, code, shortDescription, description, externalId
              );
 
             await SetCategoriesAsync(product, categoryIds);
@@ -46,7 +46,7 @@ namespace LC.Crawler.BackOffice.Products
             Guid id,
             List<Guid> categoryIds,
         List<Guid> mediaIds,
-        Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description, [CanBeNull] string concurrencyStamp = null
+        Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description, int? externalId = null, [CanBeNull] string concurrencyStamp = null
         )
         {
             var queryable = await _productRepository.WithDetailsAsync(x => x.Categories, x => x.Medias);
@@ -60,6 +60,7 @@ namespace LC.Crawler.BackOffice.Products
             product.Code = code;
             product.ShortDescription = shortDescription;
             product.Description = description;
+            product.ExternalId = externalId;
 
             await SetCategoriesAsync(product, categoryIds);
             await SetMediasAsync(product, mediaIds);

@@ -56,6 +56,12 @@
             <abp-column size="_3">
                 <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
             </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ExternalIdFilterMin" label="@L["MinExternalId"].Value" />
+            </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="ExternalIdFilterMax" label="@L["MaxExternalId"].Value" />
+            </abp-column>
                 <abp-column size="_3">
                     <label for="Media_Filter_Url">@L["FeaturedMedia"]</label>
                     <div class="input-group mb-3 mt-2">
@@ -100,6 +106,7 @@
 					<th>@L["Code"]</th>
 					<th>@L["ShortDescription"]</th>
 					<th>@L["Description"]</th>
+					<th>@L["ExternalId"]</th>
 					<th>@L["FeaturedMedia"]</th>
 					<th>@L["DataSource"]</th>
 				</tr>

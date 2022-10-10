@@ -20,6 +20,7 @@
     <PackageReference Include="Volo.Abp.Account.Pro.Admin.HttpApi" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.IdentityServer.HttpApi" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.LanguageManagement.HttpApi" Version="5.3.4" />
+    <PackageReference Include="Volo.FileManagement.HttpApi" Version="5.3.4" />
     <PackageReference Include="Volo.Saas.Host.HttpApi" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.LeptonTheme.Management.HttpApi" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.TextTemplateManagement.HttpApi" Version="5.3.4" />

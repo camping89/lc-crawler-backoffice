@@ -10,6 +10,7 @@ namespace LC.Crawler.BackOffice.Products
         public string Code { get; set; }
         public string ShortDescription { get; set; }
         public string Description { get; set; }
+        public int? ExternalId { get; set; }
         public Guid? FeaturedMediaId { get; set; }
         public Guid DataSourceId { get; set; }
 

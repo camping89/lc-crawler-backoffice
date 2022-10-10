@@ -1,4 +1,4 @@
-﻿using Localization.Resources.AbpUi;
+using Localization.Resources.AbpUi;
 using LC.Crawler.BackOffice.Localization;
 using Volo.Abp.Account;
 using Volo.Abp.AuditLogging;
@@ -14,6 +14,7 @@ using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TextTemplateManagement;
 using Volo.Abp.Gdpr;
+using Volo.FileManagement;
 
 namespace LC.Crawler.BackOffice;
 
@@ -33,7 +34,8 @@ namespace LC.Crawler.BackOffice;
     typeof(AbpAccountPublicHttpApiModule),
     typeof(TextTemplateManagementHttpApiModule)
     )]
-public class BackOfficeHttpApiModule : AbpModule
+[DependsOn(typeof(FileManagementHttpApiModule))]
+    public class BackOfficeHttpApiModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

@@ -35,13 +35,12 @@ namespace LC.Crawler.BackOffice.Products
             _mediaRepository = mediaRepository;
             _dataSourceRepository = dataSourceRepository;
             _categoryRepository = categoryRepository;
-            
         }
 
         public virtual async Task<PagedResultDto<ProductWithNavigationPropertiesDto>> GetListAsync(GetProductsInput input)
         {
-            var totalCount = await _productRepository.GetCountAsync(input.FilterText, input.Name, input.Code, input.ShortDescription, input.Description, input.FeaturedMediaId, input.DataSourceId, input.CategoryId, input.MediaId);
-            var items = await _productRepository.GetListWithNavigationPropertiesAsync(input.FilterText, input.Name, input.Code, input.ShortDescription, input.Description, input.FeaturedMediaId, input.DataSourceId, input.CategoryId, input.MediaId, input.Sorting, input.MaxResultCount, input.SkipCount);
+            var totalCount = await _productRepository.GetCountAsync(input.FilterText, input.Name, input.Code, input.ShortDescription, input.Description, input.ExternalIdMin, input.ExternalIdMax, input.FeaturedMediaId, input.DataSourceId, input.CategoryId, input.MediaId);
+            var items = await _productRepository.GetListWithNavigationPropertiesAsync(input.FilterText, input.Name, input.Code, input.ShortDescription, input.Description, input.ExternalIdMin, input.ExternalIdMax, input.FeaturedMediaId, input.DataSourceId, input.CategoryId, input.MediaId, input.Sorting, input.MaxResultCount, input.SkipCount);
 
             return new PagedResultDto<ProductWithNavigationPropertiesDto>
             {
@@ -124,7 +123,7 @@ namespace LC.Crawler.BackOffice.Products
             }
 
             var product = await _productManager.CreateAsync(
-            input.CategoryIds, input.MediaIds, input.FeaturedMediaId, input.DataSourceId, input.Name, input.Code, input.ShortDescription, input.Description
+            input.CategoryIds, input.MediaIds, input.FeaturedMediaId, input.DataSourceId, input.Name, input.Code, input.ShortDescription, input.Description, input.ExternalId
             );
 
             return ObjectMapper.Map<Product, ProductDto>(product);
@@ -140,7 +139,7 @@ namespace LC.Crawler.BackOffice.Products
 
             var product = await _productManager.UpdateAsync(
             id,
-            input.CategoryIds, input.MediaIds, input.FeaturedMediaId, input.DataSourceId, input.Name, input.Code, input.ShortDescription, input.Description, input.ConcurrencyStamp
+            input.CategoryIds, input.MediaIds, input.FeaturedMediaId, input.DataSourceId, input.Name, input.Code, input.ShortDescription, input.Description, input.ExternalId, input.ConcurrencyStamp
             );
 
             return ObjectMapper.Map<Product, ProductDto>(product);

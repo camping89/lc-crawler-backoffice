@@ -524,6 +524,15 @@
     "@abp/chart.js" "~5.3.4"
     "@volo/abp.aspnetcore.mvc.ui.theme.commercial" "~5.3.4"
 
+"@volo/file-management@5.3.4":
+  version "5.3.4"
+  resolved "https://registry.yarnpkg.com/@volo/file-management/-/file-management-5.3.4.tgz#4768867801f8c3a72daeec2c73bcc82a8ac8335b"
+  integrity sha512-WkQgTiGqe5arFwurIowTuiZ9AvuvTNuGK3d2sY4GSiArmRRUxytYbJ7aqeW2U4O/gMchZ0288t4s4sZqVUGbJg==
+  dependencies:
+    "@abp/jstree" "~5.3.4"
+    "@abp/uppy" "~5.3.4"
+    "@volo/abp.aspnetcore.mvc.ui.theme.commercial" "~5.3.4"
+
 "@volo/identity@^5.3.4":
   version "5.3.4"
   resolved "https://registry.yarnpkg.com/@volo/identity/-/identity-5.3.4.tgz#f693af627a6a4bf96310b7fafcbdddca6a82a239"

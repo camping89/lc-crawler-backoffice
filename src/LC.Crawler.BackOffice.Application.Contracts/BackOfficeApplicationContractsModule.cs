@@ -1,4 +1,4 @@
-﻿using Volo.Abp.Account;
+using Volo.Abp.Account;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -11,6 +11,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TextTemplateManagement;
 using Volo.Saas.Host;
 using Volo.Abp.Gdpr;
+using Volo.FileManagement;
 
 namespace LC.Crawler.BackOffice;
 
@@ -30,7 +31,8 @@ namespace LC.Crawler.BackOffice;
     typeof(AbpGdprApplicationContractsModule),
     typeof(TextTemplateManagementApplicationContractsModule)
 )]
-public class BackOfficeApplicationContractsModule : AbpModule
+[DependsOn(typeof(FileManagementApplicationContractsModule))]
+    public class BackOfficeApplicationContractsModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
