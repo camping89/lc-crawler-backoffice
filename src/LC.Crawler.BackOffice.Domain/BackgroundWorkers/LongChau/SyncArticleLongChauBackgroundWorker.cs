@@ -49,8 +49,7 @@ public class SyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
         
         //pass the Wordpress REST API base address as string
        
-        var client = new WordPressClient($"{BASEURL}/wp-json/");
-        client.Auth.UseBasicAuth("admin", "fTu6 yTGB hkd1 ftcq Ggj1 DpQt");
+        var client =await InitClient();
         var result = await client.Posts.CreateAsync(post);
     }
 
@@ -112,7 +111,7 @@ public class SyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     {
         //pass the Wordpress REST API base address as string
         var client = new WordPressClient($"{BASEURL}/wp-json/");
-        client.Auth.UseBasicAuth("admin", "fTu6 yTGB hkd1 ftcq Ggj1 DpQt");
+        client.Auth.UseBasicAuth("admin", "123456");
         // client.Auth.UseBearerAuth(JWTPlugin.JWTAuthByEnriqueChavez);
         // await client.Auth.RequestJWTokenAsync("admin", "XvarE5Mt1fbhKCaJRm5lGhYe");
         //var isValidToken = await client.IsValidJWTokenAsync();

@@ -116,7 +116,11 @@ public class BackOfficeWebModule : AbpModule
 
     private void ConfigureHealthChecks(ServiceConfigurationContext context)
     {
-        context.Services.AddBackOfficeHealthChecks();
+        var hostingEnvironment = context.Services.GetHostingEnvironment();
+        if (!hostingEnvironment.IsDevelopment())
+        {
+            context.Services.AddBackOfficeHealthChecks();
+        }
     }
 
     private void ConfigureBundles()

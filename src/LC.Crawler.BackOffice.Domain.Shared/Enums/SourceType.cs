@@ -7,5 +7,6 @@ public enum SourceType
     TikTok = 2,
     Instagram = 3,
     Medium = 4,
-    Faire = 5
+    Faire = 5,
+    LC = 6
 }

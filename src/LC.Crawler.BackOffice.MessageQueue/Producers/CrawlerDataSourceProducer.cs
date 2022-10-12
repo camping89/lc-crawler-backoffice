@@ -30,40 +30,15 @@ public class CrawlerDataSourceProducer : ITransientDependency
     public async Task InitCrawlerDataSourceQueueAsync()
     {
         var feedDataSources = await _dataSourceManager.GetDataSourcesAsync();
-        var credentials = await _crawlerCredentialManager.GetValidCredentials();
-        credentials = credentials.Where(properties => properties.CrawlerAccount.AccountType is AccountType.FacebookGroupPost)
-            .ToList();
+        var crawlerDataSourceEto = new CrawlerDataSourceEto();
+        crawlerDataSourceEto.Items = feedDataSources.Select(x => new CrawlerDataSourceItem
+        {
+            Url = x.Url,
+            SourceType = SourceType.LC,
+            DataSourceType = DataSourceType.Website
+        }).ToList();
         
-        var crawlerDataSources = ArrangeCrawlerDataSource(feedDataSources, credentials);
-
-        foreach (var crawlerDataSourceEto in crawlerDataSources)
-        {
-            await _distributedEventBus.PublishAsync(crawlerDataSourceEto);
-        }
-
-        await _crawlerCredentialManager.UpdateMany(credentials.Select(nav => nav.CrawlerCredential).ToList());
+        await _distributedEventBus.PublishAsync(crawlerDataSourceEto);
     }
 
-    private List<CrawlerDataSourceEto> ArrangeCrawlerDataSource(IEnumerable<DataSource> dataSources, List<CrawlerCredentialWithNavigationProperties> credentials)
-    {
-        var crawlerDataSourceEtos = new List<CrawlerDataSourceEto>();
-        foreach (var dataSource in dataSources)
-        {
-            var credential = credentials.FirstOrDefault(nav => nav.CrawlerCredential.IsAvailable);
-            if (credential != null)
-            {
-                var crawlerCredentialEto = _objectMapper.Map<CrawlerCredential, CredentialEto>(credential.CrawlerCredential);
-                var crawlerAccountEto = _objectMapper.Map<CrawlerAccount, AccountEto>(credential.CrawlerAccount);
-                var crawlerProxyEto = _objectMapper.Map<CrawlerProxy, ProxyEto>(credential.CrawlerProxy);
-                
-                var credentialEto = new CrawlerCredentialEto(crawlerCredentialEto, crawlerAccountEto, crawlerProxyEto);
-
-                crawlerDataSourceEtos.Add(new CrawlerDataSourceEto(dataSource.Url, credentialEto));
-                
-                credential.CrawlerCredential.IsAvailable = false;
-            }
-        }
-
-        return crawlerDataSourceEtos;
-    }
 }
