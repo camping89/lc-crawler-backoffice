@@ -2,14 +2,12 @@
 using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Core;
-using LC.Crawler.BackOffice.CrawlerAccounts;
-using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
-using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.MessageQueue.Consumers.Etos;
-using Veek.DataProvider.Crawler.Client.Entities;
+using LC.Crawler.BackOffice.Payloads;
+using LC.Crawler.BackOffice.Products;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.ObjectMapping;
@@ -18,57 +16,88 @@ namespace LC.Crawler.BackOffice.MessageQueue.Consumers;
 
 public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEto>, ITransientDependency
 {
-    private readonly DataSourceManager _dataSourceManager;
-    private readonly CrawlerCredentialManager _crawlerCredentialManager;
-    private readonly CrawlerAccountManager _crawlerAccountManager;
-    private readonly IArticleLongChauRepository _articleLongChauRepository;
-    private readonly IMediaRepository _mediaRepository;
+    private readonly ArticleManangerLongChau _articleManangerLongChau;
+    private readonly ProductManagerLongChau _productManagerLongChau;
+    private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
+    
+    //Aladin 
+    private readonly ProductManagerAladin _productManagerAladin;
     private readonly IObjectMapper _objectMapper;
 
-    public CrawlerDataReceiveConsumer(DataSourceManager dataSourceManager,
-        CrawlerCredentialManager crawlerCredentialManager, CrawlerAccountManager crawlerAccountManager,
-        IObjectMapper objectMapper,
-        IArticleLongChauRepository articleLongChauRepository,
-        IMediaRepository mediaRepository)
+    public CrawlerDataReceiveConsumer(IObjectMapper objectMapper,
+        ArticleManangerLongChau articleManangerLongChau,
+        ProductManagerLongChau productManagerLongChau,
+        ProductManagerAladin productManagerAladin,
+        ArticleManangerSucKhoeDoiSong articleManangerSucKhoeDoiSong)
     {
-        _dataSourceManager = dataSourceManager;
-        _crawlerCredentialManager = crawlerCredentialManager;
-        _crawlerAccountManager = crawlerAccountManager;
         _objectMapper = objectMapper;
-        _articleLongChauRepository = articleLongChauRepository;
-        _mediaRepository = mediaRepository;
+        _articleManangerLongChau = articleManangerLongChau;
+        _productManagerLongChau = productManagerLongChau;
+        _productManagerAladin = productManagerAladin;
+        _articleManangerSucKhoeDoiSong = articleManangerSucKhoeDoiSong;
     }
 
     public async Task HandleEventAsync(CrawlResultEto eventData)
     {
-        if (eventData.Items.Any())
+        if (eventData.EcommercePayloads is { Products: { } })
         {
-            var articles = _objectMapper.Map<List<CrawlPayload>, List<Article>>(eventData.Items);
-            
             // //TODO: Dựa vào urlsite trả về từ Crawler để xác định lưu vào DB nào
-            switch (eventData.DomainSite)
+            // switch (eventData.EcommercePayloads.Url)
+            // {
+            //     case  PageDataSourceConsts.LongChauUrl : // long chau
+            //     {
+            //         await _productManagerLongChau.ProcessingDataAsync(eventData.EcommercePayloads);
+            //         break;
+            //     }
+            //     case  PageDataSourceConsts.AladinUrl :
+            //     {
+            //         await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
+            //         break;
+            //     }
+            // }
+            //
+            var url = eventData.EcommercePayloads.Url;
+            if (url.Contains(PageDataSourceConsts.LongChauUrl))
             {
-                case  DataSourceConsts.LongChauUrl : // long chau
-                {
-                    await _articleLongChauRepository.InsertManyAsync(articles);
-                    break;
-                }
-                case  DataSourceConsts.AladinUrl : 
-                {
-                    await _articleLongChauRepository.InsertManyAsync(articles);
-                    break;
-                }
+                await _productManagerLongChau.ProcessingDataAsync(eventData.EcommercePayloads);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.AladinUrl))
+            {
+                await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
             }
         }
-
-        if (eventData.Credential is not null)
+        
+        //Handle articles
+        if (eventData.ArticlePayloads is { ArticlesPayload: { } })
         {
-            var crawlerCredential =
-                _objectMapper.Map<CredentialEto, CrawlerCredential>(eventData.Credential.CrawlerCredential);
-            await _crawlerCredentialManager.ResetCrawlerInformation(crawlerCredential);
-
-            var crawlerAccount = _objectMapper.Map<AccountEto, CrawlerAccount>(eventData.Credential.CrawlerAccount);
-            await _crawlerAccountManager.UpdateAccountStatus(crawlerAccount);
+            // //TODO: Dựa vào urlsite trả về từ Crawler để xác định lưu vào DB nào
+            
+            // switch (url)
+            // {
+            //     case  PageDataSourceConsts.LongChauUrl : // long chau
+            //     {
+            //         await _articleManangerLongChau.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            //         break;
+            //     }
+            //     case  PageDataSourceConsts.AladinUrl :
+            //     {
+            //         break;
+            //     }
+            //     case PageDataSourceConsts.SucKhoeDoiSongUrl:
+            //         break;
+            // }
+            
+            var url = eventData.ArticlePayloads.Url;
+            if (url.Contains(PageDataSourceConsts.LongChauUrl))
+            {
+                await _articleManangerLongChau.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl))
+            {
+                await _articleManangerSucKhoeDoiSong.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
         }
     }
 

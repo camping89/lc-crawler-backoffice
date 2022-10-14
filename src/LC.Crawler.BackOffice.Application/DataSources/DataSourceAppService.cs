@@ -28,8 +28,8 @@ namespace LC.Crawler.BackOffice.DataSources
 
         public virtual async Task<PagedResultDto<DataSourceDto>> GetListAsync(GetDataSourcesInput input)
         {
-            var totalCount = await _dataSourceRepository.GetCountAsync(input.FilterText, input.Url, input.IsActive);
-            var items = await _dataSourceRepository.GetListAsync(input.FilterText, input.Url, input.IsActive, input.Sorting, input.MaxResultCount, input.SkipCount);
+            var totalCount = await _dataSourceRepository.GetCountAsync(input.FilterText, input.Url, input.IsActive, input.PostToSite);
+            var items = await _dataSourceRepository.GetListAsync(input.FilterText, input.Url, input.IsActive, input.PostToSite, input.Sorting, input.MaxResultCount, input.SkipCount);
 
             return new PagedResultDto<DataSourceDto>
             {
@@ -54,7 +54,7 @@ namespace LC.Crawler.BackOffice.DataSources
         {
 
             var dataSource = await _dataSourceManager.CreateAsync(
-            input.Url, input.IsActive
+            input.Url, input.IsActive, input.PostToSite
             );
 
             return ObjectMapper.Map<DataSource, DataSourceDto>(dataSource);
@@ -66,7 +66,7 @@ namespace LC.Crawler.BackOffice.DataSources
 
             var dataSource = await _dataSourceManager.UpdateAsync(
             id,
-            input.Url, input.IsActive, input.ConcurrencyStamp
+            input.Url, input.IsActive, input.PostToSite, input.ConcurrencyStamp
             );
 
             return ObjectMapper.Map<DataSource, DataSourceDto>(dataSource);

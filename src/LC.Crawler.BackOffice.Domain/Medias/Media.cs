@@ -26,6 +26,9 @@ namespace LC.Crawler.BackOffice.Medias
         public virtual string Description { get; set; }
 
         public virtual bool IsDowloaded { get; set; }
+        
+        public virtual string ExternalUrl { get; set; }
+        public virtual string ExternalId { get; set; }
 
         public Media()
         {

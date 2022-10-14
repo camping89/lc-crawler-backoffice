@@ -179,6 +179,7 @@
     "IsDowloaded": "Is Dowloaded",
     "ExternalId": "External Id",
     "MinExternalId": "Min External Id",
-    "MaxExternalId": "Max External Id"
+    "MaxExternalId": "Max External Id",
+    "PostToSite": "Post To Site"
   }
 }

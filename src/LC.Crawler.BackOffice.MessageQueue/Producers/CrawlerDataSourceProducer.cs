@@ -14,31 +14,44 @@ namespace LC.Crawler.BackOffice.MessageQueue.Producers;
 public class CrawlerDataSourceProducer : ITransientDependency
 {
     private readonly IDistributedEventBus _distributedEventBus;
-    private readonly DataSourceManager _dataSourceManager;
     private readonly CrawlerCredentialManager _crawlerCredentialManager;
+    private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IObjectMapper _objectMapper;
 
-    public CrawlerDataSourceProducer(IDistributedEventBus distributedEventBus, CrawlerCredentialManager crawlerCredentialManager, DataSourceManager dataSourceManager,
-        IObjectMapper objectMapper)
+    public CrawlerDataSourceProducer(IDistributedEventBus distributedEventBus, CrawlerCredentialManager crawlerCredentialManager,
+        IObjectMapper objectMapper,
+        IDataSourceRepository dataSourceRepository)
     {
         _distributedEventBus = distributedEventBus;
         _crawlerCredentialManager = crawlerCredentialManager;
-        _dataSourceManager = dataSourceManager;
         _objectMapper = objectMapper;
+        _dataSourceRepository = dataSourceRepository;
     }
 
     public async Task InitCrawlerDataSourceQueueAsync()
     {
-        var feedDataSources = await _dataSourceManager.GetDataSourcesAsync();
-        var crawlerDataSourceEto = new CrawlerDataSourceEto();
-        crawlerDataSourceEto.Items = feedDataSources.Select(x => new CrawlerDataSourceItem
-        {
-            Url = x.Url,
-            SourceType = SourceType.LC,
-            DataSourceType = DataSourceType.Website
-        }).ToList();
+        var feedDataSources = await _dataSourceRepository.GetListAsync(x=>x.IsActive);
         
-        await _distributedEventBus.PublishAsync(crawlerDataSourceEto);
+        if (feedDataSources.Any())
+        {
+            foreach (var dataSource in feedDataSources)
+            {
+                var crawlerDataSourceEto = new CrawlerDataSourceEto
+                {
+                    Items = new List<CrawlerDataSourceItem>()
+                    {
+                        new()
+                        {
+                            Url = dataSource.Url,
+                            SourceType = SourceType.LC,
+                            DataSourceType = DataSourceType.Website
+                        }
+                    }
+                };
+
+                await _distributedEventBus.PublishAsync(crawlerDataSourceEto);
+            }
+        }
     }
 
 }

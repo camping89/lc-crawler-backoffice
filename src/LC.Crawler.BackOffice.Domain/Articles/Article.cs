@@ -1,15 +1,10 @@
-using LC.Crawler.BackOffice.Medias;
-using LC.Crawler.BackOffice.DataSources;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
 using JetBrains.Annotations;
-using Volo.Abp.Domain.Entities;
-
 using Volo.Abp;
 
 namespace LC.Crawler.BackOffice.Articles
@@ -44,10 +39,13 @@ namespace LC.Crawler.BackOffice.Articles
         public ICollection<ArticleMedia> Medias { get; private set; }
 
         public string ConcurrencyStamp { get; set; }
+        
+        public DateTime? LastSyncedAt { get; set; }
 
-        public Article()
+        public Article(Guid id)
         {
-
+            ConcurrencyStamp = Guid.NewGuid().ToString("N");
+            Id = id;
         }
 
         public Article(Guid id, Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, string tags, int likeCount, int commentCount, int shareCount)
@@ -72,11 +70,13 @@ namespace LC.Crawler.BackOffice.Articles
         public void AddCategory(Guid categoryId)
         {
             Check.NotNull(categoryId, nameof(categoryId));
-
+            Categories ??= new List<ArticleCategory>();
+            
             if (IsInCategories(categoryId))
             {
                 return;
             }
+            
 
             Categories.Add(new ArticleCategory(Id, categoryId));
         }

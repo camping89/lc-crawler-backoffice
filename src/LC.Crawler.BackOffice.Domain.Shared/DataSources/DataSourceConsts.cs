@@ -9,6 +9,11 @@ namespace LC.Crawler.BackOffice.DataSources
             return string.Format(DefaultSorting, withEntityName ? "DataSource." : string.Empty);
         }
 
+    }
+
+    public static class PageDataSourceConsts
+    {
+        
         public const string LongChauUrl = "nhathuoclongchau.com";
         public const string AladinUrl = "aladin.com.vn";
         public const string SieuThiSongKhoeUrl = "sieuthisongkhoe.com";
@@ -17,6 +22,5 @@ namespace LC.Crawler.BackOffice.DataSources
         public const string BlogSucKhoeUrl = "blogsuckhoe.com";
         public const string SucKhoeGiaDinhUrl = "suckhoegiadinh.com.vn";
         public const string AloBacSiUrl = "alobacsi.com";
-
     }
 }

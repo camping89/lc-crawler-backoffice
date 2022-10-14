@@ -26,7 +26,8 @@ $(function () {
                     return '';
                 }
                 return value === 'true';
-            })()
+            })(),
+			postToSite: $("#PostToSiteFilter").val()
         };
     };
 
@@ -77,7 +78,8 @@ $(function () {
                 render: function (isActive) {
                     return isActive ? l("Yes") : l("No");
                 }
-            }
+            },
+			{ data: "postToSite" }
         ]
     }));
 

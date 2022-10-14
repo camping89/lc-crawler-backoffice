@@ -12,6 +12,7 @@ namespace LC.Crawler.BackOffice.DataSources
             string filterText = null,
             string url = null,
             bool? isActive = null,
+            string postToSite = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
@@ -22,6 +23,7 @@ namespace LC.Crawler.BackOffice.DataSources
             string filterText = null,
             string url = null,
             bool? isActive = null,
+            string postToSite = null,
             CancellationToken cancellationToken = default);
     }
 }

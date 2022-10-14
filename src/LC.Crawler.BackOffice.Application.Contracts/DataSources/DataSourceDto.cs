@@ -8,6 +8,7 @@ namespace LC.Crawler.BackOffice.DataSources
     {
         public string Url { get; set; }
         public bool IsActive { get; set; }
+        public string PostToSite { get; set; }
 
         public string ConcurrencyStamp { get; set; }
     }

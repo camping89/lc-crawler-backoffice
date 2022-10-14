@@ -3,7 +3,9 @@ using System.Threading.Tasks;
 using Hangfire;
 using Hangfire.SqlServer;
 using LC.Crawler.BackOffice.BackgroundWorkers;
+using LC.Crawler.BackOffice.BackgroundWorkers.Aladin;
 using LC.Crawler.BackOffice.BackgroundWorkers.LongChau;
+using LC.Crawler.BackOffice.BackgroundWorkers.SucKhoeDoiSong;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,18 +39,33 @@ public class LCBackgroundWorkerDomainModule : AbpModule
         {
             // Process download and save image
             context.AddBackgroundWorkerAsync<DownloadMediaLongChauBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
+            //context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductLongChauBackgroundWorker>();
             
+            //Aladin
+            context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            
+            //Suckhoedoisong
+            context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
         }
         else
         {
             // Process download and save image
             context.AddBackgroundWorkerAsync<DownloadMediaLongChauBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
+            //context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductLongChauBackgroundWorker>();
+            
+            //Aladin
+            context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            
+            //Suckhoedoisong
+            context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
         }
         
         return Task.CompletedTask;

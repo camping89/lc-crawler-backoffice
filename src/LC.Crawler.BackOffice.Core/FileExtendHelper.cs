@@ -4,11 +4,22 @@ public static class FileExtendHelper
 {
     public static async Task<byte[]?> DownloadFile(string url)
     {
-        using var client = new HttpClient();
-        using var result = await client.GetAsync(url);
-        if (result.IsSuccessStatusCode)
+        try
         {
-            return await result.Content.ReadAsByteArrayAsync();
+            HttpClientHandler clientHandler = new HttpClientHandler();
+            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+
+            using var client = new HttpClient(clientHandler);
+            using var result = await client.GetAsync(url);
+            if (result.IsSuccessStatusCode)
+            {
+                return await result.Content.ReadAsByteArrayAsync();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
 
         return null;

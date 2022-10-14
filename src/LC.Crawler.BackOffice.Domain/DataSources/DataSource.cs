@@ -19,6 +19,9 @@ namespace LC.Crawler.BackOffice.DataSources
 
         public virtual bool IsActive { get; set; }
 
+        [CanBeNull]
+        public virtual string PostToSite { get; set; }
+
         public string ConcurrencyStamp { get; set; }
 
         public DataSource()
@@ -26,13 +29,14 @@ namespace LC.Crawler.BackOffice.DataSources
 
         }
 
-        public DataSource(Guid id, string url, bool isActive)
+        public DataSource(Guid id, string url, bool isActive, string postToSite)
         {
             ConcurrencyStamp = Guid.NewGuid().ToString("N");
             Id = id;
             Check.NotNull(url, nameof(url));
             Url = url;
             IsActive = isActive;
+            PostToSite = postToSite;
         }
 
     }

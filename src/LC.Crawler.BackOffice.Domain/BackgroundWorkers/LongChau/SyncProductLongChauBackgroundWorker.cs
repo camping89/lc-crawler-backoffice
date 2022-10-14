@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Hangfire;
 using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Products;
 using Volo.Abp.BackgroundWorkers.Hangfire;
@@ -19,14 +20,16 @@ namespace LC.Crawler.BackOffice.BackgroundWorkers.LongChau;
 public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
 {
     private readonly IProductLongChauRepository _productLongChauRepository;
+    private readonly IDataSourceRepository _dataSourceRepository;
     
     private readonly MediaManagerLongChau _mediaManagerLongChau;
-    private readonly string BASEURL = "https://103.116.104.43";
+    private string BASEURL = string.Empty;
 
-    public SyncProductLongChauBackgroundWorker(IProductLongChauRepository productLongChauRepository, MediaManagerLongChau mediaManagerLongChau)
+    public SyncProductLongChauBackgroundWorker(IProductLongChauRepository productLongChauRepository, MediaManagerLongChau mediaManagerLongChau, IDataSourceRepository dataSourceRepository)
     {
         _productLongChauRepository = productLongChauRepository;
         _mediaManagerLongChau = mediaManagerLongChau;
+        _dataSourceRepository = dataSourceRepository;
 
 
         RecurringJobId            = nameof(SyncProductLongChauBackgroundWorker);
@@ -35,6 +38,13 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
 
     public override async Task DoWorkAsync()
     {
+        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        if (dataSource == null)
+        {
+            return;
+        }
+        BASEURL = dataSource.PostToSite;
+        
         var rest = new RestAPI($"{BASEURL}/wp-json/wc/v3/", "<WooCommerce Key>", "<WooCommerce Secret");
         var wc = new WCObject(rest);
         
@@ -96,6 +106,7 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     {
         //pass the Wordpress REST API base address as string
         var client = new WordPressClient($"{BASEURL}/wp-json/");
+        client.Auth.UseBasicAuth("admin", "123456");
         var mediaItems = new List<MediaItem>();
         foreach (var media in productNav.Medias)
         {

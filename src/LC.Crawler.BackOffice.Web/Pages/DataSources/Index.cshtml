@@ -50,6 +50,9 @@
             <abp-column size="_3">
                 <abp-select asp-for="IsActiveFilter" label="@L["IsActive"].Value" />
             </abp-column>
+            <abp-column size="_3">
+                <abp-input asp-for="PostToSiteFilter" label="@L["PostToSite"].Value" />
+            </abp-column>
         </abp-row>
 
         <abp-table striped-rows="true" id="DataSourcesTable">
@@ -58,6 +61,7 @@
 					<th>@L["Actions"]</th>
 					<th>@L["Url"]</th>
 					<th>@L["IsActive"]</th>
+					<th>@L["PostToSite"]</th>
 
 				</tr>
             </thead>

@@ -1,7 +1,8 @@
-﻿
+﻿using System;
+using System.Collections.Generic;
 using LC.Crawler.BackOffice.Enums;
 
-namespace LC.Crawler.BackOffice.MessageQueue.Consumers.LC;
+namespace LC.Crawler.BackOffice.Payloads;
 
 public class CrawlEcommercePayload
 {
@@ -9,7 +10,7 @@ public class CrawlEcommercePayload
     {
         Products = new List<CrawlEcommerceProductPayload>();
     }
-    
+    public string Url { get; set; }
     public List<CrawlEcommerceProductPayload> Products { get; set; }
 }
 

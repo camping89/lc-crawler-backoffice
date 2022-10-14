@@ -1,5 +1,6 @@
-﻿using LC.Crawler.BackOffice.Enums;
-using Veek.DataProvider.Crawler.Client.Entities;
+﻿using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Payloads;
 using Volo.Abp.EventBus;
 
 namespace LC.Crawler.BackOffice.MessageQueue.Consumers.Etos;
@@ -7,10 +8,10 @@ namespace LC.Crawler.BackOffice.MessageQueue.Consumers.Etos;
 [EventName("Veek.DataProvider.Social.CrawlDataResultEto")]
 public class CrawlResultEto
 {
-    public List<CrawlPayload> Items { get; set; }
+    public CrawlEcommercePayload EcommercePayloads { get; set; }
+    public CrawlArticlePayload ArticlePayloads { get; set; }
     public DataSourceType DataSourceType { get; set; }
     public SourceType SourceType { get; set; }
     public CrawlerCredentialEto Credential { get; set; }
     
-    public string DomainSite { get; set; }
 }

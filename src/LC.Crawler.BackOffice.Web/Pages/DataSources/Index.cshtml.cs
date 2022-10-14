@@ -25,6 +25,7 @@ namespace LC.Crawler.BackOffice.Web.Pages.DataSources
                 new SelectListItem("Yes", "true"),
                 new SelectListItem("No", "false"),
             };
+        public string PostToSiteFilter { get; set; }
 
         private readonly IDataSourcesAppService _dataSourcesAppService;
 

@@ -41,6 +41,12 @@ namespace LC.Crawler.BackOffice.Products
 
         }
 
+        public Product(Guid id)
+        {
+            Id = id;
+            ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        }
+
         public Product(Guid id, Guid? featuredMediaId, Guid dataSourceId, string name, string code, string shortDescription, string description, int? externalId = null)
         {
             ConcurrencyStamp = Guid.NewGuid().ToString("N");
@@ -59,7 +65,7 @@ namespace LC.Crawler.BackOffice.Products
         public void AddCategory(Guid categoryId)
         {
             Check.NotNull(categoryId, nameof(categoryId));
-
+            Categories ??= new List<ProductCategory>();
             if (IsInCategories(categoryId))
             {
                 return;
@@ -100,7 +106,7 @@ namespace LC.Crawler.BackOffice.Products
         public void AddMedia(Guid mediaId)
         {
             Check.NotNull(mediaId, nameof(mediaId));
-
+            Medias ??= new List<ProductMedia>();
             if (IsInMedias(mediaId))
             {
                 return;

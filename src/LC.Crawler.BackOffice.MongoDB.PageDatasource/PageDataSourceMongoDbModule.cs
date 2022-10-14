@@ -5,13 +5,21 @@ using LC.Crawler.BackOffice.PageDatasource.Aladin.Articles;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Categories;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Medias;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.MongoDb;
+using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductAttributes;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Products;
+using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductVariants;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Articles;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Categories;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Medias;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Products;
+using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Articles;
+using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Categories;
+using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Medias;
+using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.MongoDb;
+using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.ProductVariants;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AuditLogging.MongoDB;
 using Volo.Abp.BackgroundJobs.MongoDB;
@@ -61,6 +69,9 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaAladinRepository>();
 
             options.AddRepository<Product, MongoProductAladinRepository>();
+            
+            options.AddRepository<ProductAttribute, MongoProductAttributeAladinRepository>();
+            options.AddRepository<ProductVariant, MongoProductVariantAladinRepository>();
 
         });
         
@@ -75,6 +86,19 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaLongChauRepository>();
 
             options.AddRepository<Product, MongoProductLongChauRepository>();
+
+        });
+
+
+        context.Services.AddMongoDbContext<SucKhoeDoiSongMongoDbContext>(options =>
+        {
+            // options.AddDefaultRepositories();
+
+            options.AddRepository<Category, MongoCategorySucKhoeDoiSongRepository>();
+
+            options.AddRepository<Article, MongoArticleSucKhoeDoiSongRepository>();
+
+            options.AddRepository<Media, MongoMediaSucKhoeDoiSongRepository>();
 
         });
 
