@@ -11,5 +11,14 @@ namespace LC.Crawler.BackOffice.DataSources
         public string PostToSite { get; set; }
 
         public string ConcurrencyStamp { get; set; }
+        public ConfigurationDto Configuration { get; set; }
+    }
+    
+    public class ConfigurationDto
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string ApiKey { get; set; }
+        public string ApiSecret { get; set; }
     }
 }

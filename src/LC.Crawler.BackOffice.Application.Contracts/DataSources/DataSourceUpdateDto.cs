@@ -13,5 +13,6 @@ namespace LC.Crawler.BackOffice.DataSources
         public string PostToSite { get; set; }
 
         public string ConcurrencyStamp { get; set; }
+        public ConfigurationDto Configuration { get; set; }
     }
 }

@@ -13,7 +13,6 @@ using LC.Crawler.BackOffice.DataSources;
 
 namespace LC.Crawler.BackOffice.DataSources
 {
-
     [Authorize(BackOfficePermissions.DataSources.Default)]
     public class DataSourcesAppService : ApplicationService, IDataSourcesAppService
     {
@@ -28,8 +27,11 @@ namespace LC.Crawler.BackOffice.DataSources
 
         public virtual async Task<PagedResultDto<DataSourceDto>> GetListAsync(GetDataSourcesInput input)
         {
-            var totalCount = await _dataSourceRepository.GetCountAsync(input.FilterText, input.Url, input.IsActive, input.PostToSite);
-            var items = await _dataSourceRepository.GetListAsync(input.FilterText, input.Url, input.IsActive, input.PostToSite, input.Sorting, input.MaxResultCount, input.SkipCount);
+            var totalCount =
+                await _dataSourceRepository.GetCountAsync(input.FilterText, input.Url, input.IsActive,
+                    input.PostToSite);
+            var items = await _dataSourceRepository.GetListAsync(input.FilterText, input.Url, input.IsActive,
+                input.PostToSite, input.Sorting, input.MaxResultCount, input.SkipCount);
 
             return new PagedResultDto<DataSourceDto>
             {
@@ -52,10 +54,9 @@ namespace LC.Crawler.BackOffice.DataSources
         [Authorize(BackOfficePermissions.DataSources.Create)]
         public virtual async Task<DataSourceDto> CreateAsync(DataSourceCreateDto input)
         {
-
-            var dataSource = await _dataSourceManager.CreateAsync(
-            input.Url, input.IsActive, input.PostToSite
-            );
+            var configuration = ObjectMapper.Map<ConfigurationDto, Configuration>(input.Configuration);
+            var dataSource =
+                await _dataSourceManager.CreateAsync(input.Url, input.IsActive, input.PostToSite, configuration);
 
             return ObjectMapper.Map<DataSource, DataSourceDto>(dataSource);
         }
@@ -63,11 +64,9 @@ namespace LC.Crawler.BackOffice.DataSources
         [Authorize(BackOfficePermissions.DataSources.Edit)]
         public virtual async Task<DataSourceDto> UpdateAsync(Guid id, DataSourceUpdateDto input)
         {
-
-            var dataSource = await _dataSourceManager.UpdateAsync(
-            id,
-            input.Url, input.IsActive, input.PostToSite, input.ConcurrencyStamp
-            );
+            var configuration = ObjectMapper.Map<ConfigurationDto, Configuration>(input.Configuration);
+            var dataSource = await _dataSourceManager.UpdateAsync(id, input.Url, input.IsActive, input.PostToSite,
+                configuration, input.ConcurrencyStamp);
 
             return ObjectMapper.Map<DataSource, DataSourceDto>(dataSource);
         }

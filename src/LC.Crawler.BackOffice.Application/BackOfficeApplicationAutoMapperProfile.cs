@@ -37,6 +37,7 @@ public class BackOfficeApplicationAutoMapperProfile : Profile
         CreateMap<CrawlerProxy, LookupDto<Guid?>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.Ip));
 
         CreateMap<DataSource, DataSourceDto>();
+        CreateMap<Configuration, ConfigurationDto>().ReverseMap();
 
         CreateMap<Category, CategoryDto>();
         CreateMap<Category, CategoryResultDto>();

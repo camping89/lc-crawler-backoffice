@@ -10,13 +10,13 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.MongoDB;
 using Volo.Abp.MultiTenancy;
 
-namespace LC.Crawler.BackOffice.PageDatasource.Aladin.MongoDb;
+namespace LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.MongoDb;
 
-public class MongoDbAladinDbSchemaMigrator : IBackOfficeDbSchemaMigrator, ITransientDependency
+public class MongoDbSieuThiSongKhoeDbSchemaMigrator : IBackOfficeDbSchemaMigrator, ITransientDependency
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public MongoDbAladinDbSchemaMigrator(IServiceProvider serviceProvider)
+    public MongoDbSieuThiSongKhoeDbSchemaMigrator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }

@@ -6,6 +6,7 @@ using LC.Crawler.BackOffice.BackgroundWorkers;
 using LC.Crawler.BackOffice.BackgroundWorkers.Aladin;
 using LC.Crawler.BackOffice.BackgroundWorkers.LongChau;
 using LC.Crawler.BackOffice.BackgroundWorkers.SongKhoeMedplus;
+using LC.Crawler.BackOffice.BackgroundWorkers.SieuThiSongKhoe;
 using LC.Crawler.BackOffice.BackgroundWorkers.SucKhoeDoiSong;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +53,10 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
             
+            //SieuThiSongKhoe
+            context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
+            
             //SongKhoeMedplus
             context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
@@ -67,6 +72,10 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //Aladin
             context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            
+            //SieuThiSongKhoe
+            context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
             
             //Suckhoedoisong
             context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();

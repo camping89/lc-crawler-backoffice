@@ -18,21 +18,16 @@ namespace LC.Crawler.BackOffice.DataSources
             _dataSourceRepository = dataSourceRepository;
         }
 
-        public async Task<DataSource> CreateAsync(
-        string url, bool isActive, string postToSite)
+        public async Task<DataSource> CreateAsync(string url, bool isActive, string postToSite,
+            Configuration configuration)
         {
-            var dataSource = new DataSource(
-             GuidGenerator.Create(),
-             url, isActive, postToSite
-             );
+            var dataSource = new DataSource(GuidGenerator.Create(), url, isActive, postToSite, configuration);
 
             return await _dataSourceRepository.InsertAsync(dataSource);
         }
 
-        public async Task<DataSource> UpdateAsync(
-            Guid id,
-            string url, bool isActive, string postToSite, [CanBeNull] string concurrencyStamp = null
-        )
+        public async Task<DataSource> UpdateAsync(Guid id, string url, bool isActive, string postToSite,
+            Configuration configuration, [CanBeNull] string concurrencyStamp = null)
         {
             var queryable = await _dataSourceRepository.GetQueryableAsync();
             var query = queryable.Where(x => x.Id == id);
@@ -42,10 +37,10 @@ namespace LC.Crawler.BackOffice.DataSources
             dataSource.Url = url;
             dataSource.IsActive = isActive;
             dataSource.PostToSite = postToSite;
+            dataSource.Configuration = configuration;
 
             dataSource.SetConcurrencyStampIfNotNull(concurrencyStamp);
             return await _dataSourceRepository.UpdateAsync(dataSource);
         }
-
     }
 }

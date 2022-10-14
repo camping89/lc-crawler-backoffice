@@ -22,9 +22,10 @@
             <abp-input asp-for="DataSource.IsActive"/>
 
             <abp-input asp-for="DataSource.PostToSite"/>
-
-                    
-                
+            <abp-input asp-for="DataSource.Configuration.Username"/>
+            <abp-input asp-for="DataSource.Configuration.Password"/>
+            <abp-input asp-for="DataSource.Configuration.ApiKey"/>
+            <abp-input asp-for="DataSource.Configuration.ApiSecret"/>
         </abp-modal-body>
 
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>

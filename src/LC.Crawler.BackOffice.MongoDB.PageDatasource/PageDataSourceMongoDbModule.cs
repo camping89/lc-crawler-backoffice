@@ -17,6 +17,13 @@ using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.Articles;
 using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.Categories;
 using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.Medias;
 using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.MongoDb;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Articles;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Categories;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Medias;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.MongoDb;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.ProductAttributes;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Products;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.ProductVariants;
 using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Articles;
 using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Categories;
 using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Medias;
@@ -91,6 +98,21 @@ public class PageDataSourceMongoDbModule : AbpModule
 
             options.AddRepository<Product, MongoProductLongChauRepository>();
 
+        });
+        
+        context.Services.AddMongoDbContext<SieuThiSongKhoeMongoDbContext>(options =>
+        {
+            // options.AddDefaultRepositories();
+
+            options.AddRepository<Category, MongoCategorySieuThiSongKhoeRepository>();
+
+            options.AddRepository<Article, MongoArticleSieuThiSongKhoeRepository>();
+
+            options.AddRepository<Media, MongoMediaSieuThiSongKhoeRepository>();
+
+            options.AddRepository<Product, MongoProductSieuThiSongKhoeRepository>();
+            options.AddRepository<ProductAttribute, MongoProductAttributeSieuThiSongKhoeRepository>();
+            options.AddRepository<ProductVariant, MongoProductVariantSieuThiSongKhoeRepository>();
         });
 
 
