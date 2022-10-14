@@ -139,6 +139,10 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaSucKhoeDoiSongRepository>();
 
         });
+        
+        context.Services.AddMongoDbContext<SongKhoeMedplusMongoDbContext>(options =>
+        {
+            // options.AddDefaultRepositories();
 
         context.Services.AddMongoDbContext<SongKhoeMedplusMongoDbContext>(options =>
         {
