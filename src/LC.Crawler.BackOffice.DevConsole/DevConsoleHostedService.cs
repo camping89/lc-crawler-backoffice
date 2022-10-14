@@ -18,9 +18,9 @@ public class DevConsoleHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _masterService.ProcessLongChauDataAsync();
+        //await _masterService.ProcessLongChauDataAsync();
         //await _masterService.DownLoadMediaLongChauAsync();
-        //await _masterService.DoSyncProductToWooAsync();
+        await _masterService.DoSyncProductToWooAsync();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
