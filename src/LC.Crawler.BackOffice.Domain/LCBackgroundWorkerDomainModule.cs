@@ -5,6 +5,7 @@ using Hangfire.SqlServer;
 using LC.Crawler.BackOffice.BackgroundWorkers;
 using LC.Crawler.BackOffice.BackgroundWorkers.Aladin;
 using LC.Crawler.BackOffice.BackgroundWorkers.LongChau;
+using LC.Crawler.BackOffice.BackgroundWorkers.SongKhoeMedplus;
 using LC.Crawler.BackOffice.BackgroundWorkers.SucKhoeDoiSong;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,10 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //Suckhoedoisong
             context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
+            
+            //SongKhoeMedplus
+            context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
         }
         else
         {
@@ -66,6 +71,10 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //Suckhoedoisong
             context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
+            
+            //SongKhoeMedplus
+            context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
         }
         
         return Task.CompletedTask;
