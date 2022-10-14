@@ -22,6 +22,7 @@ using WooCommerceNET.WooCommerce.v3;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Models.Exceptions;
+using Category = WordPressPCL.Models.Category;
 using Product = LC.Crawler.BackOffice.Products.Product;
 using WooProductCategory = WooCommerceNET.WooCommerce.v3.ProductCategory;
 using WooProductAttribute = WooCommerceNET.WooCommerce.v3.ProductAttribute;
@@ -73,7 +74,7 @@ public class WooManagerLongChau : DomainService
         var products = await _productRepository.GetListAsync(x=> x.DataSourceId == dataSource.Id && x.ExternalId == null);
 
        var number = 1;
-        foreach (var product in products)
+        foreach (var product in products.Take(10))
         {
             try
             {
@@ -107,24 +108,50 @@ public class WooManagerLongChau : DomainService
 
         var categories = (await _categoryLongChauRepository.GetListAsync()).Select(x=>x.Name).Distinct().ToList();
         //Category
-        var wooCategories = await wcObject.Category.GetAll(new Dictionary<string, string>()
+        var wooCategories = new List<WooProductCategory>();
+        var pageIndex = 1;
+        while (true)
         {
-            { "per_page", "100"}
-        });
+            var wooCategoriesResult = await wcObject.Category.GetAll(new Dictionary<string, string>()
+            {
+                { "page", pageIndex.ToString()},
+                { "per_page", "100"},
+            });
+
+            if (wooCategoriesResult.IsNullOrEmpty())
+            {
+                break;
+            }
+            wooCategories.AddRange(wooCategoriesResult);
+
+            pageIndex++;
+        }
         foreach (var cateStr in categories)
         {
+            if (cateStr.IsNullOrEmpty())
+            {
+                continue;
+            }
             var categoriesTerms = cateStr.Split("->").ToList();
            
-            var cateName = categoriesTerms.FirstOrDefault();
+            var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&","&amp;");
             var wooRootCategory = wooCategories.FirstOrDefault(x => x.name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase));
             if (wooRootCategory == null)
             {
-                var cateNew = new WooProductCategory
+                try
                 {
-                    name = cateName
-                };
-                cateNew = await wcObject.Category.Add(cateNew);
-                wooCategories.Add(cateNew);
+                    var cateNew = new WooProductCategory
+                    {
+                        name = cateName
+                    };
+                    wooRootCategory = await wcObject.Category.Add(cateNew);
+                    wooCategories.Add(wooRootCategory);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
             }
             
             if (categoriesTerms.Count > 1 && wooRootCategory != null)
@@ -132,21 +159,32 @@ public class WooManagerLongChau : DomainService
                 var cateParent = wooRootCategory;
                 for (var i = 1; i < categoriesTerms.Count; i++)
                 {
-                    var subCateName = categoriesTerms[i];
-                    
-                    var wooSubCategory = wooCategories.FirstOrDefault(x => x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase));
-                    if (wooSubCategory == null)
+                    try
                     {
-                        var cateNew = new WooProductCategory
+                        var subCateName = categoriesTerms[i].Trim().Replace("&","&amp;");
+                    
+                        var wooSubCategory = wooCategories.FirstOrDefault(x => x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase));
+                        if (wooSubCategory == null)
                         {
-                            name = cateName,
-                            parent = cateParent.id
-                        };
+                            var cateNew = new WooProductCategory
+                            {
+                                name = subCateName,
+                                parent = cateParent.id
+                            };
                         
-                        cateNew = await wcObject.Category.Add(cateNew);
-                        wooCategories.Add(cateNew);
+                            cateNew = await wcObject.Category.Add(cateNew);
+                            wooCategories.Add(cateNew);
 
-                        cateParent = cateNew;
+                            cateParent = cateNew;
+                        }
+                        else
+                        {
+                            cateParent = wooSubCategory;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
                     }
                 }
             }
@@ -165,7 +203,8 @@ public class WooManagerLongChau : DomainService
             enable_html_description = true,
             attributes = new List<ProductAttributeLine>(),
             variations = new List<int>(),
-            categories = new List<ProductCategoryLine>()
+            categories = new List<ProductCategoryLine>(),
+            status = "pending"
         };
 
         if (product.Categories != null)
@@ -173,27 +212,31 @@ public class WooManagerLongChau : DomainService
             var categoryIds = product.Categories.Select(x => x.CategoryId).ToList();
             var categoriesLongChau = await _categoryLongChauRepository.GetListAsync(x=>categoryIds.Contains(x.Id));
             //Category
-            var wooCategories = await wcObject.Category.GetAll(new Dictionary<string, string>()
+            var wooCategories = new List<WooProductCategory>();
+            var pageIndex = 1;
+            while (true)
             {
-                { "per_page", "100"}
-            });
+                var wooCategoriesResult = await wcObject.Category.GetAll(new Dictionary<string, string>()
+                {
+                    { "page", pageIndex.ToString()},
+                    { "per_page", "100"},
+                });
+
+                if (wooCategoriesResult.IsNullOrEmpty())
+                {
+                    break;
+                }
+                wooCategories.AddRange(wooCategoriesResult);
+
+                pageIndex++;
+            }
             
             foreach (var categoryLongChau in categoriesLongChau)
             {
-                var encodeName = categoryLongChau.Name.Split("->").LastOrDefault().Replace("&","&amp;");
+                var encodeName = categoryLongChau.Name.Split("->").LastOrDefault()?.Replace("&","&amp;").Trim();
                 var wooCategory = wooCategories.FirstOrDefault(x => x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
                 if (wooCategory != null)
                 {
-                    wooProduct.categories.Add(new ProductCategoryLine()
-                    {
-                        id = wooCategory.id,
-                        name = wooCategory.name,
-                        slug = wooCategory.slug
-                    });
-                }
-                else
-                {
-                    
                     wooProduct.categories.Add(new ProductCategoryLine()
                     {
                         id = wooCategory.id,
