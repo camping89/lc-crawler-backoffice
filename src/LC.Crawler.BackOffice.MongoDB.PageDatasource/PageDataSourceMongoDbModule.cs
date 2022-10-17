@@ -8,6 +8,10 @@ using LC.Crawler.BackOffice.PageDatasource.Aladin.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductAttributes;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Products;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductVariants;
+using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Articles;
+using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Categories;
+using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Medias;
+using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Articles;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Categories;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Medias;
@@ -127,7 +131,7 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaSucKhoeDoiSongRepository>();
 
         });
-        
+
         context.Services.AddMongoDbContext<SongKhoeMedplusMongoDbContext>(options =>
         {
             // options.AddDefaultRepositories();
@@ -137,9 +141,18 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Article, MongoArticleSongKhoeMedplusRepository>();
 
             options.AddRepository<Media, MongoMediaSongKhoeMedplusRepository>();
-
         });
+        
+        context.Services.AddMongoDbContext<BlogSucKhoeMongoDbContext>(options =>
+        {
+            // options.AddDefaultRepositories();
 
+            options.AddRepository<Category, MongoCategoryBlogSucKhoeRepository>();
+
+            options.AddRepository<Article, MongoArticleBlogSucKhoeRepository>();
+
+            options.AddRepository<Media, MongoMediaBlogSucKhoeRepository>();
+        });
 
         Configure<AbpUnitOfWorkDefaultOptions>(options =>
         {
