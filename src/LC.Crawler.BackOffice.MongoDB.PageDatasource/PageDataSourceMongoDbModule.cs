@@ -8,6 +8,10 @@ using LC.Crawler.BackOffice.PageDatasource.Aladin.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductAttributes;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Products;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductVariants;
+using LC.Crawler.BackOffice.PageDatasource.AloBacSi.Articles;
+using LC.Crawler.BackOffice.PageDatasource.AloBacSi.Categories;
+using LC.Crawler.BackOffice.PageDatasource.AloBacSi.Medias;
+using LC.Crawler.BackOffice.PageDatasource.AloBacSi.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Articles;
 using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Categories;
 using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Medias;
@@ -167,6 +171,17 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Article, MongoArticleSucKhoeGiaDinhRepository>();
 
             options.AddRepository<Media, MongoMediaSucKhoeGiaDinhRepository>();
+        });
+        
+        context.Services.AddMongoDbContext<AloBacSiMongoDbContext>(options =>
+        {
+            // options.AddDefaultRepositories();
+
+            options.AddRepository<Category, MongoCategoryAloBacSiRepository>();
+
+            options.AddRepository<Article, MongoArticleAloBacSiRepository>();
+
+            options.AddRepository<Media, MongoMediaAloBacSiRepository>();
         });
 
         Configure<AbpUnitOfWorkDefaultOptions>(options =>
