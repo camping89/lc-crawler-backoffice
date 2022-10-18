@@ -12,6 +12,7 @@ using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.ProductVariants;
 using Microsoft.Extensions.Logging;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;

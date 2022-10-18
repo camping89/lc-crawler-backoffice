@@ -34,9 +34,9 @@ public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
     public SyncProductSieuThiSongKhoeBackgroundWorker(WooManagerAladin wooManagerAladin, ILogger<SyncProductSieuThiSongKhoeBackgroundWorker> logger)
     {
         _wooManagerAladin = wooManagerAladin;
-        _logger = logger;
-        RecurringJobId            = nameof(SyncProductSieuThiSongKhoeBackgroundWorker);
-        CronExpression            = Cron.Daily(0,0);
+        _logger           = logger;
+        RecurringJobId    = nameof(SyncProductSieuThiSongKhoeBackgroundWorker);
+        CronExpression    = Cron.Daily(0, 0);
     }
     
     public override async Task DoWorkAsync()

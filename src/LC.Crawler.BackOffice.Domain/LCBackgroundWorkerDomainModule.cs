@@ -59,6 +59,7 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //SieuThiSongKhoe
             context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSieuThiSongKhoeBackgroundWorker>();
             
             //SongKhoeMedplus
             context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
@@ -91,6 +92,7 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //SieuThiSongKhoe
             context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSieuThiSongKhoeBackgroundWorker>();
             
             //Suckhoedoisong
             context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();

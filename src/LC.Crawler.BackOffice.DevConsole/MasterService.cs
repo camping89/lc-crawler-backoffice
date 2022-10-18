@@ -42,7 +42,7 @@ public class MasterService : ITransientDependency
         Logger = NullLogger<MasterService>.Instance;
     }
 
-    public async Task ProcessLongChauDataAsync()
+    public async Task ProcessDataAsync()
     {
          using StreamReader file = File.OpenText(@"C:\Users\huynn\Downloads\LongChau.txt");
          JsonSerializer serializer = new JsonSerializer();
@@ -66,14 +66,13 @@ public class MasterService : ITransientDependency
         
     }
 
-    public async Task DownLoadMediaLongChauAsync()
+    public async Task DownLoadMediaAsync()
     {
-        await _mediaManagerLongChau.ProcessDownloadMediasAsync();
+        await _mediaManagerBlogSucKhoe.ProcessDownloadMediasAsync();
     }
 
     public async Task DoSyncProductToWooAsync()
     {
-        //await _wooManagerLongChau.DoSyncCategoriesAsync();
         await _wooManagerLongChau.DoSyncProductToWooAsync();
         
         // await _wooManagerAladin.DoSyncCategoriesAsync();
@@ -88,6 +87,6 @@ public class MasterService : ITransientDependency
 
     public async Task DoSyncArticles()
     {
-        await _wordpressManagerSieuThiSongKhoe.DoSyncToWordpress();
+        await _wordpressManagerBlogSucKhoe.DoSyncToWordpress();
     }
 }
