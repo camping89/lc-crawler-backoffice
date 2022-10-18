@@ -31,7 +31,7 @@ public class MasterService : ITransientDependency
     {
         //var content = await File.ReadAllTextAsync(@"C:\Users\huynn\Downloads\LongChau.txt");
         // deserialize JSON directly from a file
-        using StreamReader file = File.OpenText(@"C:\Users\huynn\Downloads\LongChau.txt");
+        using StreamReader file = File.OpenText(@"C:\Users\huynn\Downloads\LongChau (2).txt");
         JsonSerializer serializer = new JsonSerializer();
         var crawlResultEtos = (CrawlEcommercePayload)serializer.Deserialize(file, typeof(CrawlEcommercePayload));
         if (crawlResultEtos != null)

@@ -30,6 +30,7 @@ public class CrawlEcommerceProductPayload
     public  int                             TotalReview      => Reviews.Count; 
     public  int                             TotalComment     => Comments.Count;
 
+    public string Brand { get; set; }
     public CrawlEcommerceProductPayload()
     {
         Variants   = new List<EcommerceProductVariant>();
@@ -53,7 +54,7 @@ public class EcommerceProductAttribute
 {
     public Guid                Id    { get; set; }
     public string              Slug  { get; set; }
-    public ProductAttributeKey Key   { get; set; }
+    public string Key   { get; set; }
     public string              Value { get; set; }
 }
 

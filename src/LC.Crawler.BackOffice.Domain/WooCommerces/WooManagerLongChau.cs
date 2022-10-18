@@ -276,7 +276,7 @@ public class WooManagerLongChau : DomainService
             }
             
         }
-        
+
         //Variations
         if (variants is { Count: > 1 })
         {
@@ -327,7 +327,10 @@ public class WooManagerLongChau : DomainService
         foreach (var media in medias)
         {
             //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
-            
+            if (media.Url.Contains("http") == false)
+            {
+                continue;
+            }
             var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
             if (fileBytes != null)
             {

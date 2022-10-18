@@ -27,6 +27,7 @@ namespace LC.Crawler.BackOffice.Products
 
         [CanBeNull]
         public virtual string Description { get; set; }
+        public string Brand { get; set; }
 
         public virtual int? ExternalId { get; set; }
         public Guid? FeaturedMediaId { get; set; }
