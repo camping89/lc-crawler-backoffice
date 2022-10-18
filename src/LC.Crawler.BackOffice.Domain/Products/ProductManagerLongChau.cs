@@ -60,7 +60,8 @@ public class ProductManagerLongChau : DomainService
                 Code = rawProduct.Code,
                 Description = rawProduct.Description,
                 ShortDescription = rawProduct.ShortDescription,
-                DataSourceId = dataSource.Id
+                DataSourceId = dataSource.Id,
+                Brand = rawProduct.Brand
             };
            
             var category = categories.FirstOrDefault(x => x.Name == rawProduct.Category);
@@ -128,7 +129,7 @@ public class ProductManagerLongChau : DomainService
                 {
                     await _productAttributeLongChauRepository.InsertAsync(new ProductAttribute()
                     {
-                        Key = Enum.GetName(attribute.Key) ?? string.Empty,
+                        Key = attribute.Key,
                         Slug = attribute.Slug,
                         Value = attribute.Value,
                         ProductId = product.Id
