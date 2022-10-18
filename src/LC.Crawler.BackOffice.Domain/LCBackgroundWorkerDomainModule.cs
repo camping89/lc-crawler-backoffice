@@ -4,10 +4,13 @@ using Hangfire;
 using Hangfire.SqlServer;
 using LC.Crawler.BackOffice.BackgroundWorkers;
 using LC.Crawler.BackOffice.BackgroundWorkers.Aladin;
+using LC.Crawler.BackOffice.BackgroundWorkers.AloBacSi;
+using LC.Crawler.BackOffice.BackgroundWorkers.BlogSucKhoe;
 using LC.Crawler.BackOffice.BackgroundWorkers.LongChau;
 using LC.Crawler.BackOffice.BackgroundWorkers.SongKhoeMedplus;
 using LC.Crawler.BackOffice.BackgroundWorkers.SieuThiSongKhoe;
 using LC.Crawler.BackOffice.BackgroundWorkers.SucKhoeDoiSong;
+using LC.Crawler.BackOffice.BackgroundWorkers.SucKhoeGiaDinh;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -60,6 +63,18 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //SongKhoeMedplus
             context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
+            
+            // Blog Suc Khoe
+            context.AddBackgroundWorkerAsync<DownloadMediaBlogSucKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleBlogSucKhoeBackgroundWorker>();
+            
+            // Suc Khoe Gia Dinh
+            context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeGiaDinhBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSucKhoeGiaDinhBackgroundWorker>();
+            
+            // Alo Bac Si
+            context.AddBackgroundWorkerAsync<DownloadMediaAloBacSiBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleAloBacSiBackgroundWorker>();
         }
         else
         {
@@ -84,6 +99,18 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //SongKhoeMedplus
             context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
+            
+            // Blog Suc Khoe
+            context.AddBackgroundWorkerAsync<DownloadMediaBlogSucKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleBlogSucKhoeBackgroundWorker>();
+            
+            // Suc Khoe Gia Dinh
+            context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeGiaDinhBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleSucKhoeGiaDinhBackgroundWorker>();
+            
+            // Alo Bac Si
+            context.AddBackgroundWorkerAsync<DownloadMediaAloBacSiBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleAloBacSiBackgroundWorker>();
         }
         
         return Task.CompletedTask;

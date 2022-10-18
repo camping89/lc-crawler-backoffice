@@ -16,25 +16,34 @@ namespace LC.Crawler.BackOffice.MessageQueue.Consumers;
 
 public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEto>, ITransientDependency
 {
-    private readonly ArticleManangerLongChau _articleManangerLongChau;
-    private readonly ProductManagerLongChau _productManagerLongChau;
+    private readonly ArticleManangerLongChau       _articleManangerLongChau;
+    private readonly ProductManagerLongChau        _productManagerLongChau;
     private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
+    private readonly ArticleManangerBlogSucKhoe    _articleManangerBlogSucKhoe;
+    private readonly ArticleManangerSucKhoeGiaDinh _articleManangerSucKhoeGiaDinh;
+    private readonly ArticleManangerAloBacSi       _articleManangerAloBacSi;
     
     //Aladin 
     private readonly ProductManagerAladin _productManagerAladin;
     private readonly IObjectMapper _objectMapper;
 
     public CrawlerDataReceiveConsumer(IObjectMapper objectMapper,
-        ArticleManangerLongChau articleManangerLongChau,
-        ProductManagerLongChau productManagerLongChau,
-        ProductManagerAladin productManagerAladin,
-        ArticleManangerSucKhoeDoiSong articleManangerSucKhoeDoiSong)
+        ArticleManangerLongChau                     articleManangerLongChau,
+        ProductManagerLongChau                      productManagerLongChau,
+        ProductManagerAladin                        productManagerAladin,
+        ArticleManangerSucKhoeDoiSong               articleManangerSucKhoeDoiSong,
+        ArticleManangerBlogSucKhoe                  articleManangerBlogSucKhoe,
+        ArticleManangerSucKhoeGiaDinh               articleManangerSucKhoeGiaDinh,
+        ArticleManangerAloBacSi                     articleManangerAloBacSi)
     {
-        _objectMapper = objectMapper;
-        _articleManangerLongChau = articleManangerLongChau;
-        _productManagerLongChau = productManagerLongChau;
-        _productManagerAladin = productManagerAladin;
+        _objectMapper                  = objectMapper;
+        _articleManangerLongChau       = articleManangerLongChau;
+        _productManagerLongChau        = productManagerLongChau;
+        _productManagerAladin          = productManagerAladin;
         _articleManangerSucKhoeDoiSong = articleManangerSucKhoeDoiSong;
+        _articleManangerBlogSucKhoe    = articleManangerBlogSucKhoe;
+        _articleManangerSucKhoeGiaDinh = articleManangerSucKhoeGiaDinh;
+        _articleManangerAloBacSi       = articleManangerAloBacSi;
     }
 
     public async Task HandleEventAsync(CrawlResultEto eventData)
@@ -97,6 +106,21 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
             if (url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl))
             {
                 await _articleManangerSucKhoeDoiSong.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.BlogSucKhoeUrl))
+            {
+                await _articleManangerBlogSucKhoe.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.SucKhoeGiaDinhUrl))
+            {
+                await _articleManangerSucKhoeGiaDinh.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.AloBacSiUrl))
+            {
+                await _articleManangerAloBacSi.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
         }
     }
