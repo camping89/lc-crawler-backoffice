@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
@@ -279,6 +280,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
             {
                 wooProduct.images = new List<ProductImage>();
                 wooProduct.images.AddRange(await PostMediasAsync(medias));
+                wooProduct.description = ReplaceImageUrls(wooProduct.description, medias);
             }
         }
 
@@ -355,5 +357,24 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
 
         return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();
+    }
+    
+    private string ReplaceImageUrls(string contentHtml, List<Media> medias)
+    {
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(contentHtml);
+        foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
+        {
+            var mediaIdAttributeValue = node.Attributes["@media-id"].Value;
+            var media = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
+            
+            if (media != null)
+            {
+                node.SetAttributeValue("src", media.ExternalUrl );
+            }
+        }
+
+        var newHtml = htmlDoc.DocumentNode.WriteTo();
+        return newHtml;
     }
 }

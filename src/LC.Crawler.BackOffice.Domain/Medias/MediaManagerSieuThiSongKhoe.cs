@@ -65,7 +65,7 @@ public class MediaManagerSieuThiSongKhoe : DomainService
             var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
             if (fileBytes != null)
             {
-                var fileName = $"{Enum.GetName(PageDataSource.Aladin)}{media.Id}{fileExtension}";
+                var fileName = $"{Enum.GetName(PageDataSource.SieuThiSongKhoe)}{media.Id}{fileExtension}";
                 await _blobContainer.SaveAsync(fileName, fileBytes);
                 
                 //Do save media
@@ -88,7 +88,8 @@ public class MediaManagerSieuThiSongKhoe : DomainService
             var medias = await _mediaRepository.GetListAsync(x => x.IsDowloaded == false);
             foreach (var partition in medias.Partition(100))
             {
-                await Task.Factory.StartNew(async () => await SaveMultipleMedia(partition.ToList()));
+                // await Task.Factory.StartNew(async () => await SaveMultipleMedia(partition.ToList()));
+                await SaveMultipleMedia(partition.ToList());
             }
         }
         

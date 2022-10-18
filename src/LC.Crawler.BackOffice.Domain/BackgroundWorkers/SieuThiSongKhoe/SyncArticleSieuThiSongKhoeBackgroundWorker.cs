@@ -24,7 +24,7 @@ public class SyncArticleSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
         RecurringJobId                   = nameof(SyncArticleSieuThiSongKhoeBackgroundWorker);
         CronExpression                   = Cron.Daily(0, 0);
     }
-    
+
     public override async Task DoWorkAsync()
     {
         await _wordpressManagerSieuThiSongKhoe.DoSyncToWordpress();

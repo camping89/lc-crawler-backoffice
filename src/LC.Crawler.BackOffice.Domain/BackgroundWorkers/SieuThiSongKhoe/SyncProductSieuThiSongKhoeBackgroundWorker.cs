@@ -27,20 +27,20 @@ namespace LC.Crawler.BackOffice.BackgroundWorkers.SieuThiSongKhoe;
 
 public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWorkerBase
 {
-    private readonly WooManagerAladin _wooManagerAladin;
+    private readonly WooManagerSieuThiSongKhoe _wooManagerSieuThiSongKhoe;
 
     private ILogger<SyncProductSieuThiSongKhoeBackgroundWorker> _logger;
 
-    public SyncProductSieuThiSongKhoeBackgroundWorker(WooManagerAladin wooManagerAladin, ILogger<SyncProductSieuThiSongKhoeBackgroundWorker> logger)
+    public SyncProductSieuThiSongKhoeBackgroundWorker(WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe, ILogger<SyncProductSieuThiSongKhoeBackgroundWorker> logger)
     {
-        _wooManagerAladin = wooManagerAladin;
-        _logger           = logger;
-        RecurringJobId    = nameof(SyncProductSieuThiSongKhoeBackgroundWorker);
-        CronExpression    = Cron.Daily(0, 0);
+        _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
+        _logger = logger;
+        RecurringJobId            = nameof(SyncProductSieuThiSongKhoeBackgroundWorker);
+        CronExpression            = Cron.Daily(0,0);
     }
     
     public override async Task DoWorkAsync()
     {
-        await _wooManagerAladin.DoSyncProductToWooAsync();
+        await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
     }
 }
