@@ -123,7 +123,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 {
                     await _productAttributeSieuThiSongKhoeRepository.InsertAsync(new ProductAttribute()
                     {
-                        Key = Enum.GetName(attribute.Key) ?? string.Empty,
+                        Key = attribute.Key,
                         Slug = attribute.Slug,
                         Value = attribute.Value,
                         ProductId = product.Id

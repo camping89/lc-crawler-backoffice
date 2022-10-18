@@ -4,6 +4,7 @@ using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.WooCommerces;
+using LC.Crawler.BackOffice.Wordpress;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
@@ -18,12 +19,13 @@ public class MasterService : ITransientDependency
     private readonly ProductManagerLongChau _productManagerLongChau;
     private readonly WooManagerLongChau _wooManagerLongChau;
     private readonly MediaManagerLongChau _mediaManagerLongChau;
-
-    public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau)
+    private readonly WordpressManagerSieuThiSongKhoe _wordpressManagerSieuThiSongKhoe;
+    public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
         _mediaManagerLongChau = mediaManagerLongChau;
+        _wordpressManagerSieuThiSongKhoe = wordpressManagerSieuThiSongKhoe;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -49,5 +51,10 @@ public class MasterService : ITransientDependency
     {
         //await _wooManagerLongChau.DoSyncCategoriesAsync();
         await _wooManagerLongChau.DoSyncProductToWooAsync();
+    }
+
+    public async Task DoSyncArticles()
+    {
+        await _wordpressManagerSieuThiSongKhoe.DoSyncToWordpress();
     }
 }
