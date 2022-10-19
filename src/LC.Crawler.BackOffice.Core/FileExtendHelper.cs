@@ -1,4 +1,6 @@
-﻿namespace LC.Crawler.BackOffice.Core;
+﻿using System.Net.Http.Headers;
+
+namespace LC.Crawler.BackOffice.Core;
 
 public static class FileExtendHelper
 {
@@ -8,8 +10,10 @@ public static class FileExtendHelper
         {
             HttpClientHandler clientHandler = new HttpClientHandler();
             clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+            clientHandler.UseDefaultCredentials = true;
 
             using var client = new HttpClient(clientHandler);
+            client.DefaultRequestHeaders.Add("User-Agent", "Other");
             using var result = await client.GetAsync(url);
             if (result.IsSuccessStatusCode)
             {

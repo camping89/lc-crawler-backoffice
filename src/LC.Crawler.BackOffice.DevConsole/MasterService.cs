@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Medias;
@@ -18,6 +19,8 @@ public class MasterService : ITransientDependency
     public ILogger<MasterService> Logger { get; set; }
 
     private readonly ProductManagerLongChau _productManagerLongChau;
+    private readonly ProductManagerSieuThiSongKhoe _productManagerSieuThiSongKhoe;
+    private readonly ArticleManangerSongKhoeMedplus _articleManangerSongKhoeMedplus;
     private readonly WooManagerLongChau _wooManagerLongChau;
 
     private readonly ArticleManangerLongChau _articleManangerLongChau;
@@ -70,6 +73,16 @@ public class MasterService : ITransientDependency
     {
         await _mediaManagerLongChau.ProcessDownloadMediasAsync();
     }
+    
+    public async Task DownLoadMediaSieuThiSucKhoeAsync()
+    {
+        await _mediaManagerSieuThiSongKhoe.ProcessDownloadMediasAsync();
+    }
+    
+    public async Task DownLoadMediaSongKhoeMedplusAsync()
+    {
+        await _mediaManagerSongKhoeMedplus.ProcessDownloadMediasAsync();
+    }
 
     public async Task DoSyncProductToWooAsync()
     {
@@ -88,5 +101,32 @@ public class MasterService : ITransientDependency
     public async Task DoSyncArticles()
     {
         await _wordpressManagerLongChau.DoSyncToWordpress();
+    }
+    
+    public async Task DoSyncSongKhoeMedplusArticles()
+    {
+        await _wordpressManagerSongKhoeMedplus.DoSyncToWordpress();
+    }
+
+    public async Task SyncData()
+    {
+        using StreamReader file = File.OpenText(@"D:\SieuThiSongKhoe.txt");
+        JsonSerializer serializer = new JsonSerializer();
+        var crawlResultEtos = (CrawlEcommercePayload)serializer.Deserialize(file, typeof(CrawlEcommercePayload));
+        if (crawlResultEtos != null)
+        {
+            await _productManagerSieuThiSongKhoe.ProcessingDataAsync(crawlResultEtos);
+        }
+    }
+    
+    public async Task SyncSongKhoeMedplusData()
+    {
+        using StreamReader file = File.OpenText(@"D:\songkhoemedplus.txt");
+        JsonSerializer serializer = new JsonSerializer();
+        var crawlResultEtos = (CrawlArticlePayload)serializer.Deserialize(file, typeof(CrawlArticlePayload));
+        if (crawlResultEtos != null)
+        {
+            await _articleManangerSongKhoeMedplus.ProcessingDataAsync(crawlResultEtos.ArticlesPayload.Take(100).ToList());
+        }
     }
 }
