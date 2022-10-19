@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace LC.Crawler.BackOffice.Web.Pages.Categories
         public string NameFilter { get; set; }
         public string SlugFilter { get; set; }
         public string DescriptionFilter { get; set; }
+        public CategoryType? CategoryTypeFilter { get; set; }
 
         private readonly ICategoriesAppService _categoriesAppService;
 

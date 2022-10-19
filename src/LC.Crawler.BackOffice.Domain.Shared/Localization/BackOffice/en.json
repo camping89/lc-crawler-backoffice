@@ -180,6 +180,9 @@
     "ExternalId": "External Id",
     "MinExternalId": "Min External Id",
     "MaxExternalId": "Max External Id",
-    "PostToSite": "Post To Site"
+    "PostToSite": "Post To Site",
+    "Enum:CategoryType.Ecom": "Ecom",
+    "Enum:CategoryType.Article": "Article",
+    "CategoryType": "Category Type"
   }
 }

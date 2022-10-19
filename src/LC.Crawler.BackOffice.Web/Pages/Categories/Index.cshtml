@@ -53,6 +53,9 @@
             <abp-column size="_3">
                 <abp-input asp-for="DescriptionFilter" label="@L["Description"].Value" />
             </abp-column>
+            <abp-column size="_3">
+                <abp-select asp-for="CategoryTypeFilter" label="@L["CategoryType"].Value" />
+            </abp-column>
                 <abp-column size="_3">
                     <label for="Category1_Filter_Name">@L["ParentCategory"]</label>
                     <div class="input-group mb-3 mt-2">
@@ -71,6 +74,7 @@
 					<th>@L["Name"]</th>
 					<th>@L["Slug"]</th>
 					<th>@L["Description"]</th>
+					<th>@L["CategoryType"]</th>
 					<th>@L["ParentCategory"]</th>
 				</tr>
             </thead>

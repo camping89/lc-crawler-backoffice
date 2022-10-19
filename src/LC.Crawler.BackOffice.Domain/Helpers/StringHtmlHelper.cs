@@ -11,15 +11,29 @@ public static class StringHtmlHelper
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
-        foreach (var node in htmlDoc.DocumentNode.Descendants("//img"))
+        foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
         {
-            var src = node.Attributes[@"src"].Value;
-            var media = medias.FirstOrDefault(x => x.Url.Equals(src));
-            
-            if (media != null)
+            if (node.Attributes.Any(x =>x.Name == "data-src"))
             {
-                node.Attributes.Add("@media-id", $"media/{media.Id}");
-                node.SetAttributeValue("src", string.Empty);
+                var src = node.Attributes[@"data-src"].Value;
+                var media = medias.FirstOrDefault(x => x.Url.Contains(src));
+            
+                if (media != null)
+                {
+                    node.Attributes.Add("@media-id", $"media/{media.Id}");
+                    node.SetAttributeValue("src", string.Empty);
+                }
+            }
+            else
+            {
+                var src = node.Attributes[@"src"].Value;
+                var media = medias.FirstOrDefault(x => x.Url.Contains(src));
+            
+                if (media != null)
+                {
+                    node.Attributes.Add("@media-id", $"media/{media.Id}");
+                    node.SetAttributeValue("src", string.Empty);
+                }
             }
         }
 

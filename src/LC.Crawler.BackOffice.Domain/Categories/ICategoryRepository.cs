@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.Enums;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -18,6 +19,7 @@ namespace LC.Crawler.BackOffice.Categories
             string name = null,
             string slug = null,
             string description = null,
+            CategoryType? categoryType = null,
             Guid? parentCategoryId = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
@@ -30,6 +32,7 @@ namespace LC.Crawler.BackOffice.Categories
                     string name = null,
                     string slug = null,
                     string description = null,
+                    CategoryType? categoryType = null,
                     string sorting = null,
                     int maxResultCount = int.MaxValue,
                     int skipCount = 0,
@@ -41,6 +44,7 @@ namespace LC.Crawler.BackOffice.Categories
             string name = null,
             string slug = null,
             string description = null,
+            CategoryType? categoryType = null,
             Guid? parentCategoryId = null,
             CancellationToken cancellationToken = default);
     }

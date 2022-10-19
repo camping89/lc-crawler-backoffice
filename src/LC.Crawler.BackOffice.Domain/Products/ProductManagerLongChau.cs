@@ -43,9 +43,6 @@ public class ProductManagerLongChau : DomainService
             return;
         }
 
-        var rawCategories = ecommercePayload.Products.Select(x => x.Category).ToList();
-        //await CreateCategoriesAsync(rawCategories);
-        
         var categories = await _categoryLongChauRepository.GetListAsync();
         foreach (var rawProduct in ecommercePayload.Products)
         {
@@ -149,7 +146,10 @@ public class ProductManagerLongChau : DomainService
             IsDowloaded = false
         }).ToList();
 
-        await _mediaLongChauRepository.InsertManyAsync(medias, true);
+        if (medias.Any())
+        {
+            await _mediaLongChauRepository.InsertManyAsync(medias, true);
+        }
         return medias;
     }
 

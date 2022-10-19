@@ -1,6 +1,9 @@
-﻿namespace LC.Crawler.BackOffice.Categories;
+﻿using System;
+using Volo.Abp.Domain.Repositories;
 
-public interface ICategoryAladinRepository : ICategoryRepository
+namespace LC.Crawler.BackOffice.Categories;
+
+public interface ICategoryAladinRepository : IRepository<Category, Guid>
 {
         
 }

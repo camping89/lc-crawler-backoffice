@@ -51,6 +51,7 @@ $(function () {
             name: $("#NameFilter").val(),
 			slug: $("#SlugFilter").val(),
 			description: $("#DescriptionFilter").val(),
+			categoryType: $("#CategoryTypeFilter").val(),
 			parentCategoryId: $("#ParentCategoryIdFilter").val()
         };
     };
@@ -99,6 +100,25 @@ $(function () {
 			{ data: "category.name" },
 			{ data: "category.slug" },
 			{ data: "category.description" },
+            {
+                data: "category.categoryType",
+                render: function (categoryType) {
+                    if (categoryType === undefined ||
+                        categoryType === null) {
+                        return "";
+                    }
+
+                    var localizationKey = "Enum:CategoryType." + categoryType;
+                    var localized = l(localizationKey);
+
+                    if (localized === localizationKey) {
+                        abp.log.warn("No localization found for " + localizationKey);
+                        return "";
+                    }
+
+                    return localized;
+                }
+            },
             {
                 data: "category1.name",
                 defaultContent : "", 

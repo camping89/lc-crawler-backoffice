@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,13 +40,14 @@ namespace LC.Crawler.BackOffice.Categories
             string name = null,
             string slug = null,
             string description = null,
+            CategoryType? categoryType = null,
             Guid? parentCategoryId = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
             CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, slug, description, parentCategoryId);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, slug, description, categoryType, parentCategoryId);
             var categories = await query.OrderBy(string.IsNullOrWhiteSpace(sorting) ? CategoryConsts.GetDefaultSorting(false) : sorting.Split('.').Last())
                 .As<IMongoQueryable<Category>>()
                 .PageBy<Category, IMongoQueryable<Category>>(skipCount, maxResultCount)
@@ -65,12 +67,13 @@ namespace LC.Crawler.BackOffice.Categories
             string name = null,
             string slug = null,
             string description = null,
+            CategoryType? categoryType = null,
             string sorting = null,
             int maxResultCount = int.MaxValue,
             int skipCount = 0,
             CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, slug, description);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, slug, description, categoryType);
             query = query.OrderBy(string.IsNullOrWhiteSpace(sorting) ? CategoryConsts.GetDefaultSorting(false) : sorting);
             return await query.As<IMongoQueryable<Category>>()
                 .PageBy<Category, IMongoQueryable<Category>>(skipCount, maxResultCount)
@@ -82,10 +85,11 @@ namespace LC.Crawler.BackOffice.Categories
            string name = null,
            string slug = null,
            string description = null,
+           CategoryType? categoryType = null,
            Guid? parentCategoryId = null,
            CancellationToken cancellationToken = default)
         {
-            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, slug, description, parentCategoryId);
+            var query = ApplyFilter((await GetMongoQueryableAsync(cancellationToken)), filterText, name, slug, description, categoryType, parentCategoryId);
             return await query.As<IMongoQueryable<Category>>().LongCountAsync(GetCancellationToken(cancellationToken));
         }
 
@@ -95,6 +99,7 @@ namespace LC.Crawler.BackOffice.Categories
             string name = null,
             string slug = null,
             string description = null,
+            CategoryType? categoryType = null,
             Guid? parentCategoryId = null)
         {
             return query
@@ -102,6 +107,7 @@ namespace LC.Crawler.BackOffice.Categories
                     .WhereIf(!string.IsNullOrWhiteSpace(name), e => e.Name.Contains(name))
                     .WhereIf(!string.IsNullOrWhiteSpace(slug), e => e.Slug.Contains(slug))
                     .WhereIf(!string.IsNullOrWhiteSpace(description), e => e.Description.Contains(description))
+                    .WhereIf(categoryType.HasValue, e => e.CategoryType == categoryType)
                     .WhereIf(parentCategoryId != null && parentCategoryId != Guid.Empty, e => e.ParentCategoryId == parentCategoryId);
         }
     }

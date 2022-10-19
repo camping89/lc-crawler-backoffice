@@ -74,6 +74,29 @@
       "EnumValues": null,
       "IsSelected": true,
       "OrdinalIndex": 0
+    },
+    {
+      "Id": "e04d53e8-3d7b-4f2b-a7b8-4b2eedabfa56",
+      "Name": "CategoryType",
+      "Type": "enum",
+      "EnumType": "CategoryType",
+      "EnumNamespace": "LC.Crawler.BackOffice.Enums",
+      "EnumAngularImport": "shared/enums/category-type",
+      "EnumFilePath": "/src/LC.Crawler.BackOffice.Domain.Shared/Enums/CategoryType.cs",
+      "IsNullable": false,
+      "IsRequired": false,
+      "MinLength": null,
+      "MaxLength": null,
+      "SortOrder": 0,
+      "SortType": 0,
+      "Regex": "",
+      "EmailValidation": false,
+      "EnumValues": {
+        "Ecom": null,
+        "Article": null
+      },
+      "IsSelected": true,
+      "OrdinalIndex": 0
     }
   ],
   "NavigationProperties": [

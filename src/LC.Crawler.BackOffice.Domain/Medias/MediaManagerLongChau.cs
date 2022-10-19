@@ -59,6 +59,10 @@ public class MediaManagerLongChau : DomainService
 
     private async Task SaveMedia(Media media,string type = "product")
     {
+        if (string.IsNullOrEmpty(media.Url) || media.Url.Contains("http") == false)
+        {
+            return;
+        }
         var fileExtension = Path.GetExtension(media.Url);
         var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
         if (fileBytes != null)

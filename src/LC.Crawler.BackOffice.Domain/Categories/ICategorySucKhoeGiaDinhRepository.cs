@@ -1,6 +1,9 @@
-﻿namespace LC.Crawler.BackOffice.Categories;
+﻿using System;
+using Volo.Abp.Domain.Repositories;
 
-public interface ICategorySucKhoeGiaDinhRepository : ICategoryRepository
+namespace LC.Crawler.BackOffice.Categories;
+
+public interface ICategorySucKhoeGiaDinhRepository : IRepository<Category, Guid>
 {
         
 }

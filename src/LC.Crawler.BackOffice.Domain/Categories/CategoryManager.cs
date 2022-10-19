@@ -1,3 +1,4 @@
+using LC.Crawler.BackOffice.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +20,11 @@ namespace LC.Crawler.BackOffice.Categories
         }
 
         public async Task<Category> CreateAsync(
-        Guid? parentCategoryId, string name, string slug, string description)
+        Guid? parentCategoryId, string name, string slug, string description, CategoryType categoryType)
         {
             var category = new Category(
              GuidGenerator.Create(),
-             parentCategoryId, name, slug, description
+             parentCategoryId, name, slug, description, categoryType
              );
 
             return await _categoryRepository.InsertAsync(category);
@@ -31,7 +32,7 @@ namespace LC.Crawler.BackOffice.Categories
 
         public async Task<Category> UpdateAsync(
             Guid id,
-            Guid? parentCategoryId, string name, string slug, string description, [CanBeNull] string concurrencyStamp = null
+            Guid? parentCategoryId, string name, string slug, string description, CategoryType categoryType, [CanBeNull] string concurrencyStamp = null
         )
         {
             var queryable = await _categoryRepository.GetQueryableAsync();
@@ -43,6 +44,7 @@ namespace LC.Crawler.BackOffice.Categories
             category.Name = name;
             category.Slug = slug;
             category.Description = description;
+            category.CategoryType = categoryType;
 
             category.SetConcurrencyStampIfNotNull(concurrencyStamp);
             return await _categoryRepository.UpdateAsync(category);

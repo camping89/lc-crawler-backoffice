@@ -30,8 +30,8 @@ namespace LC.Crawler.BackOffice.Categories
 
         public virtual async Task<PagedResultDto<CategoryWithNavigationPropertiesDto>> GetListAsync(GetCategoriesInput input)
         {
-            var totalCount = await _categoryRepository.GetCountAsync(input.FilterText, input.Name, input.Slug, input.Description, input.ParentCategoryId);
-            var items = await _categoryRepository.GetListWithNavigationPropertiesAsync(input.FilterText, input.Name, input.Slug, input.Description, input.ParentCategoryId, input.Sorting, input.MaxResultCount, input.SkipCount);
+            var totalCount = await _categoryRepository.GetCountAsync(input.FilterText, input.Name, input.Slug, input.Description, input.CategoryType, input.ParentCategoryId);
+            var items = await _categoryRepository.GetListWithNavigationPropertiesAsync(input.FilterText, input.Name, input.Slug, input.Description, input.CategoryType, input.ParentCategoryId, input.Sorting, input.MaxResultCount, input.SkipCount);
 
             return new PagedResultDto<CategoryWithNavigationPropertiesDto>
             {
@@ -78,7 +78,7 @@ namespace LC.Crawler.BackOffice.Categories
         {
 
             var category = await _categoryManager.CreateAsync(
-            input.ParentCategoryId, input.Name, input.Slug, input.Description
+            input.ParentCategoryId, input.Name, input.Slug, input.Description, input.CategoryType
             );
 
             return ObjectMapper.Map<Category, CategoryDto>(category);
@@ -90,7 +90,7 @@ namespace LC.Crawler.BackOffice.Categories
 
             var category = await _categoryManager.UpdateAsync(
             id,
-            input.ParentCategoryId, input.Name, input.Slug, input.Description, input.ConcurrencyStamp
+            input.ParentCategoryId, input.Name, input.Slug, input.Description, input.CategoryType, input.ConcurrencyStamp
             );
 
             return ObjectMapper.Map<Category, CategoryDto>(category);

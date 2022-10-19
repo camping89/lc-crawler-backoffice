@@ -23,6 +23,8 @@
 
             <abp-input asp-for="Category.Description"/>
 
+            <abp-select asp-for="Category.CategoryType"/>
+
                                 <label for="Category1_Name">@L["ParentCategory"] </label>
             <div class="input-group mb-3">
                 <input hidden value="@(Model.Category.ParentCategoryId )" id="Category1_Id" name="Category.ParentCategoryId"/>
