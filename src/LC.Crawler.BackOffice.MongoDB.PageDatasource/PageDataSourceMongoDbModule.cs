@@ -92,12 +92,12 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaAladinRepository>();
 
             options.AddRepository<Product, MongoProductAladinRepository>();
-            
+
             options.AddRepository<ProductAttribute, MongoProductAttributeAladinRepository>();
             options.AddRepository<ProductVariant, MongoProductVariantAladinRepository>();
 
         });
-        
+
         context.Services.AddMongoDbContext<LongChauMongoDbContext>(options =>
         {
             // options.AddDefaultRepositories();
@@ -111,7 +111,7 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Product, MongoProductLongChauRepository>();
 
         });
-        
+
         context.Services.AddMongoDbContext<SieuThiSongKhoeMongoDbContext>(options =>
         {
             // options.AddDefaultRepositories();
@@ -139,10 +139,6 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaSucKhoeDoiSongRepository>();
 
         });
-        
-        context.Services.AddMongoDbContext<SongKhoeMedplusMongoDbContext>(options =>
-        {
-            // options.AddDefaultRepositories();
 
         context.Services.AddMongoDbContext<SongKhoeMedplusMongoDbContext>(options =>
         {
@@ -154,7 +150,7 @@ public class PageDataSourceMongoDbModule : AbpModule
 
             options.AddRepository<Media, MongoMediaSongKhoeMedplusRepository>();
         });
-        
+
         context.Services.AddMongoDbContext<BlogSucKhoeMongoDbContext>(options =>
         {
             // options.AddDefaultRepositories();
@@ -165,7 +161,7 @@ public class PageDataSourceMongoDbModule : AbpModule
 
             options.AddRepository<Media, MongoMediaBlogSucKhoeRepository>();
         });
-        
+
         context.Services.AddMongoDbContext<SucKhoeGiaDinhMongoDbContext>(options =>
         {
             // options.AddDefaultRepositories();
@@ -176,7 +172,7 @@ public class PageDataSourceMongoDbModule : AbpModule
 
             options.AddRepository<Media, MongoMediaSucKhoeGiaDinhRepository>();
         });
-        
+
         context.Services.AddMongoDbContext<AloBacSiMongoDbContext>(options =>
         {
             // options.AddDefaultRepositories();
@@ -188,9 +184,6 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaAloBacSiRepository>();
         });
 
-        Configure<AbpUnitOfWorkDefaultOptions>(options =>
-        {
-            options.TransactionBehavior = UnitOfWorkTransactionBehavior.Disabled;
-        });
+        Configure<AbpUnitOfWorkDefaultOptions>(options => { options.TransactionBehavior = UnitOfWorkTransactionBehavior.Disabled; });
     }
 }

@@ -68,7 +68,7 @@ public class MasterService : ITransientDependency
 
     public async Task DownLoadMediaAsync()
     {
-        await _mediaManagerBlogSucKhoe.ProcessDownloadMediasAsync();
+        await _mediaManagerLongChau.ProcessDownloadMediasAsync();
     }
 
     public async Task DoSyncProductToWooAsync()
@@ -87,6 +87,6 @@ public class MasterService : ITransientDependency
 
     public async Task DoSyncArticles()
     {
-        await _wordpressManagerBlogSucKhoe.DoSyncToWordpress();
+        await _wordpressManagerLongChau.DoSyncToWordpress();
     }
 }
