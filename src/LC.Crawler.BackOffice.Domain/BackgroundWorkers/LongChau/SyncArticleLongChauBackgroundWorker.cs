@@ -17,6 +17,6 @@ public class SyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
 
     public override async Task DoWorkAsync()
     {
-        await _wordpressManagerLongChau.DoSyncToWordpress();
+        await _wordpressManagerLongChau.DoSyncPostAsync();
     }
 }

@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Svg" Version="3.4.3" />
     <PackageReference Include="Volo.Abp.BackgroundWorkers.Hangfire" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.BlobStoring.FileSystem" Version="5.3.4" />
     <PackageReference Include="Volo.Abp.Emailing" Version="5.3.4" />

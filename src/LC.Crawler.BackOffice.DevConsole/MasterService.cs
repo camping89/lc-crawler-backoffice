@@ -99,12 +99,12 @@ public class MasterService : ITransientDependency
     public async Task DoSyncArticleToWooAsync()
     {
         await _wordpressManagerLongChau.DoSyncCategoriesAsync();
-        await _wordpressManagerLongChau.DoSyncToWordpress();
+        await _wordpressManagerLongChau.DoSyncPostAsync();
     }
 
     public async Task DoSyncArticles()
     {
-        await _wordpressManagerLongChau.DoSyncToWordpress();
+        await _wordpressManagerLongChau.DoSyncPostAsync();
     }
     
     // public async Task DoSyncSongKhoeMedplusArticles()

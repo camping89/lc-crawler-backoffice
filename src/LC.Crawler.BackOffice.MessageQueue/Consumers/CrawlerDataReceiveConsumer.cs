@@ -18,10 +18,13 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
 {
     private readonly ArticleManangerLongChau       _articleManangerLongChau;
     private readonly ProductManagerLongChau        _productManagerLongChau;
+    private readonly ProductManagerSieuThiSongKhoe _productManagerSieuThiSongKhoe;
     private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
     private readonly ArticleManangerBlogSucKhoe    _articleManangerBlogSucKhoe;
     private readonly ArticleManangerSucKhoeGiaDinh _articleManangerSucKhoeGiaDinh;
     private readonly ArticleManangerAloBacSi       _articleManangerAloBacSi;
+    private readonly ArticleManangerSieuThiSongKhoe       _articleManangerSieuThiSongKhoe;
+    private readonly ArticleManangerSongKhoeMedplus       _articleManangerSongKhoeMedplusi;
     
     //Aladin 
     private readonly ProductManagerAladin _productManagerAladin;
@@ -34,7 +37,7 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
         ArticleManangerSucKhoeDoiSong               articleManangerSucKhoeDoiSong,
         ArticleManangerBlogSucKhoe                  articleManangerBlogSucKhoe,
         ArticleManangerSucKhoeGiaDinh               articleManangerSucKhoeGiaDinh,
-        ArticleManangerAloBacSi                     articleManangerAloBacSi)
+        ArticleManangerAloBacSi                     articleManangerAloBacSi, ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe, ArticleManangerSieuThiSongKhoe articleManangerSieuThiSongKhoe, ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplusi)
     {
         _objectMapper                  = objectMapper;
         _articleManangerLongChau       = articleManangerLongChau;
@@ -44,6 +47,9 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
         _articleManangerBlogSucKhoe    = articleManangerBlogSucKhoe;
         _articleManangerSucKhoeGiaDinh = articleManangerSucKhoeGiaDinh;
         _articleManangerAloBacSi       = articleManangerAloBacSi;
+        _productManagerSieuThiSongKhoe = productManagerSieuThiSongKhoe;
+        _articleManangerSieuThiSongKhoe = articleManangerSieuThiSongKhoe;
+        _articleManangerSongKhoeMedplusi = articleManangerSongKhoeMedplusi;
     }
 
     public async Task HandleEventAsync(CrawlResultEto eventData)
@@ -74,6 +80,11 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
             if (url.Contains(PageDataSourceConsts.AladinUrl))
             {
                 await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl))
+            {
+                await _productManagerSieuThiSongKhoe.ProcessingDataAsync(eventData.EcommercePayloads);
             }
         }
         
@@ -121,6 +132,16 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
             if (url.Contains(PageDataSourceConsts.AloBacSiUrl))
             {
                 await _articleManangerAloBacSi.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl))
+            {
+                await _articleManangerSieuThiSongKhoe.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
+            }
+            
+            if (url.Contains(PageDataSourceConsts.SongKhoeMedplusUrl))
+            {
+                await _articleManangerSongKhoeMedplusi.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
         }
     }

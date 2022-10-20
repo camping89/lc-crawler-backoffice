@@ -20,6 +20,6 @@ public class SyncArticleBlogSucKhoeBackgroundWorker : HangfireBackgroundWorkerBa
 
     public override async Task DoWorkAsync()
     {
-        await _wordpressManagerBlogSucKhoe.DoSyncToWordpress();
+        await _wordpressManagerBlogSucKhoe.DoSyncPostAsync();
     }
 }

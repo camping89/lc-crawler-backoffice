@@ -20,6 +20,6 @@ public class SyncArticleSongKhoeMedplusBackgroundWorker : HangfireBackgroundWork
     
     public override async Task DoWorkAsync()
     {
-        await _wordpressManagerSongKhoeMedplus.DoSyncToWordpress();
+        await _wordpressManagerSongKhoeMedplus.DoSyncPostAsync();
     }
 }
