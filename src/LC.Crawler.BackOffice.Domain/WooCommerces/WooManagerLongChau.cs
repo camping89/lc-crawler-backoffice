@@ -349,19 +349,19 @@ public class WooManagerLongChau : DomainService
         var client = new WordPressClient($"{BASEURL}/wp-json/");
         client.Auth.UseBasicAuth(_dataSource.Configuration.Username, _dataSource.Configuration.Password);
         var mediaItems = new List<MediaItem>();
-        foreach (var media in medias)
+        foreach (var media in medias.Where(media => !media.Url.IsNullOrEmpty()))
         {
             //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
             if (media.Url.Contains("http") == false)
             {
                 media.Url = $"{_dataSource.Url}{media.Url}";
             }
-
+            var fileExtension = Path.GetExtension(media.Url);
             var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
-            if (fileBytes != null)
+            if (fileBytes != null && !string.IsNullOrEmpty(fileExtension))
             {
                 var stream = new MemoryStream(fileBytes);
-                var fileName = media.Url.Split("/").LastOrDefault();
+                var fileName = $"{media.Id}{fileExtension}";
                 var mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
 
                 media.ExternalId = mediaResult.Id.ToString();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -8,7 +9,9 @@ using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.Enums;
+using Volo.Abp.Domain.Repositories;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordpresCategory = WordPressPCL.Models.Category;
@@ -138,14 +141,19 @@ public class WordpressManagerLongChau : DomainService
 
     private async Task PostToWPAsync(List<WordpresCategory> wpCategories, ArticleWithNavigationProperties articleNav)
     {
-        var featureMedia = await PostFeatureMediasAsync(articleNav.Media);
+        var media = await _mediaLongChauRepository.FirstOrDefaultAsync(x=>x.Id == articleNav.Article.FeaturedMediaId);
+        var featureMedia = await PostFeatureMediasAsync(media);
         var postMedias = await PostMediasAsync(articleNav.Article);
 
-        var post = ConvertToPost(articleNav, featureMedia, postMedias);
+        var mediaIds = articleNav.Article.Medias.Select(x => x.MediaId).ToList();
+        var medias = await _mediaLongChauRepository.GetListAsync(x => mediaIds.Contains(x.Id));
+        var post = ConvertToPost(articleNav, featureMedia, medias);
 
-        if (articleNav.Categories != null)
+        if (articleNav.Article.Categories != null)
         {
-            foreach (var articleCategory in articleNav.Categories)
+            var cateIds = articleNav.Article.Categories.Select(x => x.CategoryId).ToList();
+            var categories = await _categoryLongChauRepository.GetListAsync(x => x.CategoryType == CategoryType.Article && cateIds.Contains(x.Id));
+            foreach (var articleCategory in categories)
             {
                 var encodeName = articleCategory.Name.Split("->").LastOrDefault()?.Replace("&","&amp;").Trim();
                 var wpCate = wpCategories.FirstOrDefault(x => x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
@@ -166,9 +174,10 @@ public class WordpressManagerLongChau : DomainService
         }
     }
 
-    private Post ConvertToPost(ArticleWithNavigationProperties articleNav, MediaItem featureMedia, List<MediaItem> contentMedias)
+    private Post ConvertToPost(ArticleWithNavigationProperties articleNav, MediaItem featureMedia, List<Media> contentMedias)
     {
         var article = articleNav.Article;
+
         article.Content = ReplaceImageUrls(article.Content, contentMedias);
 
         var post = new Post()
@@ -180,24 +189,25 @@ public class WordpressManagerLongChau : DomainService
             Status = Status.Pending,
             LiveblogLikes = article.LikeCount,
             CommentStatus = OpenStatus.Open,
-            FeaturedMedia = featureMedia?.Id
+            FeaturedMedia = featureMedia?.Id,
+            Categories = new List<int>()
         };
 
         return post;
     }
 
-    private string ReplaceImageUrls(string contentHtml, List<MediaItem> medias)
+    private string ReplaceImageUrls(string contentHtml, List<Media> medias)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
         foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
         {
             var mediaIdAttributeValue = node.Attributes["@media-id"].Value;
-            var media = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Title.Raw));
+            var media = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
 
             if (media != null)
             {
-                node.SetAttributeValue("src", media.SourceUrl);
+                node.SetAttributeValue("src", media.ExternalUrl);
             }
         }
 
@@ -211,19 +221,35 @@ public class WordpressManagerLongChau : DomainService
         if (article is { Medias: { } })
         {
             var mediaIds = article.Medias.Select(x => x.MediaId).ToList();
-            var medias = await _mediaLongChauRepository.GetListAsync(x => mediaIds.Contains(x.Id) && x.IsDowloaded);
+            var medias = await _mediaLongChauRepository.GetListAsync(x => mediaIds.Contains(x.Id));
             //pass the Wordpress REST API base address as string
             var client = await InitClient();
 
             if (medias != null)
             {
                 var mediaItems = new List<MediaItem>();
-                foreach (var media in medias)
+                foreach (var media in medias.Where(media => !media.Url.IsNullOrEmpty()))
                 {
-                    var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
-                    mediaItems.Add(await client.Media.CreateAsync(stream, media.Name, media.ContentType));
-                }
+                    //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
+                    if (media.Url.Contains("http") == false)
+                    {
+                        media.Url = $"{_dataSource.Url}{media.Url}";
+                    }
+                    var fileExtension = Path.GetExtension(media.Url);
+                    var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
+                    if (fileBytes != null && !string.IsNullOrEmpty(fileExtension))
+                    {
+                        var stream = new MemoryStream(fileBytes);
+                        var fileName = $"{media.Id}{fileExtension}";
+                        var mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
 
+                        media.ExternalId = mediaResult.Id.ToString();
+                        media.ExternalUrl = mediaResult.SourceUrl;
+                        await _mediaLongChauRepository.UpdateAsync(media, true);
+
+                        mediaItems.Add(mediaResult);
+                    }
+                }
                 return mediaItems;
             }
         }
@@ -233,13 +259,28 @@ public class WordpressManagerLongChau : DomainService
 
     private async Task<MediaItem> PostFeatureMediasAsync(Media media)
     {
-        if (media is { IsDowloaded: true })
+        if (media is not null)
         {
             //pass the Wordpress REST API base address as string
             var client = await InitClient();
+            if (media.Url.Contains("http") == false)
+            {
+                media.Url = $"{_dataSource.Url}{media.Url}";
+            }
+            var fileExtension = Path.GetExtension(media.Url);
+            var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
+            if (fileBytes != null && !string.IsNullOrEmpty(fileExtension))
+            {
+                var stream = new MemoryStream(fileBytes);
+                var fileName = $"{media.Id}{fileExtension}";
+                var mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
 
-            var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
-            return await client.Media.CreateAsync(stream, media.Name, media.ContentType);
+                media.ExternalId = mediaResult.Id.ToString();
+                media.ExternalUrl = mediaResult.SourceUrl;
+                await _mediaLongChauRepository.UpdateAsync(media, true);
+
+                return mediaResult;
+            }
         }
 
         return null;

@@ -45,37 +45,37 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             // Process download and save image
             context.AddBackgroundWorkerAsync<DownloadMediaLongChauBackgroundWorker>();
             //context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleLongChauBackgroundWorker>();
+            //context.AddBackgroundWorkerAsync<SyncArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductLongChauBackgroundWorker>();
-            
-            //Aladin
-            context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
-            
-            //Suckhoedoisong
-            context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
-            
-            //SieuThiSongKhoe
-            context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleSieuThiSongKhoeBackgroundWorker>();
-            
-            //SongKhoeMedplus
-            context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
-            
-            // Blog Suc Khoe
-            context.AddBackgroundWorkerAsync<DownloadMediaBlogSucKhoeBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleBlogSucKhoeBackgroundWorker>();
-            
-            // Suc Khoe Gia Dinh
-            context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeGiaDinhBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleSucKhoeGiaDinhBackgroundWorker>();
-            
-            // Alo Bac Si
-            context.AddBackgroundWorkerAsync<DownloadMediaAloBacSiBackgroundWorker>();
-            context.AddBackgroundWorkerAsync<SyncArticleAloBacSiBackgroundWorker>();
+            //
+            // //Aladin
+            // context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            //
+            // //Suckhoedoisong
+            // context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncArticleSucKhoeDoiSongBackgroundWorker>();
+            //
+            // //SieuThiSongKhoe
+            // context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncArticleSieuThiSongKhoeBackgroundWorker>();
+            //
+            // //SongKhoeMedplus
+            // context.AddBackgroundWorkerAsync<DownloadMediaSongKhoeMedplusBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncArticleSongKhoeMedplusBackgroundWorker>();
+            //
+            // // Blog Suc Khoe
+            // context.AddBackgroundWorkerAsync<DownloadMediaBlogSucKhoeBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncArticleBlogSucKhoeBackgroundWorker>();
+            //
+            // // Suc Khoe Gia Dinh
+            // context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeGiaDinhBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncArticleSucKhoeGiaDinhBackgroundWorker>();
+            //
+            // // Alo Bac Si
+            // context.AddBackgroundWorkerAsync<DownloadMediaAloBacSiBackgroundWorker>();
+            // context.AddBackgroundWorkerAsync<SyncArticleAloBacSiBackgroundWorker>();
         }
         else
         {
