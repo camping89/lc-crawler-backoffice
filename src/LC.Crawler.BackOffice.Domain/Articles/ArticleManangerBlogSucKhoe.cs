@@ -103,7 +103,7 @@ public class ArticleManangerBlogSucKhoe : DomainService
                         }).ToList();
                         await _mediaBlogSucKhoeRepository.InsertManyAsync(medias, true);
 
-                        articleEntity.Content = StringHtmlHelper.ReplaceImageUrls(article.Content, medias);
+                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
                         
                         foreach (var media in medias)
                         {

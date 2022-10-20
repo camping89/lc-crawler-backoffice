@@ -33,7 +33,9 @@ public class MasterService : ITransientDependency
     private readonly WordpressManagerLongChau _wordpressManagerLongChau;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
-        WooManagerAladin wooManagerAladin)
+        WooManagerAladin wooManagerAladin,
+        ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe,
+        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -42,6 +44,8 @@ public class MasterService : ITransientDependency
         _articleManangerLongChau = articleManangerLongChau;
         _wordpressManagerLongChau = wordpressManagerLongChau;
         _wooManagerAladin = wooManagerAladin;
+        _productManagerSieuThiSongKhoe = productManagerSieuThiSongKhoe;
+        _articleManangerSongKhoeMedplus = articleManangerSongKhoeMedplus;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -73,16 +77,16 @@ public class MasterService : ITransientDependency
     {
         await _mediaManagerLongChau.ProcessDownloadMediasAsync();
     }
-    
-    public async Task DownLoadMediaSieuThiSucKhoeAsync()
-    {
-        await _mediaManagerSieuThiSongKhoe.ProcessDownloadMediasAsync();
-    }
-    
-    public async Task DownLoadMediaSongKhoeMedplusAsync()
-    {
-        await _mediaManagerSongKhoeMedplus.ProcessDownloadMediasAsync();
-    }
+    //
+    // public async Task DownLoadMediaSieuThiSucKhoeAsync()
+    // {
+    //     await _mediaManagerSieuThiSongKhoe.ProcessDownloadMediasAsync();
+    // }
+    //
+    // public async Task DownLoadMediaSongKhoeMedplusAsync()
+    // {
+    //     await _mediaManagerSongKhoeMedplus.ProcessDownloadMediasAsync();
+    // }
 
     public async Task DoSyncProductToWooAsync()
     {
@@ -103,10 +107,10 @@ public class MasterService : ITransientDependency
         await _wordpressManagerLongChau.DoSyncToWordpress();
     }
     
-    public async Task DoSyncSongKhoeMedplusArticles()
-    {
-        await _wordpressManagerSongKhoeMedplus.DoSyncToWordpress();
-    }
+    // public async Task DoSyncSongKhoeMedplusArticles()
+    // {
+    //     await _wordpressManagerSongKhoeMedplus.DoSyncToWordpress();
+    // }
 
     public async Task SyncData()
     {

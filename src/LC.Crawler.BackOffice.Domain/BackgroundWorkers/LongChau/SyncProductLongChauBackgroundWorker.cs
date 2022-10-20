@@ -21,6 +21,7 @@ namespace LC.Crawler.BackOffice.BackgroundWorkers.LongChau;
 public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
 {
     private readonly WooManagerLongChau _wooManagerLongChau;
+    
     public SyncProductLongChauBackgroundWorker(WooManagerLongChau wooManagerLongChau)
     {
         _wooManagerLongChau = wooManagerLongChau;

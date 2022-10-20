@@ -94,7 +94,7 @@ public class ProductManagerAladin : DomainService
                     }).ToList();
                     await _mediaAladinRepository.InsertManyAsync(medias, true);
 
-                    product.Description = StringHtmlHelper.ReplaceImageUrls(rawProduct.Description, medias);
+                    product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
                         
                     foreach (var media in medias)
                     {

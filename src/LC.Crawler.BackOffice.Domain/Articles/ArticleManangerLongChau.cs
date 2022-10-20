@@ -93,7 +93,7 @@ public class ArticleManangerLongChau : DomainService
                         }).ToList();
                         await _mediaLongChauRepository.InsertManyAsync(medias);
 
-                        articleEntity.Content = StringHtmlHelper.ReplaceImageUrls(article.Content, medias);
+                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
 
                         foreach (var media in medias)
                         {

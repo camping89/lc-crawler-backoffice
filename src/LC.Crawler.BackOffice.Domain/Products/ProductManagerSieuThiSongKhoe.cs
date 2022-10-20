@@ -92,7 +92,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                     }).ToList();
                     await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
 
-                    product.Description = StringHtmlHelper.ReplaceImageUrls(rawProduct.Description, medias);
+                    product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
                         
                     foreach (var media in medias)
                     {

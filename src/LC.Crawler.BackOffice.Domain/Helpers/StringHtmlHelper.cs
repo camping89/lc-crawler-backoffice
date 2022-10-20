@@ -7,7 +7,7 @@ namespace LC.Crawler.BackOffice.Helpers;
 
 public static class StringHtmlHelper
 {
-    public static string ReplaceImageUrls(string contentHtml, List<Media> medias)
+    public static string SetContentMediaIds(string contentHtml, List<Media> medias)
     {
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
@@ -37,6 +37,25 @@ public static class StringHtmlHelper
             }
         }
 
+        var newHtml = htmlDoc.DocumentNode.WriteTo();
+        return newHtml;
+    }
+    
+    public static string ReplaceImageUrls(string contentHtml, List<Media> medias)
+    {
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(contentHtml);
+        foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
+        {
+            var mediaIdAttributeValue = node.Attributes["@media-id"].Value;
+            var media = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
+    
+            if (media != null)
+            {
+                node.SetAttributeValue("src", media.ExternalUrl);
+            }
+        }
+    
         var newHtml = htmlDoc.DocumentNode.WriteTo();
         return newHtml;
     }
