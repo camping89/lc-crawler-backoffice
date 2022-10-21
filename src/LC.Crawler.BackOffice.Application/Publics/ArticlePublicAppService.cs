@@ -52,7 +52,7 @@ public class ArticlePublicAppService : ApplicationService,IArticlePublicAppServi
                 ObjectMapper.Map(item.Medias, resultItem.Medias);
                 if (item.Article is { Tags: { } })
                 {
-                    resultItem.Article.Tags = item.Article.Tags.Split(",").ToList();
+                    resultItem.Article.Tags = item.Article.Tags;
                 }
             }
             return new PagedResultDto<ArticleWithNavigationPropertiesResultDto>

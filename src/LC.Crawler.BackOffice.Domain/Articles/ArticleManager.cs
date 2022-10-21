@@ -29,7 +29,7 @@ namespace LC.Crawler.BackOffice.Articles
         public async Task<Article> CreateAsync(
         List<Guid> categoryIds,
         List<Guid> mediaIds,
-        Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, string tags, int likeCount, int commentCount, int shareCount)
+        Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, List<string> tags, int likeCount, int commentCount, int shareCount)
         {
             var article = new Article(
              GuidGenerator.Create(),
@@ -46,7 +46,7 @@ namespace LC.Crawler.BackOffice.Articles
             Guid id,
             List<Guid> categoryIds,
         List<Guid> mediaIds,
-        Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, string tags, int likeCount, int commentCount, int shareCount, [CanBeNull] string concurrencyStamp = null
+        Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, List<string> tags, int likeCount, int commentCount, int shareCount, [CanBeNull] string concurrencyStamp = null
         )
         {
             var queryable = await _articleRepository.WithDetailsAsync(x => x.Categories, x => x.Medias);

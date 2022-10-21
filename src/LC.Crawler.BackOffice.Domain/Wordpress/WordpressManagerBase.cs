@@ -15,6 +15,7 @@ using Svg;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordpresCategory = WordPressPCL.Models.Category;
+using WordpresTag = WordPressPCL.Models.Tag;
 
 namespace LC.Crawler.BackOffice.Wordpress;
 
@@ -39,9 +40,11 @@ public class WordpressManagerBase : DomainService
             LiveblogLikes = article.LikeCount,
             CommentStatus = OpenStatus.Open,
             FeaturedMedia = featureMedia?.Id,
-            Categories = new List<int>()
+            Categories = new List<int>(),
+            Tags = new List<int>()
         };
 
+        // categories
         var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
 
         var encodeName = articleNav.Categories.FirstOrDefault()?.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
@@ -50,6 +53,23 @@ public class WordpressManagerBase : DomainService
         if (wpCate != null)
         {
             post.Categories.Add(wpCate.Id);
+        }
+        
+        // tags
+        var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
+        if (article.Tags.Any())
+        {
+            foreach (var tag in article.Tags)
+            {
+                var wpTag = wooTags.FirstOrDefault(_ => _.Name == tag);
+                if (wpTag is null)
+                {
+                    wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
+                    wooTags.Add(wpTag);
+                }
+                
+                post.Tags.Add(wpTag.Id);
+            }
         }
 
         var result = await client.Posts.CreateAsync(post);

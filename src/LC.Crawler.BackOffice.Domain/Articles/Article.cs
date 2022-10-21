@@ -24,9 +24,8 @@ namespace LC.Crawler.BackOffice.Articles
 
         [CanBeNull]
         public virtual string Author { get; set; }
-
-        [CanBeNull]
-        public virtual string Tags { get; set; }
+        
+        public virtual List<string> Tags { get; set; }
 
         public virtual int LikeCount { get; set; }
 
@@ -48,7 +47,7 @@ namespace LC.Crawler.BackOffice.Articles
             Id = id;
         }
 
-        public Article(Guid id, Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, string tags, int likeCount, int commentCount, int shareCount)
+        public Article(Guid id, Guid? featuredMediaId, Guid dataSourceId, string title, string excerpt, string content, DateTime createdAt, string author, List<string> tags, int likeCount, int commentCount, int shareCount)
         {
             ConcurrencyStamp = Guid.NewGuid().ToString("N");
             Id = id;
