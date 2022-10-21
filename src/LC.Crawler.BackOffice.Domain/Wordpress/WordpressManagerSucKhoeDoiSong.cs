@@ -43,7 +43,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         }
         
         var articleIds = (await _articleSucKhoeDoiSongRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt.HasValue == false)
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id);
         
         foreach (var articleId in articleIds)
