@@ -43,15 +43,13 @@ public class WordpressManagerBase : DomainService
         };
 
         var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
-        foreach (var wooCategory in wooCategories)
+
+        var encodeName = articleNav.Categories.FirstOrDefault()?.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
+        var wpCate = wooCategories.FirstOrDefault(x =>
+            encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+        if (wpCate != null)
         {
-            var encodeName = wooCategory.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
-            var wpCate = wooCategories.FirstOrDefault(x =>
-                x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-            if (wpCate != null)
-            {
-                post.Categories.Add(wpCate.Id);
-            }
+            post.Categories.Add(wpCate.Id);
         }
 
         var result = await client.Posts.CreateAsync(post);
@@ -88,7 +86,7 @@ public class WordpressManagerBase : DomainService
                 foreach (var media in articleNav.Medias.Where(media => media.Url.IsNotNullOrEmpty()))
                 {
                     var mediaResult = await PostMediaAsync(dataSource, media);
-                    if(mediaResult is null) continue;
+                    if (mediaResult is null) continue;
                     mediaItems.Add(mediaResult);
                 }
 
@@ -172,9 +170,9 @@ public class WordpressManagerBase : DomainService
     private async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
     {
         MediaItem mediaResult;
-        
+
         if (media is null || !media.Url.IsNotNullOrEmpty()) return null;
-        
+
         var client = await InitClient(dataSource);
         //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
         if (media.Url.Contains("http") == false)
@@ -208,10 +206,10 @@ public class WordpressManagerBase : DomainService
 
             mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
         }
-                    
+
         media.ExternalId = mediaResult.Id.ToString();
         media.ExternalUrl = mediaResult.SourceUrl;
-        
+
         return mediaResult;
     }
 

@@ -16,18 +16,24 @@ namespace LC.Crawler.BackOffice.MessageQueue.Consumers;
 
 public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEto>, ITransientDependency
 {
-    private readonly ArticleManangerLongChau       _articleManangerLongChau;
+    private readonly ProductManagerAladin _productManagerAladin;
+    
     private readonly ProductManagerLongChau        _productManagerLongChau;
+    private readonly ArticleManangerLongChau       _articleManangerLongChau;
+    
     private readonly ProductManagerSieuThiSongKhoe _productManagerSieuThiSongKhoe;
-    private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
-    private readonly ArticleManangerBlogSucKhoe    _articleManangerBlogSucKhoe;
-    private readonly ArticleManangerSucKhoeGiaDinh _articleManangerSucKhoeGiaDinh;
-    private readonly ArticleManangerAloBacSi       _articleManangerAloBacSi;
     private readonly ArticleManangerSieuThiSongKhoe       _articleManangerSieuThiSongKhoe;
+    
+    private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
+    
+    private readonly ArticleManangerBlogSucKhoe    _articleManangerBlogSucKhoe;
+    
+    private readonly ArticleManangerSucKhoeGiaDinh _articleManangerSucKhoeGiaDinh;
+    
+    private readonly ArticleManangerAloBacSi       _articleManangerAloBacSi;
+
     private readonly ArticleManangerSongKhoeMedplus       _articleManangerSongKhoeMedplusi;
     
-    //Aladin 
-    private readonly ProductManagerAladin _productManagerAladin;
     private readonly IObjectMapper _objectMapper;
 
     public CrawlerDataReceiveConsumer(IObjectMapper objectMapper,

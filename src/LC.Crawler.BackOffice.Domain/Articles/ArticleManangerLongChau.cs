@@ -51,6 +51,7 @@ public class ArticleManangerLongChau : DomainService
                     CreatedAt = article.CreatedAt,
                     Excerpt = article.ShortDescription,
                     Content = article.Content,
+                    DataSourceId = dataSource.Id,
                     Tags = article.Tags?.JoinAsString(";")
                 };
                 var category = categories.FirstOrDefault(x => x.Name == article.Category);

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
+using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
@@ -17,59 +19,54 @@ public class ArticleManangerSieuThiSongKhoe : DomainService
     private readonly IArticleSieuThiSongKhoeRepository _articleSieuThiSongKhoeRepository;
     private readonly ICategorySieuThiSongKhoeRepository _categorySieuThiSongKhoeRepository;
     private readonly IMediaSieuThiSongKhoeRepository _mediaSieuThiSongKhoeRepository;
+    private readonly IDataSourceRepository _dataSourceRepository;
 
-    public ArticleManangerSieuThiSongKhoe(IArticleSieuThiSongKhoeRepository articleSieuThiSongKhoeRepository, ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository, IMediaSieuThiSongKhoeRepository mediaSieuThiSongKhoeRepository)
+    public ArticleManangerSieuThiSongKhoe(IArticleSieuThiSongKhoeRepository articleSieuThiSongKhoeRepository, ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository, IMediaSieuThiSongKhoeRepository mediaSieuThiSongKhoeRepository, IDataSourceRepository dataSourceRepository)
     {
         _articleSieuThiSongKhoeRepository = articleSieuThiSongKhoeRepository;
         _categorySieuThiSongKhoeRepository = categorySieuThiSongKhoeRepository;
         _mediaSieuThiSongKhoeRepository = mediaSieuThiSongKhoeRepository;
+        _dataSourceRepository = dataSourceRepository;
     }
     
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync();
+       var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
+        if (dataSource == null)
+        {
+            return;
+        }
+
+        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
         
         foreach (var article in articles)
         {
             var articleEntity = await _articleSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
-            if (articleEntity != null)
+            if (articleEntity == null)
             {
-                continue;
-                // articleEntity.Title = article.Title;
-                // articleEntity.CreatedAt = article.CreatedAt;
-                // articleEntity.Excerpt = article.ShortDescription;
-                // articleEntity.Content = article.Content;
-                // articleEntity.Tags = article.Tags.JoinAsString(";");
-                // articleEntity.ConcurrencyStamp = Guid.NewGuid().ToString("N");
-                //
-                // var category = categories.FirstOrDefault(x => x.Name == article.Category);
-                // if (category == null)
-                // {
-                //     category = new Category()
-                //     {
-                //         Name = article.Category
-                //     };
-                //     await _categorySieuThiSongKhoeRepository.InsertAsync(category, true);
-                //     categories.Add(category);
-                // }
-                // articleEntity.AddCategory(category.Id);
-            }
-            else
-            {
-                articleEntity = new Article(GuidGenerator.Create());
+                articleEntity = new Article(GuidGenerator.Create())
+                {
+                    Title = article.Title,
+                    CreatedAt = article.CreatedAt,
+                    Excerpt = article.ShortDescription,
+                    Content = article.Content,
+                    DataSourceId = dataSource.Id,
+                    Tags = article.Tags?.JoinAsString(";")
+                };
                 var category = categories.FirstOrDefault(x => x.Name == article.Category);
                 if (category == null)
                 {
                     category = new Category()
                     {
-                        Name = article.Category
+                        Name = article.Category,
+                        CategoryType = CategoryType.Article
                     };
                     await _categorySieuThiSongKhoeRepository.InsertAsync(category, true);
                     categories.Add(category);
                 }
-                
+
                 articleEntity.AddCategory(category.Id);
-                
+
                 if (article.FeatureImage.IsNotNullOrEmpty())
                 {
                     var media = new Media()
@@ -80,9 +77,9 @@ public class ArticleManangerSieuThiSongKhoe : DomainService
                     await _mediaSieuThiSongKhoeRepository.InsertAsync(media, true);
                     articleEntity.FeaturedMediaId = media.Id;
                 }
-                
-                articleEntity.AddCategory(category.Id); 
-                
+
+                articleEntity.AddCategory(category.Id);
+
                 if (!string.IsNullOrEmpty(article.Content))
                 {
                     var mediaUrls = article.Content.GetImageUrls();
@@ -91,13 +88,13 @@ public class ArticleManangerSieuThiSongKhoe : DomainService
                     {
                         var medias = mediaUrls.Select(url => new Media()
                         {
-                            Url = url,
+                            Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
                             IsDowloaded = false
                         }).ToList();
                         await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias);
 
                         articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
-                        
+
                         foreach (var media in medias)
                         {
                             articleEntity.AddMedia(media.Id);

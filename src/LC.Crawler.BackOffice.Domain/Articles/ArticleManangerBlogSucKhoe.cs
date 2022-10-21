@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
+using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
@@ -17,44 +19,30 @@ public class ArticleManangerBlogSucKhoe : DomainService
     private readonly IArticleBlogSucKhoeRepository _articleBlogSucKhoeRepository;
     private readonly ICategoryBlogSucKhoeRepository _categoryBlogSucKhoeRepository;
     private readonly IMediaBlogSucKhoeRepository _mediaBlogSucKhoeRepository;
+    private readonly IDataSourceRepository _dataSourceRepository;
     
-    public ArticleManangerBlogSucKhoe(IArticleBlogSucKhoeRepository articleBlogSucKhoeRepository, ICategoryBlogSucKhoeRepository categoryBlogSucKhoeRepository, IMediaBlogSucKhoeRepository mediaBlogSucKhoeRepository)
+    public ArticleManangerBlogSucKhoe(IArticleBlogSucKhoeRepository articleBlogSucKhoeRepository, ICategoryBlogSucKhoeRepository categoryBlogSucKhoeRepository, IMediaBlogSucKhoeRepository mediaBlogSucKhoeRepository, IDataSourceRepository dataSourceRepository)
     {
         _articleBlogSucKhoeRepository = articleBlogSucKhoeRepository;
         _categoryBlogSucKhoeRepository = categoryBlogSucKhoeRepository;
         _mediaBlogSucKhoeRepository = mediaBlogSucKhoeRepository;
+        _dataSourceRepository = dataSourceRepository;
     }
 
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-        var categories = await _categoryBlogSucKhoeRepository.GetListAsync();
+       var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.BlogSucKhoeUrl));
+        if (dataSource == null)
+        {
+            return;
+        }
+
+        var categories = await _categoryBlogSucKhoeRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
         
         foreach (var article in articles)
         {
             var articleEntity = await _articleBlogSucKhoeRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
-            if (articleEntity != null)
-            {
-                continue;
-                // articleEntity.Title = article.Title;
-                // articleEntity.CreatedAt = article.CreatedAt;
-                // articleEntity.Excerpt = article.ShortDescription;
-                // articleEntity.Content = article.Content;
-                // articleEntity.Tags = article.Tags.JoinAsString(";");
-                // articleEntity.ConcurrencyStamp = Guid.NewGuid().ToString("N");
-                //
-                // var category = categories.FirstOrDefault(x => x.Name == article.Category);
-                // if (category == null)
-                // {
-                //     category = new Category()
-                //     {
-                //         Name = article.Category
-                //     };
-                //     await _categoryBlogSucKhoeRepository.InsertAsync(category, true);
-                //     categories.Add(category);
-                // }
-                // articleEntity.AddCategory(category.Id);
-            }
-            else
+            if (articleEntity == null)
             {
                 articleEntity = new Article(GuidGenerator.Create())
                 {
@@ -62,23 +50,23 @@ public class ArticleManangerBlogSucKhoe : DomainService
                     CreatedAt = article.CreatedAt,
                     Excerpt = article.ShortDescription,
                     Content = article.Content,
+                    DataSourceId = dataSource.Id,
                     Tags = article.Tags?.JoinAsString(";")
                 };
-
-
                 var category = categories.FirstOrDefault(x => x.Name == article.Category);
                 if (category == null)
                 {
                     category = new Category()
                     {
-                        Name = article.Category
+                        Name = article.Category,
+                        CategoryType = CategoryType.Article
                     };
                     await _categoryBlogSucKhoeRepository.InsertAsync(category, true);
                     categories.Add(category);
                 }
-                
+
                 articleEntity.AddCategory(category.Id);
-                
+
                 if (article.FeatureImage.IsNotNullOrEmpty())
                 {
                     var media = new Media()
@@ -89,7 +77,9 @@ public class ArticleManangerBlogSucKhoe : DomainService
                     await _mediaBlogSucKhoeRepository.InsertAsync(media, true);
                     articleEntity.FeaturedMediaId = media.Id;
                 }
-                
+
+                articleEntity.AddCategory(category.Id);
+
                 if (!string.IsNullOrEmpty(article.Content))
                 {
                     var mediaUrls = article.Content.GetImageUrls();
@@ -98,13 +88,13 @@ public class ArticleManangerBlogSucKhoe : DomainService
                     {
                         var medias = mediaUrls.Select(url => new Media()
                         {
-                            Url = url,
+                            Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
                             IsDowloaded = false
                         }).ToList();
-                        await _mediaBlogSucKhoeRepository.InsertManyAsync(medias, true);
+                        await _mediaBlogSucKhoeRepository.InsertManyAsync(medias);
 
                         articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
-                        
+
                         foreach (var media in medias)
                         {
                             articleEntity.AddMedia(media.Id);
