@@ -31,6 +31,7 @@ public class SyncArticleAloBacSiBackgroundWorker : HangfireBackgroundWorkerBase
 
     public override async Task DoWorkAsync()
     {
+        await _wordpressManagerAloBacSi.DoSyncCategoriesAsync();
         await _wordpressManagerAloBacSi.DoSyncPostAsync();
     }
 }

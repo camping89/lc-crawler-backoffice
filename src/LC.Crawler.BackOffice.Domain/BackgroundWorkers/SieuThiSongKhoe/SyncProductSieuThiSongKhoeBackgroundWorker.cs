@@ -41,6 +41,7 @@ public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
     
     public override async Task DoWorkAsync()
     {
+        await _wooManagerSieuThiSongKhoe.DoSyncCategoriesAsync();
         await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
     }
 }
