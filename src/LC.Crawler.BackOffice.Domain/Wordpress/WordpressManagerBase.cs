@@ -4,13 +4,25 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
+using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
+using LC.Crawler.BackOffice.Helpers;
+using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.Payloads;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Domain.Services;
 using Svg;
 using WordPressPCL;
 using WordPressPCL.Models;
@@ -57,7 +69,7 @@ public class WordpressManagerBase : DomainService
         
         // tags
         var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
-        if (article.Tags.Any())
+        if (article.Tags.IsNotNullOrEmpty())
         {
             foreach (var tag in article.Tags)
             {

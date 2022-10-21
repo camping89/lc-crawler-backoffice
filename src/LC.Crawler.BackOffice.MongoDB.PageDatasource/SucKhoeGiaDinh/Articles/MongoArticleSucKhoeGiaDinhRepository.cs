@@ -29,9 +29,9 @@ namespace LC.Crawler.BackOffice.PageDatasource.SucKhoeGiaDinh.Articles
 
             var media = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().FirstOrDefaultAsync(e => e.Id == article.FeaturedMediaId, cancellationToken: cancellationToken);
             //var dataSource = await (await GetDbContextAsync(cancellationToken)).DataSources.AsQueryable().FirstOrDefaultAsync(e => e.Id == article.DataSourceId, cancellationToken: cancellationToken);
-            var categoryIds = article.Categories.Select(x => x.CategoryId).ToList();
+            var categoryIds = article.Categories?.Select(x => x.CategoryId).ToList();
             var categories = await (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().Where(e => categoryIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
-            var mediaIds = article.Medias.Select(x => x.MediaId).ToList();
+            var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
             var medias = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().Where(e => mediaIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
 
             return new ArticleWithNavigationProperties

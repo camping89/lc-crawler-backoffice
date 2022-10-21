@@ -30,9 +30,9 @@ namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Products
 
             var media = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().FirstOrDefaultAsync(e => e.Id == product.FeaturedMediaId, cancellationToken: cancellationToken);
             //var dataSource = await (await GetDbContextAsync(cancellationToken)).DataSources.AsQueryable().FirstOrDefaultAsync(e => e.Id == product.DataSourceId, cancellationToken: cancellationToken);
-            var categoryIds = product.Categories.Select(x => x.CategoryId).ToList();
+            var categoryIds = product.Categories?.Select(x => x.CategoryId).ToList();
             var categories = await (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().Where(e => categoryIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
-            var mediaIds = product.Medias.Select(x => x.MediaId).ToList();
+            var mediaIds = product.Medias?.Select(x => x.MediaId).ToList();
             var medias = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().Where(e => mediaIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
             
             return new ProductWithNavigationProperties

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace LC.Crawler.BackOffice.Extensions;
 
@@ -28,5 +29,10 @@ public static class EnumerableExtensions
             Array.Resize(ref array, count);
             yield return new ReadOnlyCollection<T>(array);
         }
+    }
+    
+    public static bool IsNotNullOrEmpty<T>(this IEnumerable<T> source)
+    {
+        return source != null && source.Any();
     }
 }
