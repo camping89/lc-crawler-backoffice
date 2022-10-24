@@ -73,7 +73,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         var products = await _productRepository.GetListAsync(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null);
 
         var number = 1;
-        foreach (var product in products.Take(10))
+        foreach (var product in products)
         {
             try
             {
