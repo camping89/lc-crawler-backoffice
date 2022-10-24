@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.Products;
@@ -31,11 +32,13 @@ public class MasterService : ITransientDependency
     private readonly WordpressManagerSieuThiSongKhoe _wordpressManagerSieuThiSongKhoe;
 
     private readonly WordpressManagerLongChau _wordpressManagerLongChau;
+    private readonly WooManangerBase _wooManangerBase;
+    private readonly IDataSourceRepository _dataSourceRepository;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
         ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe,
-        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus)
+        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus, WooManangerBase wooManangerBase, IDataSourceRepository dataSourceRepository)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -46,6 +49,8 @@ public class MasterService : ITransientDependency
         _wooManagerAladin = wooManagerAladin;
         _productManagerSieuThiSongKhoe = productManagerSieuThiSongKhoe;
         _articleManangerSongKhoeMedplus = articleManangerSongKhoeMedplus;
+        _wooManangerBase = wooManangerBase;
+        _dataSourceRepository = dataSourceRepository;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -132,5 +137,11 @@ public class MasterService : ITransientDependency
         {
             await _articleManangerSongKhoeMedplus.ProcessingDataAsync(crawlResultEtos.ArticlesPayload.Take(100).ToList());
         }
+    }
+
+    public async Task DeleteDuplicateWooProduct(string site)
+    {
+        var dataSource = await _dataSourceRepository.GetAsync(_ => _.Url.Contains(site));
+        await _wooManangerBase.DeleteDuplicateWooProduct(dataSource);
     }
 }

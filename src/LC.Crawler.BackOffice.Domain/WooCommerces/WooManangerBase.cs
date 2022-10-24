@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
@@ -299,5 +300,33 @@ public class WooManangerBase : DomainService
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Source",     ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
+    }
+
+    public async Task DeleteDuplicateWooProduct(DataSource dataSource)
+    {
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
+        var wc = new WCObject(rest);
+
+        var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
+        var pageIndex = 1;
+        while (true)
+        {
+            var checkProduct = await wc.Product.GetAll(new Dictionary<string, string>()
+            {
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+            });
+            if (checkProduct.IsNullOrEmpty()) break;
+            
+            checkProducts.AddRange(checkProduct);
+            pageIndex++;
+        }
+
+        var deletedProducts = checkProducts.GroupBy(_ => _.sku).Where(_ => _.Count() > 1).ToList();
+        foreach (var item in deletedProducts)
+        {
+            var deleteProduct = await wc.Product.Delete(item.FirstOrDefault().id.To<int>());
+            Console.WriteLine($"-----------------------Deleted Product: {deleteProduct.id}-----------------------");
+        }
     }
 }
