@@ -52,8 +52,9 @@ public class WordpressManagerAloBacSi : DomainService
             var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
             if (post is not null) 
             {
-                articleNav.Article.LastSyncedAt = DateTime.UtcNow;
-                await _articleAloBacSiRepository.UpdateAsync(articleNav.Article, true);
+                var article = await _articleAloBacSiRepository.GetAsync(articleId);
+                article.LastSyncedAt = DateTime.UtcNow;
+                await _articleAloBacSiRepository.UpdateAsync(article, true);
                 
                 if (articleNav.Media is not null) 
                 {

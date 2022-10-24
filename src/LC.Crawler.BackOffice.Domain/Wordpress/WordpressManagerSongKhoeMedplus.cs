@@ -52,8 +52,9 @@ public class WordpressManagerSongKhoeMedplus : DomainService
             var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
             if (post is not null) 
             {
-                articleNav.Article.LastSyncedAt = DateTime.UtcNow;
-                await _articleSongKhoeMedplusRepository.UpdateAsync(articleNav.Article, true);
+                var article = await _articleSongKhoeMedplusRepository.GetAsync(articleId);
+                article.LastSyncedAt = DateTime.UtcNow;
+                await _articleSongKhoeMedplusRepository.UpdateAsync(article, true);
                 
                 if (articleNav.Media is not null) 
                 {

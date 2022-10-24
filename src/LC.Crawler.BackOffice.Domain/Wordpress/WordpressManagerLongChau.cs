@@ -49,10 +49,11 @@ public class WordpressManagerLongChau : DomainService
         {
             var articleNav = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
             var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
-            if (post is not null) 
+            if (post is not null)
             {
-                articleNav.Article.LastSyncedAt = DateTime.UtcNow;
-                await _articleLongChauRepository.UpdateAsync(articleNav.Article, true);
+                var article = await _articleLongChauRepository.GetAsync(articleId);
+                article.LastSyncedAt = DateTime.UtcNow;
+                await _articleLongChauRepository.UpdateAsync(article, true);
                 
                 if (articleNav.Media is not null) 
                 {

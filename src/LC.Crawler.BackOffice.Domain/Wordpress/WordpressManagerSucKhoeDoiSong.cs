@@ -52,9 +52,10 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
             if (post is not null) 
             {
-                articleNav.Article.LastSyncedAt = DateTime.UtcNow;
-                await _articleSucKhoeDoiSongRepository.UpdateAsync(articleNav.Article, true);
-                
+                var article = await _articleSucKhoeDoiSongRepository.GetAsync(articleId);
+                article.LastSyncedAt = DateTime.UtcNow;
+                await _articleSucKhoeDoiSongRepository.UpdateAsync(article, true);
+
                 if (articleNav.Media is not null) 
                 {
                     await _mediaSucKhoeDoiSongRepository.UpdateAsync(articleNav.Media, true);

@@ -31,7 +31,7 @@ public class MongoArticleSieuThiSongKhoeRepository : MongoDbRepository<SieuThiSo
             var categoryIds = article.Categories?.Select(x => x.CategoryId).ToList();
             var categories = await (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().Where(e => categoryIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
             var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
-            var medias = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().Where(e => mediaIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
+            var medias = (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().WhereIf(mediaIds is { Count: > 0 } , e =>  mediaIds.Contains(e.Id)).ToList();
 
             return new ArticleWithNavigationProperties
             {
