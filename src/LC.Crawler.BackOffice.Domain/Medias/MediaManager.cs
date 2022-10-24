@@ -63,7 +63,7 @@ public class MediaManager : DomainService
         if (fileBytes != null)
         {
             var fileName = $"{media.Id}{fileExtension}";
-            await _blobContainer.SaveAsync(fileName, fileBytes);
+            await _blobContainer.SaveAsync(fileName, fileBytes, true);
                 
             //Do save media
             media.Name = fileName;
