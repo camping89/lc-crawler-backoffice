@@ -5,6 +5,7 @@ using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
@@ -69,7 +70,7 @@ public class WordpressManagerAloBacSi : DomainService
                         await _mediaAloBacSiRepository.UpdateAsync(articleNav.Media, true);
                     }
 
-                    if (articleNav.Medias is not null)
+                    if (articleNav.Medias.IsNotNullOrEmpty())
                     {
                         await _mediaAloBacSiRepository.UpdateManyAsync(articleNav.Medias, true);
                     }

@@ -7,6 +7,7 @@ using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Extensions;
 using Volo.Abp.Auditing;
 using WordpresCategory = WordPressPCL.Models.Category;
 
@@ -68,7 +69,7 @@ public class WordpressManagerLongChau : DomainService
                         await _mediaLongChauRepository.UpdateAsync(articleNav.Media, true);
                     }
 
-                    if (articleNav.Medias is not null)
+                    if (articleNav.Medias.IsNotNullOrEmpty())
                     {
                         await _mediaLongChauRepository.UpdateManyAsync(articleNav.Medias, true);
                     }
