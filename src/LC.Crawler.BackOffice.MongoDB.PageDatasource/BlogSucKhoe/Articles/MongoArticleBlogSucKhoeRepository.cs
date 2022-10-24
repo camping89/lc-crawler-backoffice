@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.MongoDb;
 using MongoDB.Driver;
@@ -30,9 +31,14 @@ namespace LC.Crawler.BackOffice.PageDatasource.BlogSucKhoe.Articles
             var media = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().FirstOrDefaultAsync(e => e.Id == article.FeaturedMediaId, cancellationToken: cancellationToken);
             //var dataSource = await (await GetDbContextAsync(cancellationToken)).DataSources.AsQueryable().FirstOrDefaultAsync(e => e.Id == article.DataSourceId, cancellationToken: cancellationToken);
             var categoryIds = article.Categories?.Select(x => x.CategoryId).ToList();
-            var categories = await (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().Where(e => categoryIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
+            var categories = new List<Category>();
+            if (categoryIds.IsNotNullOrEmpty()) 
+                categories = (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().WhereIf(categoryIds is { Count: > 0 } , e =>  categoryIds.Contains(e.Id)).ToList();
+            
             var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
-            var medias = (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().WhereIf(mediaIds is { Count: > 0 } , e =>  mediaIds.Contains(e.Id)).ToList();
+            var medias = new List<Media>();
+            if (mediaIds.IsNotNullOrEmpty()) 
+                medias = (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().WhereIf(mediaIds is { Count: > 0 } , e =>  mediaIds.Contains(e.Id)).ToList();
 
             return new ArticleWithNavigationProperties
             {

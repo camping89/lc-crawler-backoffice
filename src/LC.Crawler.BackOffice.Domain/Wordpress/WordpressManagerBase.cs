@@ -11,6 +11,7 @@ using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
@@ -226,6 +227,7 @@ public class WordpressManagerBase : DomainService
             var bitmap = svgDoc.Draw();
             using var stream = new MemoryStream();
             bitmap.Save(stream, ImageFormat.Png);
+            stream.Position = 0;
 
             mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
         }

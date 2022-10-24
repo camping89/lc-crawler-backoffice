@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Products;
 using Volo.Abp.Auditing;
+using Svg;
 using Volo.Abp.Domain.Services;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;
@@ -38,6 +40,7 @@ public class WooManangerBase : DomainService
         var mediaItems = new List<MediaItem>();
         foreach (var media in medias.Where(media => !StringExtensions.IsNullOrEmpty(media.Url)))
         {
+            MediaItem mediaResult;
             //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
             if (media.Url.Contains("http") == false)
             {
@@ -45,16 +48,34 @@ public class WooManangerBase : DomainService
             }
 
             var fileExtension = Path.GetExtension(media.Url);
-            var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
-            if (fileBytes != null && !string.IsNullOrEmpty(fileExtension))
+            if (!fileExtension.IsNotNullOrEmpty()) return null;
+
+            if (fileExtension is FileExtendHelper.SvgExtend)
             {
+                var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
+                if (!svgContent.IsNotNullOrEmpty()) return null;
+
+                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
+                var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
+                var bitmap = svgDoc.Draw();
+                using var stream = new MemoryStream();
+                bitmap.Save(stream, ImageFormat.Png);
+                stream.Position = 0;
+
+                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+            }
+            else
+            {
+                var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
+                if (fileBytes is null) return null;
                 var stream = new MemoryStream(fileBytes);
                 var fileName = $"{media.Id}{fileExtension}";
-                var mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
-                media.ExternalId = mediaResult.Id.ToString();
-                media.ExternalUrl = mediaResult.SourceUrl;
-                mediaItems.Add(mediaResult);
+                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
             }
+
+            media.ExternalId = mediaResult.Id.ToString();
+            media.ExternalUrl = mediaResult.SourceUrl;
+            mediaItems.Add(mediaResult);
         }
 
         return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading;
 using System.Threading.Tasks;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.MongoDB;
 using Volo.Abp.Domain.Repositories.MongoDB;
 using Volo.Abp.MongoDB;
@@ -28,10 +29,18 @@ namespace LC.Crawler.BackOffice.Products
 
             var media = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().FirstOrDefaultAsync(e => e.Id == product.FeaturedMediaId, cancellationToken: cancellationToken);
             var dataSource = await (await GetDbContextAsync(cancellationToken)).DataSources.AsQueryable().FirstOrDefaultAsync(e => e.Id == product.DataSourceId, cancellationToken: cancellationToken);
-            var categoryIds = product.Categories.Select(x => x.CategoryId).ToList();
-            var categories = await (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().Where(e => categoryIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
-            var mediaIds = product.Medias.Select(x => x.MediaId).ToList();
-            var medias = await (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().Where(e => mediaIds.Contains(e.Id)).ToListAsync(cancellationToken: cancellationToken);
+            var categoryIds = product.Categories?.Select(x => x.CategoryId).ToList();
+            var categories = new List<Category>();
+            if (categoryIds.IsNotNullOrEmpty()) 
+                categories = (await GetDbContextAsync(cancellationToken)).Categories.AsQueryable().WhereIf(categoryIds is { Count: > 0 } , e =>  categoryIds.Contains(e.Id)).ToList();
+            
+            var mediaIds = product.Medias?.Select(x => x.MediaId).ToList();
+            var medias = new List<Media>();
+            if (mediaIds.IsNotNullOrEmpty()) 
+                medias = (await GetDbContextAsync(cancellationToken)).Medias.AsQueryable().WhereIf(mediaIds is { Count: > 0 } , e =>  mediaIds.Contains(e.Id)).ToList();
+            
+            var variants = await (await GetDbContextAsync(cancellationToken)).ProductVariants.AsQueryable().Where(e => e.ProductId == product.Id).ToListAsync(cancellationToken: cancellationToken);
+            var attributes = await (await GetDbContextAsync(cancellationToken)).ProductAttributes.AsQueryable().Where(e => e.ProductId == product.Id).ToListAsync(cancellationToken: cancellationToken);
 
             return new ProductWithNavigationProperties
             {
@@ -40,7 +49,8 @@ namespace LC.Crawler.BackOffice.Products
                 DataSource = dataSource,
                 Categories = categories,
                 Medias = medias,
-
+                Variants = variants,
+                Attributes = attributes
             };
         }
 
