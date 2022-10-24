@@ -6,6 +6,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Medias;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using WooCategory = WordPressPCL.Models.Category;
@@ -20,18 +21,21 @@ public class WordpressManagerBlogSucKhoe : DomainService
     private readonly IDataSourceRepository          _dataSourceRepository;
     private          DataSource                     _dataSource;
     private readonly WordpressManagerBase           _wordpressManagerBase;
+    private readonly IAuditingManager               _auditingManager;
 
     public WordpressManagerBlogSucKhoe(ICategoryBlogSucKhoeRepository categoryBlogSucKhoeRepository, 
                                        IArticleBlogSucKhoeRepository  articleBlogSucKhoeRepository, 
                                        IMediaBlogSucKhoeRepository    mediaBlogSucKhoeRepository, 
                                        IDataSourceRepository          dataSourceRepository,
-                                       WordpressManagerBase           wordpressManagerBase)
+                                       WordpressManagerBase           wordpressManagerBase,
+                                       IAuditingManager               auditingManager)
     {
         _categoryBlogSucKhoeRepository = categoryBlogSucKhoeRepository;
         _articleBlogSucKhoeRepository  = articleBlogSucKhoeRepository;
         _mediaBlogSucKhoeRepository    = mediaBlogSucKhoeRepository;
         _dataSourceRepository          = dataSourceRepository;
         _wordpressManagerBase          = wordpressManagerBase;
+        _auditingManager               = auditingManager;
     }
 
     public async Task DoSyncPostAsync()
@@ -48,23 +52,38 @@ public class WordpressManagerBlogSucKhoe : DomainService
         
         foreach (var articleId in articleIds)
         {
-            var articleNav = await _articleBlogSucKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
-            var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
-            if (post is not null) 
+            using var auditingScope = _auditingManager.BeginScope();
+            var       articleNav    = await _articleBlogSucKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
+            
+            try
             {
-                var article = await _articleBlogSucKhoeRepository.GetAsync(articleId);
-                article.LastSyncedAt = DateTime.UtcNow;
-                await _articleBlogSucKhoeRepository.UpdateAsync(article, true);
-
-                if (articleNav.Media is not null) 
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                if (post is not null) 
                 {
-                    await _mediaBlogSucKhoeRepository.UpdateAsync(articleNav.Media, true);
-                }
+                    var article = await _articleBlogSucKhoeRepository.GetAsync(articleId);
+                    article.LastSyncedAt = DateTime.UtcNow;
+                    await _articleBlogSucKhoeRepository.UpdateAsync(article, true);
 
-                if (articleNav.Medias is not null)
-                {
-                    await _mediaBlogSucKhoeRepository.UpdateManyAsync(articleNav.Medias, true);
+                    if (articleNav.Media is not null) 
+                    {
+                        await _mediaBlogSucKhoeRepository.UpdateAsync(articleNav.Media, true);
+                    }
+
+                    if (articleNav.Medias is not null)
+                    {
+                        await _mediaBlogSucKhoeRepository.UpdateManyAsync(articleNav.Medias, true);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.BlogSucKhoeUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
             }
         }
     }

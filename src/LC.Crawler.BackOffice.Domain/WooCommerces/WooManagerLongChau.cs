@@ -16,6 +16,7 @@ using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.ProductVariants;
 using Microsoft.Extensions.Logging;
+using Volo.Abp.Auditing;
 using Volo.Abp.BackgroundWorkers.Hangfire;
 using Volo.Abp.Domain.Repositories;
 using WooCommerceNET;
@@ -33,31 +34,34 @@ namespace LC.Crawler.BackOffice.WooCommerces;
 
 public class WooManagerLongChau : DomainService
 {
-    private readonly ICategoryLongChauRepository _categoryLongChauRepository;
-    private readonly IProductLongChauRepository _productRepository;
-    private readonly IDataSourceRepository _dataSourceRepository;
-    private readonly IMediaLongChauRepository _mediaLongChauRepository;
-    private readonly IProductVariantLongChauRepository _productVariantLongChauRepository;
+    private readonly ICategoryLongChauRepository         _categoryLongChauRepository;
+    private readonly IProductLongChauRepository          _productRepository;
+    private readonly IDataSourceRepository               _dataSourceRepository;
+    private readonly IMediaLongChauRepository            _mediaLongChauRepository;
+    private readonly IProductVariantLongChauRepository   _productVariantLongChauRepository;
     private readonly IProductAttributeLongChauRepository _productAttributeLongChauRepository;
-    private readonly WooManangerBase _wooManangerBase;
+    private readonly WooManangerBase                     _wooManangerBase;
+    private readonly IAuditingManager                    _auditingManager;
 
     private DataSource _dataSource;
 
     public WooManagerLongChau(IProductLongChauRepository productRepository,
-        IDataSourceRepository dataSourceRepository,
-        IMediaLongChauRepository mediaLongChauRepository,
-        IProductVariantLongChauRepository productVariantLongChauRepository,
-        IProductAttributeLongChauRepository productAttributeLongChauRepository,
-        ICategoryLongChauRepository categoryLongChauRepository,
-        WooManangerBase wooManangerBase)
+        IDataSourceRepository                            dataSourceRepository,
+        IMediaLongChauRepository                         mediaLongChauRepository,
+        IProductVariantLongChauRepository                productVariantLongChauRepository,
+        IProductAttributeLongChauRepository              productAttributeLongChauRepository,
+        ICategoryLongChauRepository                      categoryLongChauRepository,
+        WooManangerBase                                  wooManangerBase,
+        IAuditingManager                                 auditingManager)
     {
-        _productRepository = productRepository;
-        _dataSourceRepository = dataSourceRepository;
-        _mediaLongChauRepository = mediaLongChauRepository;
-        _productVariantLongChauRepository = productVariantLongChauRepository;
+        _productRepository                  = productRepository;
+        _dataSourceRepository               = dataSourceRepository;
+        _mediaLongChauRepository            = mediaLongChauRepository;
+        _productVariantLongChauRepository   = productVariantLongChauRepository;
         _productAttributeLongChauRepository = productAttributeLongChauRepository;
-        _categoryLongChauRepository = categoryLongChauRepository;
-        _wooManangerBase = wooManangerBase;
+        _categoryLongChauRepository         = categoryLongChauRepository;
+        _wooManangerBase                    = wooManangerBase;
+        _auditingManager                    = auditingManager;
     }
 
     public async Task DoSyncCategoriesAsync()
@@ -88,11 +92,12 @@ public class WooManagerLongChau : DomainService
         var number = 1;
         foreach (var productId in productIds)
         {
+            using var auditingScope = _auditingManager.BeginScope();
+            var       productNav    = await _productRepository.GetWithNavigationPropertiesAsync(productId);
+            
             try
             {
-                var productNav = await _productRepository.GetWithNavigationPropertiesAsync(productId);
-
-                var wooProduct = await  _wooManangerBase.PostToWooProduct(_dataSource,wc, productNav, wooCategories);
+                var wooProduct = await  _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories);
                 if (wooProduct is { id: > 0 })
                 {
                     productNav.Product.ExternalId = wooProduct.id.To<int>();
@@ -103,9 +108,15 @@ public class WooManagerLongChau : DomainService
                     number++;
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, e, e.StackTrace);
+                //Add exceptions
+                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, productNav, PageDataSourceConsts.LongChauUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
             }
         }
     }

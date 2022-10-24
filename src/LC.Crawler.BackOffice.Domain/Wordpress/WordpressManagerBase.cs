@@ -24,6 +24,7 @@ using LC.Crawler.BackOffice.Payloads;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Svg;
+using Volo.Abp.Auditing;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordpresCategory = WordPressPCL.Models.Category;
@@ -44,16 +45,16 @@ public class WordpressManagerBase : DomainService
 
         var post = new Post
         {
-            Title = new Title(article.Title),
-            Content = new Content(article.Content),
-            Date = article.CreatedAt,
-            Excerpt = new Excerpt(article.Excerpt),
-            Status = Status.Pending,
+            Title         = null,
+            Content       = null,
+            Date          = article.CreatedAt,
+            Excerpt       = null,
+            Status        = Status.Pending,
             LiveblogLikes = article.LikeCount,
             CommentStatus = OpenStatus.Open,
             FeaturedMedia = featureMedia?.Id,
-            Categories = new List<int>(),
-            Tags = new List<int>()
+            Categories    = new List<int>(),
+            Tags          = new List<int>()
         };
 
         // categories
@@ -251,5 +252,23 @@ public class WordpressManagerBase : DomainService
         var client = new WordPressClient($"{dataSource.PostToSite}/wp-json/");
         client.Auth.UseBasicAuth(dataSource.Configuration.Username, dataSource.Configuration.Password);
         return Task.FromResult(client);
+    }
+    
+    public void LogException(AuditLogInfo currentLog, Exception ex, ArticleWithNavigationProperties articleNav, string url)
+    {
+        //Add exceptions
+        currentLog.Url = url;
+        currentLog.Exceptions.Add(ex);
+        if (ex.InnerException is not null)
+        {
+            currentLog.Exceptions.Add(ex.InnerException);
+        }
+
+        currentLog.Comments.Add($"Id: {articleNav.Article.Id}, DataSourceId {articleNav.Article.DataSourceId}");
+        currentLog.Comments.Add(ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
+        currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Source",     ex.Source);
+        currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
 }

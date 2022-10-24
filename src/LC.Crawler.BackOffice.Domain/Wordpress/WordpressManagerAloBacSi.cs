@@ -6,6 +6,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Medias;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using WooCategory = WordPressPCL.Models.Category;
@@ -20,18 +21,21 @@ public class WordpressManagerAloBacSi : DomainService
     private readonly IDataSourceRepository       _dataSourceRepository;
     private          DataSource                  _dataSource;
     private readonly WordpressManagerBase        _wordpressManagerBase;
+    private readonly IAuditingManager            _auditingManager;
 
     public WordpressManagerAloBacSi(ICategoryAloBacSiRepository categoryAloBacSiRepository, 
                                     IArticleAloBacSiRepository  articleAloBacSiRepository, 
                                     IMediaAloBacSiRepository    mediaAloBacSiRepository, 
                                     IDataSourceRepository       dataSourceRepository,
-                                    WordpressManagerBase        wordpressManagerBase)
+                                    WordpressManagerBase        wordpressManagerBase,
+                                    IAuditingManager            auditingManager)
     {
         _categoryAloBacSiRepository = categoryAloBacSiRepository;
         _articleAloBacSiRepository  = articleAloBacSiRepository;
         _mediaAloBacSiRepository    = mediaAloBacSiRepository;
         _dataSourceRepository       = dataSourceRepository;
         _wordpressManagerBase       = wordpressManagerBase;
+        _auditingManager            = auditingManager;
     }
 
     public async Task DoSyncPostAsync()
@@ -43,32 +47,47 @@ public class WordpressManagerAloBacSi : DomainService
         }
         
         var articleIds = (await _articleAloBacSiRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
+                        .Where(x => x.LastSyncedAt == null)
                         .Select(x=>x.Id);
 
         foreach (var articleId in articleIds)
         {
-            var articleNav = await _articleAloBacSiRepository.GetWithNavigationPropertiesAsync(articleId);
-            var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
-            if (post is not null) 
+            using var auditingScope = _auditingManager.BeginScope();
+            var       articleNav    = await _articleAloBacSiRepository.GetWithNavigationPropertiesAsync(articleId);
+            
+            try
             {
-                var article = await _articleAloBacSiRepository.GetAsync(articleId);
-                article.LastSyncedAt = DateTime.UtcNow;
-                await _articleAloBacSiRepository.UpdateAsync(article, true);
+                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                if (post is not null) 
+                {
+                    var article = await _articleAloBacSiRepository.GetAsync(articleId);
+                    article.LastSyncedAt = DateTime.UtcNow;
+                    await _articleAloBacSiRepository.UpdateAsync(article, true);
                 
-                if (articleNav.Media is not null) 
-                {
-                    await _mediaAloBacSiRepository.UpdateAsync(articleNav.Media, true);
-                }
+                    if (articleNav.Media is not null) 
+                    {
+                        await _mediaAloBacSiRepository.UpdateAsync(articleNav.Media, true);
+                    }
 
-                if (articleNav.Medias is not null)
-                {
-                    await _mediaAloBacSiRepository.UpdateManyAsync(articleNav.Medias, true);
+                    if (articleNav.Medias is not null)
+                    {
+                        await _mediaAloBacSiRepository.UpdateManyAsync(articleNav.Medias, true);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.AloBacSiUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
             }
         }
     }
-    
+
     public async Task DoSyncCategoriesAsync()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AloBacSiUrl));

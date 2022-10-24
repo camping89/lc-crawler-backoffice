@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Products;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Services;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;
@@ -258,5 +260,23 @@ public class WooManangerBase : DomainService
         }
 
         return await wcObject.Product.Add(wooProduct);
+    }
+    
+    public void LogException(AuditLogInfo currentLog, Exception ex, ProductWithNavigationProperties productNav, string url)
+    {
+        //Add exceptions
+        currentLog.Url = url;
+        currentLog.Exceptions.Add(ex);
+        if (ex.InnerException is not null)
+        {
+            currentLog.Exceptions.Add(ex.InnerException);
+        }
+
+        currentLog.Comments.Add($"Id: {productNav.Product.Id}, DataSourceId {productNav.Product.DataSourceId}");
+        currentLog.Comments.Add(ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
+        currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Source",     ex.Source);
+        currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
 }

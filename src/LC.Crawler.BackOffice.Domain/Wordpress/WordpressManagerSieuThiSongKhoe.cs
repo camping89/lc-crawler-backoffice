@@ -6,6 +6,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Medias;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -19,18 +20,21 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
     private readonly ICategorySieuThiSongKhoeRepository _categorySieuThiSongKhoeRepository;
     private          DataSource                         _dataSource;
     private readonly WordpressManagerBase               _wordpressManagerBase;
+    private readonly IAuditingManager                   _auditingManager;
 
     public WordpressManagerSieuThiSongKhoe(IDataSourceRepository              dataSourceRepository, 
                                            IMediaSieuThiSongKhoeRepository    mediaSieuThiSongKhoeRepository, 
                                            IArticleSieuThiSongKhoeRepository  articleSieuThiSongKhoeRepository,
                                            WordpressManagerBase               wordpressManagerBase,
-                                           ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository)
+                                           ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository,
+                                           IAuditingManager                   auditingManager)
     {
         _dataSourceRepository              = dataSourceRepository;
         _mediaSieuThiSongKhoeRepository    = mediaSieuThiSongKhoeRepository;
         _articleSieuThiSongKhoeRepository  = articleSieuThiSongKhoeRepository;
         _wordpressManagerBase              = wordpressManagerBase;
         _categorySieuThiSongKhoeRepository = categorySieuThiSongKhoeRepository;
+        _auditingManager                   = auditingManager;
     }
 
     public async Task DoSyncPostAsync()
@@ -47,24 +51,41 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         
         foreach (var articleId in articleIds)
         {
-            var articleNav = await _articleSieuThiSongKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
-            var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
-            if (post is not null) 
+            using var auditingScope = _auditingManager.BeginScope();
+            var       articleNav    = await _articleSieuThiSongKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
+            
+            try
             {
-                var article = await _articleSieuThiSongKhoeRepository.GetAsync(articleId);
-                article.LastSyncedAt = DateTime.UtcNow;
-                await _articleSieuThiSongKhoeRepository.UpdateAsync(article, true);
-
-                if (articleNav.Media is not null) 
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                if (post is not null) 
                 {
-                    await _mediaSieuThiSongKhoeRepository.UpdateAsync(articleNav.Media, true);
-                }
+                    var article = await _articleSieuThiSongKhoeRepository.GetAsync(articleId);
+                    article.LastSyncedAt = DateTime.UtcNow;
+                    await _articleSieuThiSongKhoeRepository.UpdateAsync(article, true);
 
-                if (articleNav.Medias is not null)
-                {
-                    await _mediaSieuThiSongKhoeRepository.UpdateManyAsync(articleNav.Medias, true);
+                    if (articleNav.Media is not null) 
+                    {
+                        await _mediaSieuThiSongKhoeRepository.UpdateAsync(articleNav.Media, true);
+                    }
+
+                    if (articleNav.Medias is not null)
+                    {
+                        await _mediaSieuThiSongKhoeRepository.UpdateManyAsync(articleNav.Medias, true);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.SieuThiSongKhoeUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+
+            
         }
     }
     

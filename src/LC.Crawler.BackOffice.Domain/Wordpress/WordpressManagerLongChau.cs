@@ -7,6 +7,7 @@ using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Enums;
+using Volo.Abp.Auditing;
 using WordpresCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -19,18 +20,21 @@ public class WordpressManagerLongChau : DomainService
     private readonly IDataSourceRepository       _dataSourceRepository;
     private          DataSource                  _dataSource;
     private readonly WordpressManagerBase        _wordpressManagerBase;
+    private readonly IAuditingManager            _auditingManager;
     
     public WordpressManagerLongChau(IArticleLongChauRepository  articleLongChauRepository, 
                                     IMediaLongChauRepository    mediaLongChauRepository, 
                                     IDataSourceRepository       dataSourceRepository, 
                                     ICategoryLongChauRepository categoryLongChauRepository,
-                                    WordpressManagerBase        wordpressManagerBase)
+                                    WordpressManagerBase        wordpressManagerBase,
+                                    IAuditingManager            auditingManager)
     {
         _articleLongChauRepository  = articleLongChauRepository;
         _mediaLongChauRepository    = mediaLongChauRepository;
         _dataSourceRepository       = dataSourceRepository;
         _categoryLongChauRepository = categoryLongChauRepository;
         _wordpressManagerBase       = wordpressManagerBase;
+        _auditingManager            = auditingManager;
     }
 
     public async Task DoSyncPostAsync()
@@ -47,23 +51,38 @@ public class WordpressManagerLongChau : DomainService
 
         foreach (var articleId in articleIds)
         {
-            var articleNav = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
-            var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
-            if (post is not null)
+            using var auditingScope = _auditingManager.BeginScope();
+            var       articleNav    = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
+            
+            try
             {
-                var article = await _articleLongChauRepository.GetAsync(articleId);
-                article.LastSyncedAt = DateTime.UtcNow;
-                await _articleLongChauRepository.UpdateAsync(article, true);
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                if (post is not null)
+                {
+                    var article = await _articleLongChauRepository.GetAsync(articleId);
+                    article.LastSyncedAt = DateTime.UtcNow;
+                    await _articleLongChauRepository.UpdateAsync(article, true);
                 
-                if (articleNav.Media is not null) 
-                {
-                    await _mediaLongChauRepository.UpdateAsync(articleNav.Media, true);
-                }
+                    if (articleNav.Media is not null) 
+                    {
+                        await _mediaLongChauRepository.UpdateAsync(articleNav.Media, true);
+                    }
 
-                if (articleNav.Medias is not null)
-                {
-                    await _mediaLongChauRepository.UpdateManyAsync(articleNav.Medias, true);
+                    if (articleNav.Medias is not null)
+                    {
+                        await _mediaLongChauRepository.UpdateManyAsync(articleNav.Medias, true);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.LongChauUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
             }
         }
     }
