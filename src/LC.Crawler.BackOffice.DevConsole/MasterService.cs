@@ -33,12 +33,13 @@ public class MasterService : ITransientDependency
 
     private readonly WordpressManagerLongChau _wordpressManagerLongChau;
     private readonly WooManangerBase _wooManangerBase;
+    private readonly WooApiConsumers _wooApiConsumers;
     private readonly IDataSourceRepository _dataSourceRepository;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
         ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe,
-        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus, WooManangerBase wooManangerBase, IDataSourceRepository dataSourceRepository)
+        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus, WooManangerBase wooManangerBase, IDataSourceRepository dataSourceRepository, WooApiConsumers wooApiConsumers)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -51,6 +52,7 @@ public class MasterService : ITransientDependency
         _articleManangerSongKhoeMedplus = articleManangerSongKhoeMedplus;
         _wooManangerBase = wooManangerBase;
         _dataSourceRepository = dataSourceRepository;
+        _wooApiConsumers = wooApiConsumers;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -143,5 +145,17 @@ public class MasterService : ITransientDependency
     {
         var dataSource = await _dataSourceRepository.GetAsync(_ => _.Url.Contains(site));
         await _wooManangerBase.DeleteDuplicateWooProduct(dataSource);
+    }
+    
+    public async Task TestProductApi(string site)
+    {
+        var dataSource = await _dataSourceRepository.GetAsync(_ => _.Url.Contains(site));
+        await _wooApiConsumers.GetProductBrandApi(dataSource);
+    }
+    
+    public async Task TestArticleApi(string site)
+    {
+        var dataSource = await _dataSourceRepository.GetAsync(_ => _.Url.Contains(site));
+        await _wooApiConsumers.GetArticleBrandApi(dataSource);
     }
 }
