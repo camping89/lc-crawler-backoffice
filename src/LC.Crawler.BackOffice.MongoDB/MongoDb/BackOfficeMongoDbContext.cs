@@ -11,6 +11,7 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
 using LC.Crawler.BackOffice.CrawlerAccounts;
+using LC.Crawler.BackOffice.TrackingDataSources;
 using MongoDB.Driver;
 using Volo.Abp.Data;
 using Volo.Abp.MongoDB;
@@ -33,6 +34,7 @@ public class BackOfficeMongoDbContext : AbpMongoDbContext
     public IMongoCollection<CrawlerCredential> CrawlerCredentials => Collection<CrawlerCredential>();
     public IMongoCollection<CrawlerProxy> CrawlerProxies => Collection<CrawlerProxy>();
     public IMongoCollection<CrawlerAccount> CrawlerAccounts => Collection<CrawlerAccount>();
+    public IMongoCollection<TrackingDataSource> TrackingDataSources => Collection<TrackingDataSource>();
 
     /* Add mongo collections here. Example:
      * public IMongoCollection<Question> Questions => Collection<Question>();
@@ -72,5 +74,7 @@ public class BackOfficeMongoDbContext : AbpMongoDbContext
         modelBuilder.Entity<ProductComment>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductComments"; });
 
         modelBuilder.Entity<ArticleComment>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ArticleComments"; });
+        
+        modelBuilder.Entity<TrackingDataSource>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "TrackingDataSources"; });
     }
 }

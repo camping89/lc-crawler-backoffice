@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.ProductVariants;
+using LC.Crawler.BackOffice.TrackingDataSources;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -23,9 +25,10 @@ public class ProductManagerAladin : DomainService
     private readonly IProductAttributeAladinRepository _productAttributeAladinRepository;
     private readonly IProductVariantAladinRepository _productVariantAladinRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
+    private readonly ITrackingDataSourceRepository _trackingDataSourceRepository;
 
     public ProductManagerAladin(IProductAladinRepository productAladinRepository, ICategoryAladinRepository categoryAladinRepository, IMediaAladinRepository mediaAladinRepository, IDataSourceRepository dataSourceRepository, IProductAttributeAladinRepository productAttributeAladinRepository,
-        IProductVariantAladinRepository productVariantAladinRepository)
+        IProductVariantAladinRepository productVariantAladinRepository, ITrackingDataSourceRepository trackingDataSourceRepository)
     {
         _productAladinRepository = productAladinRepository;
         _categoryAladinRepository = categoryAladinRepository;
@@ -33,6 +36,7 @@ public class ProductManagerAladin : DomainService
         _dataSourceRepository = dataSourceRepository;
         _productAttributeAladinRepository = productAttributeAladinRepository;
         _productVariantAladinRepository = productVariantAladinRepository;
+        _trackingDataSourceRepository = trackingDataSourceRepository;
     }
 
     public async  Task ProcessingDataAsync(CrawlEcommercePayload ecommercePayload)
@@ -45,6 +49,17 @@ public class ProductManagerAladin : DomainService
         var categories = await _categoryAladinRepository.GetListAsync();
         foreach (var rawProduct in ecommercePayload.Products)
         {
+            if (rawProduct.Code.IsNullOrEmpty())
+            {
+                await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
+                {
+                    Url = rawProduct.Url,
+                    CrawlType = CrawlType.Ecom,
+                    PageDataSource = PageDataSource.LongChau,
+                    Error = TrackingDataSourceConsts.EmptyCode
+                }, true);
+            }
+            
             var productExist = await _productAladinRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {

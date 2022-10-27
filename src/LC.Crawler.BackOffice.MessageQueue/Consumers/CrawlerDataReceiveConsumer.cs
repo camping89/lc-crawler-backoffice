@@ -62,21 +62,6 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
     {
         if (eventData.EcommercePayloads is { Products: { } })
         {
-            // //TODO: Dựa vào urlsite trả về từ Crawler để xác định lưu vào DB nào
-            // switch (eventData.EcommercePayloads.Url)
-            // {
-            //     case  PageDataSourceConsts.LongChauUrl : // long chau
-            //     {
-            //         await _productManagerLongChau.ProcessingDataAsync(eventData.EcommercePayloads);
-            //         break;
-            //     }
-            //     case  PageDataSourceConsts.AladinUrl :
-            //     {
-            //         await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
-            //         break;
-            //     }
-            // }
-            //
             var url = eventData.EcommercePayloads.Url;
             if (url.Contains(PageDataSourceConsts.LongChauUrl))
             {
@@ -97,23 +82,6 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
         //Handle articles
         if (eventData.ArticlePayloads is { ArticlesPayload: { } })
         {
-            // //TODO: Dựa vào urlsite trả về từ Crawler để xác định lưu vào DB nào
-            
-            // switch (url)
-            // {
-            //     case  PageDataSourceConsts.LongChauUrl : // long chau
-            //     {
-            //         await _articleManangerLongChau.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
-            //         break;
-            //     }
-            //     case  PageDataSourceConsts.AladinUrl :
-            //     {
-            //         break;
-            //     }
-            //     case PageDataSourceConsts.SucKhoeDoiSongUrl:
-            //         break;
-            // }
-            
             var url = eventData.ArticlePayloads.Url;
             if (url.Contains(PageDataSourceConsts.LongChauUrl))
             {

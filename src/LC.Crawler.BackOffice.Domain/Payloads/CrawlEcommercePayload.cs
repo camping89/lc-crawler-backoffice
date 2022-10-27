@@ -31,6 +31,7 @@ public class CrawlEcommerceProductPayload
     public  int                             TotalComment     => Comments.Count;
 
     public string Brand { get; set; }
+    public List<string> Tags { get; set; }
     public CrawlEcommerceProductPayload()
     {
         Variants   = new List<EcommerceProductVariant>();
@@ -38,6 +39,7 @@ public class CrawlEcommerceProductPayload
         ImageUrls  = new List<string>();
         Reviews    = new List<EcommerceProductReview>();
         Comments   = new List<EcommerceProductComment>();
+        Tags = new List<string>();
     }
 }
 

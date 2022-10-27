@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductAttributes;
 using LC.Crawler.BackOffice.ProductVariants;
+using LC.Crawler.BackOffice.TrackingDataSources;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -23,9 +25,10 @@ public class ProductManagerLongChau : DomainService
     private readonly IProductVariantLongChauRepository _productVariantLongChauRepository;
     private readonly IProductAttributeLongChauRepository _productAttributeLongChauRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
+    private readonly ITrackingDataSourceRepository _trackingDataSourceRepository;
 
     public ProductManagerLongChau(IProductLongChauRepository productLongChauRepository, ICategoryLongChauRepository categoryLongChauRepository, IMediaLongChauRepository mediaLongChauRepository, IDataSourceRepository dataSourceRepository, IProductVariantLongChauRepository productVariantLongChauRepository,
-        IProductAttributeLongChauRepository productAttributeLongChauRepository)
+        IProductAttributeLongChauRepository productAttributeLongChauRepository, ITrackingDataSourceRepository trackingDataSourceRepository)
     {
         _productLongChauRepository = productLongChauRepository;
         _categoryLongChauRepository = categoryLongChauRepository;
@@ -33,6 +36,7 @@ public class ProductManagerLongChau : DomainService
         _dataSourceRepository = dataSourceRepository;
         _productVariantLongChauRepository = productVariantLongChauRepository;
         _productAttributeLongChauRepository = productAttributeLongChauRepository;
+        _trackingDataSourceRepository = trackingDataSourceRepository;
     }
 
     public async Task ProcessingDataAsync(CrawlEcommercePayload ecommercePayload)
@@ -46,6 +50,16 @@ public class ProductManagerLongChau : DomainService
         var categories = await _categoryLongChauRepository.GetListAsync();
         foreach (var rawProduct in ecommercePayload.Products)
         {
+            if (rawProduct.Code.IsNullOrEmpty())
+            {
+                await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
+                {
+                    Url = rawProduct.Url,
+                    CrawlType = CrawlType.Ecom,
+                    PageDataSource = PageDataSource.LongChau,
+                    Error = TrackingDataSourceConsts.EmptyCode
+                }, true);
+            }
             var productExist = await _productLongChauRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {

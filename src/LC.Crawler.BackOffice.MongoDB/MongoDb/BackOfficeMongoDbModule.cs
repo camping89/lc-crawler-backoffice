@@ -11,6 +11,7 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.CrawlerCredentials;
 using LC.Crawler.BackOffice.CrawlerProxies;
 using LC.Crawler.BackOffice.CrawlerAccounts;
+using LC.Crawler.BackOffice.TrackingDataSources;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AuditLogging.MongoDB;
 using Volo.Abp.BackgroundJobs.MongoDB;
@@ -78,6 +79,7 @@ namespace LC.Crawler.BackOffice.MongoDB;
             options.AddRepository<ProductComment, ProductComments.MongoProductCommentRepository>();
 
             options.AddRepository<ArticleComment, ArticleComments.MongoArticleCommentRepository>();
+            options.AddRepository<TrackingDataSource, MongoTrackingDataSourceRepository>();
 
         });
 
