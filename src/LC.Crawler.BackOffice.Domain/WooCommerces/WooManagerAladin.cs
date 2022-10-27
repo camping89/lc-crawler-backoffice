@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -38,6 +39,24 @@ public class WooManagerAladin : DomainService
         _mediaAladinRepository = mediaAladinRepository;
         _categoryAladinRepository = categoryAladinRepository;
         _auditingManager = auditingManager;
+    }
+    
+    public async Task DoSyncTagAsync()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        var tags = (await _productRepository.GetQueryableAsync())
+                  .Where(x => x.Tags.Any())
+                  .ToList().Select(x => x.Tags);
+        
+        var tagList = new List<string>();
+        tagList.AddRange(tags.SelectMany(x => x));
+        
+        await _wooManangerBase.SyncProductTagsAsync(_dataSource, tagList);
     }
 
     public async Task DoSyncCategoriesAsync()

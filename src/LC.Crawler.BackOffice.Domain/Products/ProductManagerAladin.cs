@@ -72,7 +72,8 @@ public class ProductManagerAladin : DomainService
                 Description = rawProduct.Description,
                 ShortDescription = rawProduct.ShortDescription,
                 DataSourceId = dataSource.Id,
-                Brand = rawProduct.Brand
+                Brand = rawProduct.Brand,
+                Tags = rawProduct.Tags
             };
            
             var category = categories.FirstOrDefault(x => x.Name == rawProduct.Category);

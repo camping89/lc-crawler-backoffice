@@ -34,6 +34,8 @@ namespace LC.Crawler.BackOffice.Products
         public Guid DataSourceId { get; set; }
         public ICollection<ProductCategory> Categories { get; private set; }
         public ICollection<ProductMedia> Medias { get; private set; }
+        
+        public virtual List<string> Tags { get; set; }
 
         public string ConcurrencyStamp { get; set; }
 

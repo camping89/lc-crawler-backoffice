@@ -145,16 +145,19 @@ public class WooManangerBase : DomainService
     public async Task SyncProductTagsAsync(DataSource dataSource, List<string> tags)
     {
         var wooTags = await GetWooProductTagsAsync(dataSource);
-        var productTagNeedCreate = tags.Where(x => wooTags.Any(t => t.name.Equals(x)));
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
-            dataSource.Configuration.ApiSecret);
-        var wcObject = new WCObject(rest);
-        foreach (var tag in productTagNeedCreate)
+        var productTagNeedCreate = tags.Where(x => !wooTags.Any(t => t.name.Equals(x)));
+        if (productTagNeedCreate.IsNotNullOrEmpty())
         {
-            await wcObject.Tag.Add(new ProductTag()
+            var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
+                                dataSource.Configuration.ApiSecret);
+            var wcObject = new WCObject(rest);
+            foreach (var tag in productTagNeedCreate)
             {
-                name = tag
-            });
+                await wcObject.Tag.Add(new ProductTag()
+                {
+                    name = tag
+                });
+            }
         }
     }
 
@@ -245,6 +248,7 @@ public class WooManangerBase : DomainService
             enable_html_description = true,
             attributes = new List<ProductAttributeLine>(),
             variations = new List<int>(),
+            tags = new List<ProductTagLine>(),
             categories = new List<ProductCategoryLine>(),
             status = "pending"
         };
@@ -347,6 +351,31 @@ public class WooManangerBase : DomainService
                     visible = true,
                     options = new List<string>() { attribute.Value }
                 });
+            }
+        }
+
+        //Tags 
+        var tags = productNav.Product.Tags;
+        if (tags.IsNotNullOrEmpty())
+        {
+            foreach (var tag in tags)
+            {
+                var productTag = productTags.FirstOrDefault(x => x.name.Contains(tag, StringComparison.InvariantCultureIgnoreCase));
+                if (productTag is null)
+                {
+                    productTag = new ProductTag() { name = tag };
+                    productTag = await wcObject.Tag.Add(productTag);
+                }
+
+                if (productTag.id > 0)
+                {
+                    wooProduct.tags.Add(new ProductTagLine()
+                    {
+                        id   = productTag.id,
+                        name = productTag.name,
+                        slug = productTag.slug
+                    });
+                }
             }
         }
         
