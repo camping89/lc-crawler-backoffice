@@ -92,6 +92,8 @@ public class WordpressManagerBase : DomainService
 
     private string ReplaceImageUrls(string contentHtml, List<Media> medias)
     {
+        if(!contentHtml.IsNotNullOrEmpty()) return null;
+        
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
         foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
