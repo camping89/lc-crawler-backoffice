@@ -42,6 +42,7 @@ public class WooManangerBase : DomainService
         var mediaItems = new List<MediaItem>();
         foreach (var media in medias.Where(media => !StringExtensions.IsNullOrEmpty(media.Url)))
         {
+            if(media.ExternalId.IsNotNullOrEmpty()) continue;
             MediaItem mediaResult;
             //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
             if (!media.Url.Contains("http"))
@@ -49,6 +50,7 @@ public class WooManangerBase : DomainService
                 media.Url = Flurl.Url.Combine(dataSource.Url, media.Url);
             }
 
+            media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
             var fileExtension = Path.GetExtension(media.Url);
             if (!fileExtension.IsNotNullOrEmpty()) return null;
 

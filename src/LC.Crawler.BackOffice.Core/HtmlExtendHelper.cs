@@ -1,4 +1,5 @@
-﻿using static System.String;
+﻿using System.Web;
+using static System.String;
 
 namespace LC.Crawler.BackOffice.Core;
 
@@ -35,5 +36,25 @@ public static class HtmlExtendHelper
             .Select(e => e.GetAttributeValue("src", null))
             .Where(s => !IsNullOrEmpty(s)).ToList();
         return urls;
+    }
+    
+    public static string RemoveQueryStringByKey(string url, string key = "")
+    {                   
+        var uri = new Uri(url);
+
+        // this gets all the query string key value pairs as a collection
+        var newQueryString = HttpUtility.ParseQueryString(uri.Query);
+        
+        // this gets the page path from root without QueryString
+        var pagePathWithoutQueryString = uri.GetLeftPart(UriPartial.Path);
+
+        if (key == "") return pagePathWithoutQueryString;
+        
+        // this removes the key if exists
+        newQueryString.Remove(key);
+
+        return newQueryString.Count > 0
+            ? $"{pagePathWithoutQueryString}?{newQueryString}"
+            : pagePathWithoutQueryString;
     }
 }

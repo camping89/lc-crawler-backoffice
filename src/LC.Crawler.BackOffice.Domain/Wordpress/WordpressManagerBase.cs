@@ -46,10 +46,10 @@ public class WordpressManagerBase : DomainService
 
         var post = new Post
         {
-            Title         = null,
-            Content       = null,
+            Title         = new Title(article.Title),
+            Content       = new Content(article.Content),
             Date          = article.CreatedAt,
-            Excerpt       = null,
+            Excerpt       = new Excerpt(article.Excerpt),
             Status        = Status.Pending,
             LiveblogLikes = article.LikeCount,
             CommentStatus = OpenStatus.Open,
