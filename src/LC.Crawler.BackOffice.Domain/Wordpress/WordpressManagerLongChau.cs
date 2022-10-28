@@ -48,7 +48,7 @@ public class WordpressManagerLongChau : DomainService
         
         var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
-                        .Select(x=>x.Id);
+                        .Select(x=>x.Id).ToList();
 
         foreach (var articleId in articleIds)
         {

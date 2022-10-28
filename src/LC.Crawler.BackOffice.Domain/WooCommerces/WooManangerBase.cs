@@ -145,7 +145,7 @@ public class WooManangerBase : DomainService
     public async Task SyncProductTagsAsync(DataSource dataSource, List<string> tags)
     {
         var wooTags = await GetWooProductTagsAsync(dataSource);
-        var productTagNeedCreate = tags.Where(x => !wooTags.Any(t => t.name.Equals(x)));
+        var productTagNeedCreate = tags.Where(x => !wooTags.Any(t => t.name.Equals(x, StringComparison.InvariantCultureIgnoreCase))).ToList();
         if (productTagNeedCreate.IsNotNullOrEmpty())
         {
             var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,

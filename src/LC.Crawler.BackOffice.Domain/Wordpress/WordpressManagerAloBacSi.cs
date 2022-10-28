@@ -49,7 +49,7 @@ public class WordpressManagerAloBacSi : DomainService
         
         var articleIds = (await _articleAloBacSiRepository.GetQueryableAsync())
                         .Where(x => x.LastSyncedAt == null)
-                        .Select(x=>x.Id);
+                        .Select(x=>x.Id).ToList();
 
         foreach (var articleId in articleIds)
         {
