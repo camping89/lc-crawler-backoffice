@@ -97,9 +97,9 @@ public class MasterService : ITransientDependency
 
     public async Task DoSyncProductToWooAsync()
     {
-        await _wooManagerLongChau.DoSyncProductToWooAsync();
+        //await _wooManagerLongChau.DoSyncProductToWooAsync();
         
-        // await _wooManagerAladin.DoSyncCategoriesAsync();
+        await _wooManagerLongChau.DoSyncCategoriesAsync();
         // await _wooManagerAladin.DoSyncProductToWooAsync();
     }
 

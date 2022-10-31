@@ -198,9 +198,10 @@ public class WooManangerBase : DomainService
                 for (var i = 1; i < categoriesTerms.Count; i++)
                 {
                     var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
-
+                    
                     var wooSubCategory = wooCategories.FirstOrDefault(x =>
-                        x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase));
+                        x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == cateParent.id);
+                    
                     if (wooSubCategory == null)
                     {
                         var cateNew = new WooProductCategory
@@ -257,12 +258,20 @@ public class WooManangerBase : DomainService
         {
             foreach (var category in productNav.Categories)
             {
+                if (string.IsNullOrEmpty(category.Name))
+                {
+                    continue;
+                }
+                
+                category.Name = category.Name.Replace("&", "&amp;").Trim();
+                var cateTerms = category.Name.Split("->").LastOrDefault();
                 //Thuốc -> Vitamin &amp; khoáng chất
                 //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
-                var encodeName = category.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
+                var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
+                
                 var wooCategory = wooCategories.FirstOrDefault(x =>
-                    x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-                if (encodeName.Equals("Vitamin &amp; khoáng chất", StringComparison.InvariantCultureIgnoreCase))
+                    encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                if (encodeName != null && encodeName.Equals("Vitamin &amp; khoáng chất", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var wooCategoriesFilter = wooCategories.Where(x =>
                         x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
