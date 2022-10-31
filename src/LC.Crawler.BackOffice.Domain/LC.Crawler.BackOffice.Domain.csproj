@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Flurl" Version="3.0.6" />
     <PackageReference Include="RestSharp" Version="108.0.2" />
     <PackageReference Include="Svg" Version="3.4.3" />
     <PackageReference Include="Volo.Abp.BackgroundWorkers.Hangfire" Version="5.3.4" />

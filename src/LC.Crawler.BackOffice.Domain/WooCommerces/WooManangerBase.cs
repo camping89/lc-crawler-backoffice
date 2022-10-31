@@ -42,22 +42,22 @@ public class WooManangerBase : DomainService
         var mediaItems = new List<MediaItem>();
         foreach (var media in medias.Where(media => !StringExtensions.IsNullOrEmpty(media.Url)))
         {
-            if(media.ExternalId.IsNotNullOrEmpty()) continue;
+            if (media.ExternalId.IsNotNullOrEmpty()) continue;
             MediaItem mediaResult;
             //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
             if (!media.Url.Contains("http"))
             {
-                media.Url = Flurl.Url.Combine(dataSource.Url, media.Url);
+                media.Url = $"{dataSource.Url}{media.Url}";
             }
 
             media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
             var fileExtension = Path.GetExtension(media.Url);
-            if (!fileExtension.IsNotNullOrEmpty()) return null;
+            if (!fileExtension.IsNotNullOrEmpty()) continue;
 
             if (fileExtension is FileExtendHelper.SvgExtend)
             {
                 var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
-                if (!svgContent.IsNotNullOrEmpty()) return null;
+                if (!svgContent.IsNotNullOrEmpty()) continue;
 
                 var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
                 var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
@@ -70,7 +70,7 @@ public class WooManangerBase : DomainService
             else
             {
                 var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
-                if (fileBytes is null) return null;
+                if (fileBytes is null) continue;
                 var stream = new MemoryStream(fileBytes);
                 var fileName = $"{media.Id}{fileExtension}";
                 mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
@@ -86,7 +86,8 @@ public class WooManangerBase : DomainService
 
     public async Task<List<WooProductCategory>> GetWooCategories(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
+            dataSource.Configuration.ApiKey,
             dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
         //Category
@@ -115,7 +116,8 @@ public class WooManangerBase : DomainService
 
     public async Task<List<ProductTag>> GetWooProductTagsAsync(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
+            dataSource.Configuration.ApiKey,
             dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
         //Category
@@ -148,8 +150,9 @@ public class WooManangerBase : DomainService
         var productTagNeedCreate = tags.Where(x => !wooTags.Any(t => t.name.Equals(x, StringComparison.InvariantCultureIgnoreCase))).ToList();
         if (productTagNeedCreate.IsNotNullOrEmpty())
         {
-            var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
-                                dataSource.Configuration.ApiSecret);
+            var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
+                dataSource.Configuration.ApiKey,
+                dataSource.Configuration.ApiSecret);
             var wcObject = new WCObject(rest);
             foreach (var tag in productTagNeedCreate)
             {
@@ -163,7 +166,8 @@ public class WooManangerBase : DomainService
 
     public async Task SyncCategoriesAsync(DataSource dataSource, List<Category> categories, string display = "products")
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
+            dataSource.Configuration.ApiKey,
             dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
 
@@ -198,10 +202,10 @@ public class WooManangerBase : DomainService
                 for (var i = 1; i < categoriesTerms.Count; i++)
                 {
                     var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
-                    
+
                     var wooSubCategory = wooCategories.FirstOrDefault(x =>
                         x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == cateParent.id);
-                    
+
                     if (wooSubCategory == null)
                     {
                         var cateNew = new WooProductCategory
@@ -225,8 +229,10 @@ public class WooManangerBase : DomainService
         }
     }
 
-    public async Task<WooProduct> PostToWooProduct(DataSource dataSource, WCObject wcObject,
-        ProductWithNavigationProperties productNav, List<WooProductCategory> wooCategories,
+    public async Task<WooProduct> PostToWooProduct(DataSource dataSource,
+        WCObject wcObject,
+        ProductWithNavigationProperties productNav,
+        List<WooProductCategory> wooCategories,
         List<ProductTag> productTags)
     {
         var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
@@ -262,17 +268,17 @@ public class WooManangerBase : DomainService
                 {
                     continue;
                 }
-                
-                category.Name = category.Name.Replace("&", "&amp;").Trim();
+
                 var cateTerms = category.Name.Split("->").LastOrDefault();
                 //Thuốc -> Vitamin &amp; khoáng chất
                 //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
                 var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
-                
+
                 var wooCategory = wooCategories.FirstOrDefault(x =>
                     encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-                if (encodeName != null && encodeName.Equals("Vitamin &amp; khoáng chất", StringComparison.InvariantCultureIgnoreCase))
+                if (encodeName != null)
                 {
+                    category.Name = category.Name.Replace("&", "&amp;").Trim();
                     var wooCategoriesFilter = wooCategories.Where(x =>
                         x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
                     foreach (var wooCate in wooCategoriesFilter)
@@ -280,7 +286,11 @@ public class WooManangerBase : DomainService
                         var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
                         if (parentCate != null && category.Name.Contains(parentCate.name))
                         {
-                            wooCategory = wooCate;
+                            var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
+                            if ((rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                            {
+                                wooCategory = wooCate;
+                            }
                         }
                     }
                 }
@@ -322,7 +332,8 @@ public class WooManangerBase : DomainService
             if (medias != null)
             {
                 wooProduct.images = new List<ProductImage>();
-                wooProduct.images.AddRange(await PostMediasAsync(dataSource, medias));
+                var mediaResults = await PostMediasAsync(dataSource, medias);
+                if(mediaResults.IsNotNullOrEmpty()) wooProduct.images.AddRange(mediaResults);
             }
 
             wooProduct.description = StringHtmlHelper.ReplaceImageUrls(product.Description, medias);
@@ -380,18 +391,20 @@ public class WooManangerBase : DomainService
                 {
                     wooProduct.tags.Add(new ProductTagLine()
                     {
-                        id   = productTag.id,
+                        id = productTag.id,
                         name = productTag.name,
                         slug = productTag.slug
                     });
                 }
             }
         }
-        
+
         return await wcObject.Product.Add(wooProduct);
     }
 
-    public void LogException(AuditLogInfo currentLog, Exception ex, ProductWithNavigationProperties productNav,
+    public void LogException(AuditLogInfo currentLog,
+        Exception ex,
+        ProductWithNavigationProperties productNav,
         string url)
     {
         //Add exceptions
@@ -412,7 +425,8 @@ public class WooManangerBase : DomainService
 
     public async Task DeleteDuplicateWooProduct(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
+            dataSource.Configuration.ApiKey,
             dataSource.Configuration.ApiSecret);
         var wc = new WCObject(rest);
 

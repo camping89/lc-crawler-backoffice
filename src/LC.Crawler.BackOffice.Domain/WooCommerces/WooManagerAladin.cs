@@ -41,6 +41,81 @@ public class WooManagerAladin : DomainService
         _auditingManager = auditingManager;
     }
     
+    public async Task DoSyncUpdateProduct()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
+        var wc = new WCObject(rest);
+
+        var categories = ( await _categoryAladinRepository.GetListAsync(x=>x.Name.Contains("&"))).ToList();
+        var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
+        //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
+        foreach (var categoryItem in categories)
+        {
+            var productIds = (await _productRepository.GetQueryableAsync()).Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId != null
+                && x.Categories.Any(x=>x.CategoryId == categoryItem.Id))
+            .Select(x=>x.Id).ToList();
+            foreach (var productId in productIds)
+            {
+                using var auditingScope = _auditingManager.BeginScope();
+                var productNav = await _productRepository.GetWithNavigationPropertiesAsync(productId);
+                var checkProduct = (await wc.Product.GetAll(new Dictionary<string, string>()
+                {
+                    { "sku", productNav.Product.Code }
+                })).FirstOrDefault();
+
+                if (checkProduct != null && checkProduct.categories.Any(x=>x.slug == "uncategorized"))
+                {
+                    var category = productNav.Categories.FirstOrDefault();
+                    if (category != null)
+                    {
+                        
+                        var cateTerms = category.Name.Split("->").LastOrDefault();
+                        //Thuốc -> Vitamin &amp; khoáng chất
+                        //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
+                        var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
+                
+                        var wooCategory = wooCategories.FirstOrDefault(x =>
+                            encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                        if (encodeName != null )
+                        {
+                            category.Name = category.Name.Replace("&", "&amp;").Trim();
+                            var wooCategoriesFilter = wooCategories.Where(x =>
+                                x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                            foreach (var wooCate in wooCategoriesFilter)
+                            {
+                                var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
+                                if (parentCate != null && category.Name.Contains(parentCate.name))
+                                {
+                                    var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
+                                    if ( (rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                                    {
+                                        wooCategory = wooCate;
+                                        checkProduct.categories = new List<ProductCategoryLine>()
+                                        {
+                                            new()
+                                            {
+                                                id = wooCategory.id,
+                                                name = wooCategory.name,
+                                                slug = wooCategory.slug
+                                            }
+                                        };
+                                        await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     public async Task DoSyncTagAsync()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
