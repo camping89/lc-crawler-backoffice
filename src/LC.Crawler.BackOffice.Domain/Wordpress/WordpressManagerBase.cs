@@ -97,6 +97,8 @@ public class WordpressManagerBase : DomainService
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
         var divVideos = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class,'VCSortableInPreviewMode')]");
+        if (divVideos is null) return contentHtml;
+        
         foreach (var divVideo in divVideos)
         {
             var linkVideo = divVideo.Attributes["data-vid"].Value;
