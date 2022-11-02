@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
+using Fizzler.Systems.HtmlAgilityPack;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
@@ -43,6 +44,7 @@ public class WordpressManagerBase : DomainService
 
         var article = articleNav.Article;
         article.Content = ReplaceImageUrls(article.Content, articleNav.Medias);
+        article.Content = ReplaceVideos(article.Content);
 
         var post = new Post
         {
@@ -88,6 +90,25 @@ public class WordpressManagerBase : DomainService
 
         var result = await client.Posts.CreateAsync(post);
         return result;
+    }
+
+    private string ReplaceVideos(string contentHtml)
+    {
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(contentHtml);
+        var divVideos = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class,'VCSortableInPreviewMode')]");
+        foreach (var divVideo in divVideos)
+        {
+            var linkVideo = divVideo.Attributes["data-vid"].Value;
+                
+            if (linkVideo.IsNotNullOrEmpty())
+            {
+                divVideo.InnerHtml = $"[video width='1280' height='720' mp4='{linkVideo}']";
+            }
+        }
+        
+        var newHtml = htmlDoc.DocumentNode.WriteTo();
+        return newHtml;
     }
 
     private string ReplaceImageUrls(string contentHtml, List<Media> medias)

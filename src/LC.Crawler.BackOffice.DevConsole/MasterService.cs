@@ -35,11 +35,17 @@ public class MasterService : ITransientDependency
     private readonly WooManangerBase _wooManangerBase;
     private readonly WooApiConsumers _wooApiConsumers;
     private readonly IDataSourceRepository _dataSourceRepository;
+    private readonly IArticleSucKhoeDoiSongRepository _articleSucKhoeDoiSongRepository;
+    private readonly WordpressManagerBase _wordpressManagerBase;
+    private readonly WordpressManagerSucKhoeDoiSong _wordpressManagerSucKhoeDoiSong;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
         ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe,
-        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus, WooManangerBase wooManangerBase, IDataSourceRepository dataSourceRepository, WooApiConsumers wooApiConsumers)
+        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus, WooManangerBase wooManangerBase, IDataSourceRepository dataSourceRepository, WooApiConsumers wooApiConsumers,
+        IArticleSucKhoeDoiSongRepository articleSucKhoeDoiSongRepository,
+        WordpressManagerBase wordpressManagerBase,
+        WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -53,6 +59,9 @@ public class MasterService : ITransientDependency
         _wooManangerBase = wooManangerBase;
         _dataSourceRepository = dataSourceRepository;
         _wooApiConsumers = wooApiConsumers;
+        _articleSucKhoeDoiSongRepository = articleSucKhoeDoiSongRepository;
+        _wordpressManagerBase = wordpressManagerBase;
+        _wordpressManagerSucKhoeDoiSong = wordpressManagerSucKhoeDoiSong;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -106,8 +115,11 @@ public class MasterService : ITransientDependency
 
     public async Task DoSyncArticleToWooAsync()
     {
-        await _wordpressManagerLongChau.DoSyncCategoriesAsync();
-        await _wordpressManagerLongChau.DoSyncPostAsync();
+        //var suckhoeArticle = await _articleSucKhoeDoiSongRepository.GetAsync(x => x.Title == "Lợi ích không ngờ của hành tây với sức khỏe");
+        //var text = _wordpressManagerSucKhoeDoiSong.DoSyncCategoriesAsync();
+        //await _wordpressManagerLongChau.DoSyncCategoriesAsync();
+        //await _wordpressManagerLongChau.DoSyncPostAsync();
+        await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
     }
 
     public async Task DoSyncArticles()
