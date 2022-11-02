@@ -38,6 +38,7 @@ public class MasterService : ITransientDependency
     private readonly IArticleSucKhoeDoiSongRepository _articleSucKhoeDoiSongRepository;
     private readonly WordpressManagerBase _wordpressManagerBase;
     private readonly WordpressManagerSucKhoeDoiSong _wordpressManagerSucKhoeDoiSong;
+    private readonly WooManagerSieuThiSongKhoe _wooManagerSieuThiSongKhoe;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
@@ -45,7 +46,8 @@ public class MasterService : ITransientDependency
         ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplus, WooManangerBase wooManangerBase, IDataSourceRepository dataSourceRepository, WooApiConsumers wooApiConsumers,
         IArticleSucKhoeDoiSongRepository articleSucKhoeDoiSongRepository,
         WordpressManagerBase wordpressManagerBase,
-        WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong)
+        WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong,
+        WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -62,6 +64,7 @@ public class MasterService : ITransientDependency
         _articleSucKhoeDoiSongRepository = articleSucKhoeDoiSongRepository;
         _wordpressManagerBase = wordpressManagerBase;
         _wordpressManagerSucKhoeDoiSong = wordpressManagerSucKhoeDoiSong;
+        _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -110,7 +113,7 @@ public class MasterService : ITransientDependency
         
         //await _wooManagerLongChau.DoSyncCategoriesAsync();
         // await _wooManagerAladin.DoSyncProductToWooAsync();
-        await _wooManagerAladin.DoSyncUpdateProduct();
+        await _wooManagerSieuThiSongKhoe.DoSyncUpdateProduct();
     }
 
     public async Task DoSyncArticleToWooAsync()

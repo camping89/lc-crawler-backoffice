@@ -25,7 +25,8 @@ public class DevConsoleHostedService : IHostedService
         //await _masterService.ProcessLongChauArticleDataAsync();
         //await _masterService.DoSyncArticleToWooAsync();
 
-        await _masterService.DoSyncArticleToWooAsync();
+        //await _masterService.DoSyncArticleToWooAsync();
+        await _masterService.DoSyncProductToWooAsync();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

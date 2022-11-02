@@ -1,15 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Products;
 using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Services;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;
+using Product = WooCommerceNET.WooCommerce.v3.Product;
 
 namespace LC.Crawler.BackOffice.WooCommerces;
 
@@ -19,8 +22,8 @@ public class WooManagerSieuThiSongKhoe : DomainService
     private readonly IProductSieuThiSongKhoeRepository _productRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IMediaSieuThiSongKhoeRepository _mediaSieuThiSongKhoeRepository;
-    private readonly WooManangerBase                     _wooManangerBase;
-    private readonly IAuditingManager                    _auditingManager;
+    private readonly WooManangerBase _wooManangerBase;
+    private readonly IAuditingManager _auditingManager;
 
     private string BASEURL = string.Empty;
 
@@ -29,7 +32,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
     public WooManagerSieuThiSongKhoe(IProductSieuThiSongKhoeRepository productRepository,
         IDataSourceRepository dataSourceRepository,
         IMediaSieuThiSongKhoeRepository mediaSieuThiSongKhoeRepository,
-        ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository, WooManangerBase wooManangerBase, IAuditingManager auditingManager)
+        ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository,
+        WooManangerBase wooManangerBase,
+        IAuditingManager auditingManager)
     {
         _productRepository = productRepository;
         _dataSourceRepository = dataSourceRepository;
@@ -37,6 +42,108 @@ public class WooManagerSieuThiSongKhoe : DomainService
         _categorySieuThiSongKhoeRepository = categorySieuThiSongKhoeRepository;
         _wooManangerBase = wooManangerBase;
         _auditingManager = auditingManager;
+    }
+
+    public async Task DoSyncUpdateProduct()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
+        var wc = new WCObject(rest);
+
+        var categories = (await _categorySieuThiSongKhoeRepository.GetListAsync()).ToList();
+        var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
+        //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
+        
+        var index = 1;
+        var products = new List<Product>();
+        var pageIndex = 1;
+        while (true)
+        {
+            var result = await wc.Product.GetAll(new Dictionary<string, string>()
+            {
+                
+                { "category", "15" },
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+            });
+
+            if (result.IsNullOrEmpty())
+            {
+                break;
+            }
+
+            products.AddRange(result);
+
+            pageIndex++;
+        }
+
+        var skus = products.Select(x => x.sku);
+        var productIds = (await _productRepository.GetQueryableAsync()).Where(x=>x.ExternalId != null && skus.Contains(x.Code)).Select(x => x.Id);
+        Console.WriteLine($"Total: {productIds.Count()}");
+        foreach (var productId in productIds)
+        {
+            var productNav = await _productRepository.GetWithNavigationPropertiesAsync(productId);
+            var checkProduct = products.FirstOrDefault(x=>x.sku == productNav.Product.Code);
+
+            if (checkProduct != null && checkProduct.categories.Any(x => x.id == 15))
+            {
+                var category = productNav.Categories.FirstOrDefault();
+                if (category != null && category.Name.IsNotNullOrEmpty())
+                {
+                    var cateTerms = category.Name.Split("->").LastOrDefault();
+                    //Thuốc -> Vitamin &amp; khoáng chất
+                    //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
+                    var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
+
+                    var wooCategory = wooCategories.FirstOrDefault(x =>
+                        encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    if (encodeName != null)
+                    {
+                        category.Name = category.Name.Replace("&", "&amp;").Trim();
+                        var wooCategoriesFilter = wooCategories.Where(x =>
+                            x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                        foreach (var wooCate in wooCategoriesFilter)
+                        {
+                            var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
+                            if (parentCate != null && category.Name.Contains(parentCate.name))
+                            {
+                                var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
+                                if ( (rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                                {
+                                    wooCategory = wooCate;
+                                    checkProduct.categories = new List<ProductCategoryLine>()
+                                    {
+                                        new()
+                                        {
+                                            id = wooCategory.id,
+                                            name = wooCategory.name,
+                                            slug = wooCategory.slug
+                                        }
+                                    };
+                                    try
+                                    {
+                                        await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Console.WriteLine(e);
+                                       continue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Console.WriteLine($"Product: {index}");
+            index++;
+        }
     }
 
     public async Task DoSyncCategoriesAsync()
@@ -59,7 +166,8 @@ public class WooManagerSieuThiSongKhoe : DomainService
             return;
         }
 
-        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
+        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/",
+            _dataSource.Configuration.ApiKey,
             _dataSource.Configuration.ApiSecret);
         var wc = new WCObject(rest);
 
@@ -91,7 +199,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, productNav,
+                _wooManangerBase.LogException(_auditingManager.Current.Log,
+                    ex,
+                    productNav,
                     PageDataSourceConsts.SieuThiSongKhoeUrl);
             }
             finally

@@ -180,11 +180,11 @@ public class WooManangerBase : DomainService
                 continue;
             }
 
-            var categoriesTerms = cateStr.Split("->").ToList();
+            var categoriesTerms = cateStr.Split("->").Select(x=>x.Trim()).ToList();
 
             var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
             var wooRootCategory =
-                wooCategories.FirstOrDefault(x => x.name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase));
+                wooCategories.FirstOrDefault(x => x.name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == 0);
             if (wooRootCategory == null)
             {
                 var cateNew = new WooProductCategory
