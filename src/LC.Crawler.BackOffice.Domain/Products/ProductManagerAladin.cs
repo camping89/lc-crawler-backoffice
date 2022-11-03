@@ -63,6 +63,9 @@ public class ProductManagerAladin : DomainService
             var productExist = await _productAladinRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
+                productExist.Brand = rawProduct.Brand;
+                productExist.Tags = rawProduct.Tags;
+                await _productAladinRepository.UpdateAsync(productExist, true);
                 continue;
             }
             var product = new Product(GuidGenerator.Create())

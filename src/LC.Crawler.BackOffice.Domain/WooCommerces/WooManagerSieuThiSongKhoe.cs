@@ -67,7 +67,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
             var result = await wc.Product.GetAll(new Dictionary<string, string>()
             {
                 
-                { "category", "15" },
+                //{ "category", "15" },
                 { "page", pageIndex.ToString() },
                 { "per_page", "100" },
             });
@@ -90,7 +90,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
             var productNav = await _productRepository.GetWithNavigationPropertiesAsync(productId);
             var checkProduct = products.FirstOrDefault(x=>x.sku == productNav.Product.Code);
 
-            if (checkProduct != null && checkProduct.categories.Any(x => x.id == 15))
+            if (checkProduct != null)
             {
                 var category = productNav.Categories.FirstOrDefault();
                 if (category != null && category.Name.IsNotNullOrEmpty())

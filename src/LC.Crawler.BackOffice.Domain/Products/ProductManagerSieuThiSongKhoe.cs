@@ -62,6 +62,9 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             var productExist = await _productSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
+                productExist.Brand = rawProduct.Brand;
+                productExist.Tags = rawProduct.Tags;
+                await _productSieuThiSongKhoeRepository.UpdateAsync(productExist, true);
                 continue;
             }
             var product = new Product(GuidGenerator.Create())
@@ -70,7 +73,9 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 Code = rawProduct.Code,
                 Description = rawProduct.Description,
                 ShortDescription = rawProduct.ShortDescription,
-                DataSourceId = dataSource.Id
+                DataSourceId = dataSource.Id,
+                Brand = rawProduct.Brand,
+                Tags = rawProduct.Tags
             };
            
             var category = categories.FirstOrDefault(x => x.Name == rawProduct.Category);

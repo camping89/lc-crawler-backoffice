@@ -63,6 +63,9 @@ public class ProductManagerLongChau : DomainService
             var productExist = await _productLongChauRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
+                productExist.Brand = rawProduct.Brand;
+                productExist.Tags = rawProduct.Tags;
+                await _productLongChauRepository.UpdateAsync(productExist, true);
                 continue;
             }
             var product = new Product(GuidGenerator.Create())
@@ -72,7 +75,8 @@ public class ProductManagerLongChau : DomainService
                 Description = rawProduct.Description,
                 ShortDescription = rawProduct.ShortDescription,
                 DataSourceId = dataSource.Id,
-                Brand = rawProduct.Brand
+                Brand = rawProduct.Brand,
+                Tags = rawProduct.Tags
             };
            
             var category = categories.FirstOrDefault(x => x.Name == rawProduct.Category);

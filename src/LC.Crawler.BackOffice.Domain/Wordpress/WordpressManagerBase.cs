@@ -101,11 +101,15 @@ public class WordpressManagerBase : DomainService
         
         foreach (var divVideo in divVideos)
         {
-            var linkVideo = divVideo.Attributes["data-vid"].Value;
-                
-            if (linkVideo.IsNotNullOrEmpty())
+            var dataVideo = divVideo.Attributes["data-vid"];
+            if (dataVideo is not null)
             {
-                divVideo.InnerHtml = $"[video width='1280' height='720' mp4='{linkVideo}']";
+                var linkVideo = dataVideo.Value;
+                
+                if (linkVideo.IsNotNullOrEmpty())
+                {
+                    divVideo.InnerHtml = $"[video width='1280' height='720' mp4='{linkVideo}']";
+                }
             }
         }
         
