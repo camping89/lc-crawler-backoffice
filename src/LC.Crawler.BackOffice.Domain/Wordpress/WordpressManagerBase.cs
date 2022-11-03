@@ -243,6 +243,7 @@ public class WordpressManagerBase : DomainService
             media.Url = $"{dataSource.Url}{media.Url}";
         }
 
+        media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
         var fileExtension = Path.GetExtension(media.Url);
         if (!fileExtension.IsNotNullOrEmpty()) return null;
 
