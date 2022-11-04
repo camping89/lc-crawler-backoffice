@@ -1079,5 +1079,11 @@ namespace LC.Crawler.BackOffice.Extensions
  
             return result; 
         }
+        
+        
+        public static string RemoveHrefFromA(this string value)
+        {
+            return Regex.Replace(value, "href=\".*?\"", string.Empty);
+        }
     }
 }

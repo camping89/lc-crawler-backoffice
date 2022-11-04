@@ -78,7 +78,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
             }
 
             products.AddRange(result);
-
+            Console.WriteLine($"Page : {pageIndex} ");
             pageIndex++;
         }
 
@@ -116,23 +116,26 @@ public class WooManagerSieuThiSongKhoe : DomainService
                                 if ( (rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
                                 {
                                     wooCategory = wooCate;
-                                    checkProduct.categories = new List<ProductCategoryLine>()
+                                    if (checkProduct.categories.All(x => x.id != wooCategory.id))
                                     {
-                                        new()
+                                        checkProduct.categories = new List<ProductCategoryLine>()
                                         {
-                                            id = wooCategory.id,
-                                            name = wooCategory.name,
-                                            slug = wooCategory.slug
+                                            new()
+                                            {
+                                                id = wooCategory.id,
+                                                name = wooCategory.name,
+                                                slug = wooCategory.slug
+                                            }
+                                        };
+                                        try
+                                        {
+                                            await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
                                         }
-                                    };
-                                    try
-                                    {
-                                        await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Console.WriteLine(e);
-                                       continue;
+                                        catch (Exception e)
+                                        {
+                                            Console.WriteLine(e);
+                                            continue;
+                                        }
                                     }
                                 }
                             }

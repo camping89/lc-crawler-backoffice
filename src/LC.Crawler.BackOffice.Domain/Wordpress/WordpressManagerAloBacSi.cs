@@ -39,6 +39,16 @@ public class WordpressManagerAloBacSi : DomainService
         _auditingManager            = auditingManager;
     }
 
+    public async Task UpdateDataPostAsync()
+    {
+        _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.AloBacSiUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        await _wordpressManagerBase.DoUpdatePosts(_dataSource);
+    }
     public async Task DoSyncPostAsync()
     {
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.AloBacSiUrl));

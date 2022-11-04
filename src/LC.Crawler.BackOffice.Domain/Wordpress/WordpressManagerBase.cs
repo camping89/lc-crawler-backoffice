@@ -10,6 +10,15 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Threading.Tasks;
+using Fizzler.Systems.HtmlAgilityPack;
+using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.Core;
+using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using Svg;
 using Volo.Abp.Auditing;
@@ -29,6 +38,33 @@ public class WordpressManagerBase : DomainService
         _auditingManager = auditingManager;
     }
 
+    public async Task DoUpdatePosts(DataSource dataSource)
+    {
+        var client = await InitClient(dataSource);
+        var wpPosts = ( await client.Posts.GetAllAsync(useAuth: true)).Where(x=>x.Content.Rendered.Contains("href")).ToList();
+
+        Console.WriteLine($"Total: {wpPosts.Count()}");
+        var index = 1;
+        foreach (var wpPost in wpPosts)
+        {
+            try
+            {
+                if (wpPost.Content != null)
+                {
+                    wpPost.Content.Raw = wpPost.Content.Rendered.RemoveHrefFromA();
+                    await client.Posts.UpdateAsync(wpPost);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                continue;
+            }
+
+            Console.WriteLine($"Index: {index}");
+            index++;
+        }
+    }
     public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav)
     {
         var client = await InitClient(dataSource);
@@ -332,4 +368,5 @@ public class WordpressManagerBase : DomainService
         currentLog.ExtraProperties.Add("C_Source",     ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
+    
 }

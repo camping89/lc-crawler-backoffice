@@ -39,6 +39,8 @@ public class MasterService : ITransientDependency
     private readonly WordpressManagerBase _wordpressManagerBase;
     private readonly WordpressManagerSucKhoeDoiSong _wordpressManagerSucKhoeDoiSong;
     private readonly WooManagerSieuThiSongKhoe _wooManagerSieuThiSongKhoe;
+
+    private readonly WordpressManagerAloBacSi _wordpressManagerAloBacSi;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
@@ -47,7 +49,8 @@ public class MasterService : ITransientDependency
         IArticleSucKhoeDoiSongRepository articleSucKhoeDoiSongRepository,
         WordpressManagerBase wordpressManagerBase,
         WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong,
-        WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe)
+        WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe,
+        WordpressManagerAloBacSi wordpressManagerAloBacSi)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -65,6 +68,7 @@ public class MasterService : ITransientDependency
         _wordpressManagerBase = wordpressManagerBase;
         _wordpressManagerSucKhoeDoiSong = wordpressManagerSucKhoeDoiSong;
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
+        _wordpressManagerAloBacSi = wordpressManagerAloBacSi;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -122,7 +126,8 @@ public class MasterService : ITransientDependency
         //var text = _wordpressManagerSucKhoeDoiSong.DoSyncCategoriesAsync();
         //await _wordpressManagerLongChau.DoSyncCategoriesAsync();
         //await _wordpressManagerLongChau.DoSyncPostAsync();
-        await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
+        //await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
+        await _wordpressManagerAloBacSi.UpdateDataPostAsync();
     }
 
     public async Task DoSyncArticles()
