@@ -78,7 +78,7 @@ public class WordpressManagerLongChau : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.LongChauUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.LongChauUrl);
             }
             finally
             {

@@ -4,9 +4,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using ExCSS;
-using IdentityServer4.Extensions;
-using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Extensions;
@@ -24,11 +21,19 @@ using WooProductCategory = WooCommerceNET.WooCommerce.v3.ProductCategory;
 using WooProductAttribute = WooCommerceNET.WooCommerce.v3.ProductAttribute;
 using WooProduct = WooCommerceNET.WooCommerce.v3.Product;
 using Category = LC.Crawler.BackOffice.Categories.Category;
+using Product = LC.Crawler.BackOffice.Products.Product;
 
 namespace LC.Crawler.BackOffice.WooCommerces;
 
 public class WooManangerBase : DomainService
 {
+    private readonly IAuditingManager _auditingManager;
+
+    public WooManangerBase(IAuditingManager auditingManager)
+    {
+        _auditingManager = auditingManager;
+    }
+
     public async Task<List<ProductImage>> PostMediasAsync(DataSource dataSource, List<Media> medias)
     {
         if (medias == null)
@@ -260,152 +265,239 @@ public class WooManangerBase : DomainService
             status = "pending"
         };
 
-        if (product.Categories != null)
-        {
-            foreach (var category in productNav.Categories)
-            {
-                if (string.IsNullOrEmpty(category.Name))
-                {
-                    continue;
-                }
+        // add categories
+        await AddProductCategories(productNav, wooCategories, product, wooProduct, dataSource.Url);
+        
+        // add medias
+        await AddProductMedias(dataSource, productNav, product, wooProduct, dataSource.Url);
 
-                var cateTerms = category.Name.Split("->").LastOrDefault();
-                //Thuốc -> Vitamin &amp; khoáng chất
-                //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
-                var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
+        // add variants
+        await AddProductVariants(wcObject, productNav, wooProduct, dataSource.Url);
 
-                var wooCategory = wooCategories.FirstOrDefault(x =>
-                    encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-                if (encodeName != null)
-                {
-                    category.Name = category.Name.Replace("&", "&amp;").Trim();
-                    var wooCategoriesFilter = wooCategories.Where(x =>
-                        x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
-                    foreach (var wooCate in wooCategoriesFilter)
-                    {
-                        var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
-                        if (parentCate != null && category.Name.Contains(parentCate.name))
-                        {
-                            var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
-                            if ((rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
-                            {
-                                wooCategory = wooCate;
-                            }
-                        }
-                    }
-                }
+        // add attributes
+        await AddProductAttributes(productNav, wooProduct, dataSource.Url);
 
-                if (wooCategory != null)
-                {
-                    wooProduct.categories.Add(new ProductCategoryLine()
-                    {
-                        id = wooCategory.id,
-                        name = wooCategory.name,
-                        slug = wooCategory.slug
-                    });
-                }
-            }
-        }
-
-        var variants = productNav.Variants;
-        if (variants != null)
-        {
-            decimal? productPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
-            decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
-
-            if (productPrice.HasValue && productPrice > 0)
-            {
-                wooProduct.price = productPrice;
-                wooProduct.regular_price = productPrice;
-            }
-
-            if (discountedPrice.HasValue && discountedPrice > 0)
-            {
-                wooProduct.sale_price = discountedPrice;
-            }
-        }
-
-        if (product.Medias != null)
-        {
-            var medias = productNav.Medias;
-            //Add product images
-            if (medias != null)
-            {
-                wooProduct.images = new List<ProductImage>();
-                var mediaResults = await PostMediasAsync(dataSource, medias);
-                if(mediaResults.IsNotNullOrEmpty()) wooProduct.images.AddRange(mediaResults);
-            }
-
-            wooProduct.description = StringHtmlHelper.ReplaceImageUrls(product.Description, medias);
-        }
-
-        //Variations
-        if (variants is { Count: > 1 })
-        {
-            foreach (var variant in variants)
-            {
-                var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
-                    {
-                        price = variant.RetailPrice,
-                        regular_price = variant.RetailPrice,
-                        sale_price = variant.DiscountedPrice
-                    },
-                    0);
-                if (wooVariantResult.id is > 0)
-                {
-                    wooProduct.variations.Add(wooVariantResult.id.To<int>());
-                }
-            }
-        }
-
-        var attributes = productNav.Attributes;
-
-        //Attributes 
-        if (attributes != null)
-        {
-            foreach (var attribute in attributes)
-            {
-                wooProduct.attributes.Add(new ProductAttributeLine()
-                {
-                    name = attribute.Key,
-                    visible = true,
-                    options = new List<string>() { attribute.Value }
-                });
-            }
-        }
-
-        //Tags 
-        var tags = productNav.Product.Tags;
-        if (tags.IsNotNullOrEmpty())
-        {
-            foreach (var tag in tags)
-            {
-                var productTag = productTags.FirstOrDefault(x => x.name.Contains(tag, StringComparison.InvariantCultureIgnoreCase));
-                if (productTag is null)
-                {
-                    productTag = new ProductTag() { name = tag };
-                    productTag = await wcObject.Tag.Add(productTag);
-                }
-
-                if (productTag.id > 0)
-                {
-                    wooProduct.tags.Add(new ProductTagLine()
-                    {
-                        id = productTag.id,
-                        name = productTag.name,
-                        slug = productTag.slug
-                    });
-                }
-            }
-        }
+        // Add tags
+        await AddProductTags(wcObject, productNav, productTags, wooProduct, dataSource.Url);
 
         return await wcObject.Product.Add(wooProduct);
     }
 
+    private async Task AddProductTags(WCObject         wcObject,    ProductWithNavigationProperties productNav, 
+                                      List<ProductTag> productTags, WooProduct                      wooProduct, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        
+        try
+        {
+            //Tags 
+            var tags = productNav.Product.Tags;
+            if (tags.IsNotNullOrEmpty())
+            {
+                foreach (var tag in tags)
+                {
+                    var productTag = productTags.FirstOrDefault(x => x.name.Contains(tag, StringComparison.InvariantCultureIgnoreCase));
+                    if (productTag is null)
+                    {
+                        productTag = new ProductTag() { name = tag };
+                        productTag = await wcObject.Tag.Add(productTag);
+                    }
+
+                    if (productTag.id > 0)
+                    {
+                        wooProduct.tags.Add(new ProductTagLine() { id = productTag.id, name = productTag.name, slug = productTag.slug });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductTags");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+
+    private async Task AddProductAttributes(ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+
+        try
+        {
+            var attributes = productNav.Attributes;
+
+            //Attributes 
+            if (attributes != null)
+            {
+                foreach (var attribute in attributes)
+                {
+                    wooProduct.attributes.Add(new ProductAttributeLine() { name = attribute.Key, visible = true, options = new List<string>() { attribute.Value } });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductAttributes");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+
+    private async Task AddProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        
+        try
+        {
+            //Variations
+            var variants = productNav.Variants;
+            if (variants != null)
+            {
+                decimal? productPrice    = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+                decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
+
+                if (productPrice.HasValue && productPrice > 0)
+                {
+                    wooProduct.price         = productPrice;
+                    wooProduct.regular_price = productPrice;
+                }
+
+                if (discountedPrice.HasValue && discountedPrice > 0)
+                {
+                    wooProduct.sale_price = discountedPrice;
+                }
+            }
+
+            if (variants is { Count: > 1 })
+            {
+                foreach (var variant in variants)
+                {
+                    var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
+                                                                                 {
+                                                                                     price         = variant.RetailPrice,
+                                                                                     regular_price = variant.RetailPrice,
+                                                                                     sale_price    = variant.DiscountedPrice
+                                                                                 },
+                                                                                 0);
+                    if (wooVariantResult.id is > 0)
+                    {
+                        wooProduct.variations.Add(wooVariantResult.id.To<int>());
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductVariants");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+
+    private async Task AddProductMedias(DataSource dataSource, ProductWithNavigationProperties productNav, 
+                                        Product    product,    WooProduct                      wooProduct, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        try
+        {
+            if (product.Medias != null)
+            {
+                var medias = productNav.Medias;
+
+                //Add product images
+                if (medias != null)
+                {
+                    wooProduct.images = new List<ProductImage>();
+                    var mediaResults = await PostMediasAsync(dataSource, medias);
+                    if (mediaResults.IsNotNullOrEmpty()) wooProduct.images.AddRange(mediaResults);
+                }
+
+                wooProduct.description = StringHtmlHelper.ReplaceImageUrls(product.Description, medias);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductMedias");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+
+    private async Task AddProductCategories(ProductWithNavigationProperties productNav, List<WooProductCategory> wooCategories, 
+                                            Product product, WooProduct wooProduct, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        try
+        {
+            if (product.Categories != null)
+            {
+                foreach (var category in productNav.Categories)
+                {
+                    if (string.IsNullOrEmpty(category.Name))
+                    {
+                        continue;
+                    }
+
+                    var cateTerms = category.Name.Split("->").LastOrDefault();
+
+                    //Thuốc -> Vitamin &amp; khoáng chất
+                    //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
+                    var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
+
+                    var wooCategory = wooCategories.FirstOrDefault(x => encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    if (encodeName != null)
+                    {
+                        category.Name = category.Name.Replace("&", "&amp;").Trim();
+                        var wooCategoriesFilter = wooCategories.Where(x => x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                        foreach (var wooCate in wooCategoriesFilter)
+                        {
+                            var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
+                            if (parentCate != null && category.Name.Contains(parentCate.name))
+                            {
+                                var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
+                                if ((rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                                {
+                                    wooCategory = wooCate;
+                                }
+                            }
+                        }
+                    }
+
+                    if (wooCategory != null)
+                    {
+                        wooProduct.categories.Add(new ProductCategoryLine() { id = wooCategory.id, name = wooCategory.name, slug = wooCategory.slug });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductCategories");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+
     public void LogException(AuditLogInfo currentLog,
-        Exception ex,
-        ProductWithNavigationProperties productNav,
-        string url)
+                             Exception    ex,
+                             Product      product,
+                             string       url,
+                             string entity = "Product")
     {
         //Add exceptions
         currentLog.Url = url;
@@ -415,11 +507,13 @@ public class WooManangerBase : DomainService
             currentLog.Exceptions.Add(ex.InnerException);
         }
 
-        currentLog.Comments.Add($"Id: {productNav.Product.Id}, DataSourceId {productNav.Product.DataSourceId}");
+        currentLog.Comments.Add($"Id: {product.Id}, DataSourceId {product.DataSourceId}");
         currentLog.Comments.Add(ex.StackTrace);
-        currentLog.ExtraProperties.Add("C_Message", ex.Message);
+        currentLog.ExtraProperties.Add("C_Entity",     entity);
+        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
+        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
-        currentLog.ExtraProperties.Add("C_Source", ex.Source);
+        currentLog.ExtraProperties.Add("C_Source",     ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
 

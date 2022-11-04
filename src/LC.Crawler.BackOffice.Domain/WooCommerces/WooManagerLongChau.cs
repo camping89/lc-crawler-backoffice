@@ -163,7 +163,7 @@ public class WooManagerLongChau : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, productNav, PageDataSourceConsts.LongChauUrl);
+                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, productNav.Product, PageDataSourceConsts.LongChauUrl);
             }
             finally
             {

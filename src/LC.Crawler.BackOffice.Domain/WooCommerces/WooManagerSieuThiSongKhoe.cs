@@ -201,7 +201,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
                 //Add exceptions
                 _wooManangerBase.LogException(_auditingManager.Current.Log,
                     ex,
-                    productNav,
+                    productNav.Product,
                     PageDataSourceConsts.SieuThiSongKhoeUrl);
             }
             finally

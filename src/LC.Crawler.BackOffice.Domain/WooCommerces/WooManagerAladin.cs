@@ -188,7 +188,7 @@ public class WooManagerAladin : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, productNav,
+                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, productNav.Product,
                     PageDataSourceConsts.AladinUrl);
             }
             finally

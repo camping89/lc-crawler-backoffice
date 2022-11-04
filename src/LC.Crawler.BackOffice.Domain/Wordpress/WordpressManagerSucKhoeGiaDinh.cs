@@ -79,7 +79,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.SucKhoeGiaDinhUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SucKhoeGiaDinhUrl);
             }
             finally
             {

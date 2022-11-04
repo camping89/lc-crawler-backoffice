@@ -79,7 +79,7 @@ public class WordpressManagerBlogSucKhoe : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.BlogSucKhoeUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.BlogSucKhoeUrl);
             }
             finally
             {

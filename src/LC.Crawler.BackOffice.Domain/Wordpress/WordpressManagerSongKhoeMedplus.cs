@@ -79,7 +79,7 @@ public class WordpressManagerSongKhoeMedplus : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.SongKhoeMedplusUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SongKhoeMedplusUrl);
             }
             finally
             {
