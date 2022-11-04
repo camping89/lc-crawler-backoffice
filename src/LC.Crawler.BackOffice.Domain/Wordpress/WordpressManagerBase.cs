@@ -10,21 +10,7 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Threading.Tasks;
-using Fizzler.Systems.HtmlAgilityPack;
-using LC.Crawler.BackOffice.Categories;
-using LC.Crawler.BackOffice.Core;
-using LC.Crawler.BackOffice.DataSources;
-using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
-using LC.Crawler.BackOffice.Helpers;
-using LC.Crawler.BackOffice.Medias;
-using LC.Crawler.BackOffice.Payloads;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Domain.Services;
 using Svg;
 using Volo.Abp.Auditing;
 using WordPressPCL;
@@ -36,6 +22,13 @@ namespace LC.Crawler.BackOffice.Wordpress;
 
 public class WordpressManagerBase : DomainService
 {
+    private readonly IAuditingManager _auditingManager;
+
+    public WordpressManagerBase(IAuditingManager auditingManager)
+    {
+        _auditingManager = auditingManager;
+    }
+
     public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav)
     {
         var client = await InitClient(dataSource);
@@ -61,35 +54,71 @@ public class WordpressManagerBase : DomainService
         };
 
         // categories
-        var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
+        await AddPostCategories(articleNav, client, post, dataSource.Url);
 
-        var encodeName = articleNav.Categories.FirstOrDefault()?.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
-        var wpCate = wooCategories.FirstOrDefault(x =>
-            encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-        if (wpCate != null)
-        {
-            post.Categories.Add(wpCate.Id);
-        }
-        
         // tags
-        var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
-        if (article.Tags.IsNotNullOrEmpty())
-        {
-            foreach (var tag in article.Tags)
-            {
-                var wpTag = wooTags.FirstOrDefault(_ => _.Name == tag);
-                if (wpTag is null)
-                {
-                    wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
-                    wooTags.Add(wpTag);
-                }
-                
-                post.Tags.Add(wpTag.Id);
-            }
-        }
+        await AddPostTags(client, article, post, dataSource.Url);
 
         var result = await client.Posts.CreateAsync(post);
         return result;
+    }
+
+    private async Task AddPostTags(WordPressClient client, Article article, Post post, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        
+        try
+        {
+            var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
+            if (article.Tags.IsNotNullOrEmpty())
+            {
+                foreach (var tag in article.Tags)
+                {
+                    var wpTag = wooTags.FirstOrDefault(_ => _.Name == tag);
+                    if (wpTag is null)
+                    {
+                        wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
+                        wooTags.Add(wpTag);
+                    }
+
+                    post.Tags.Add(wpTag.Id);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, article, homeUrl, "PostTags");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+
+    private async Task AddPostCategories(ArticleWithNavigationProperties articleNav, WordPressClient client, Post post, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        try
+        {
+            var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
+
+            var encodeName = articleNav.Categories.FirstOrDefault()?.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
+            var wpCate     = wooCategories.FirstOrDefault(x => encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+            if (wpCate != null)
+            {
+                post.Categories.Add(wpCate.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, articleNav.Article, homeUrl, "PostCategories");
+        }
+        finally
+        {
+            // Always save the log
+            await auditingScope.SaveAsync();
+        }
     }
 
     private string ReplaceVideos(string contentHtml)
@@ -105,7 +134,6 @@ public class WordpressManagerBase : DomainService
             if (dataVideo is not null)
             {
                 var linkVideo = dataVideo.Value;
-                
                 if (linkVideo.IsNotNullOrEmpty())
                 {
                     divVideo.InnerHtml = $"[video width='1280' height='720' mp4='{linkVideo}']";
@@ -286,7 +314,7 @@ public class WordpressManagerBase : DomainService
         return Task.FromResult(client);
     }
     
-    public void LogException(AuditLogInfo currentLog, Exception ex, ArticleWithNavigationProperties articleNav, string url)
+    public void LogException(AuditLogInfo currentLog, Exception ex, Article article, string url, string entity = "Article")
     {
         //Add exceptions
         currentLog.Url = url;
@@ -296,8 +324,9 @@ public class WordpressManagerBase : DomainService
             currentLog.Exceptions.Add(ex.InnerException);
         }
 
-        currentLog.Comments.Add($"Id: {articleNav.Article.Id}, DataSourceId {articleNav.Article.DataSourceId}");
+        currentLog.Comments.Add($"Id: {article.Id}, DataSourceId {article.DataSourceId}");
         currentLog.Comments.Add(ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Entity",     entity);
         currentLog.ExtraProperties.Add("C_Message",    ex.Message);
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Source",     ex.Source);

@@ -78,7 +78,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.SieuThiSongKhoeUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SieuThiSongKhoeUrl);
             }
             finally
             {

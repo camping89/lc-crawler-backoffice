@@ -79,7 +79,7 @@ public class WordpressManagerAloBacSi : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav, PageDataSourceConsts.AloBacSiUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.AloBacSiUrl);
             }
             finally
             {
