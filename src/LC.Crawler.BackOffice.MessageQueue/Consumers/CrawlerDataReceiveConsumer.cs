@@ -2,6 +2,7 @@
 using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Core;
+using LC.Crawler.BackOffice.CrawlerData;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
@@ -36,6 +37,8 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
     
     private readonly IObjectMapper _objectMapper;
 
+    private readonly CrawlerDataManager _crawlerDataManager;
+
     public CrawlerDataReceiveConsumer(IObjectMapper objectMapper,
         ArticleManangerLongChau                     articleManangerLongChau,
         ProductManagerLongChau                      productManagerLongChau,
@@ -43,7 +46,8 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
         ArticleManangerSucKhoeDoiSong               articleManangerSucKhoeDoiSong,
         ArticleManangerBlogSucKhoe                  articleManangerBlogSucKhoe,
         ArticleManangerSucKhoeGiaDinh               articleManangerSucKhoeGiaDinh,
-        ArticleManangerAloBacSi                     articleManangerAloBacSi, ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe, ArticleManangerSieuThiSongKhoe articleManangerSieuThiSongKhoe, ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplusi)
+        ArticleManangerAloBacSi                     articleManangerAloBacSi, ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe, ArticleManangerSieuThiSongKhoe articleManangerSieuThiSongKhoe, ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplusi,
+        CrawlerDataManager crawlerDataManager)
     {
         _objectMapper                  = objectMapper;
         _articleManangerLongChau       = articleManangerLongChau;
@@ -56,6 +60,7 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
         _productManagerSieuThiSongKhoe = productManagerSieuThiSongKhoe;
         _articleManangerSieuThiSongKhoe = articleManangerSieuThiSongKhoe;
         _articleManangerSongKhoeMedplusi = articleManangerSongKhoeMedplusi;
+        _crawlerDataManager = crawlerDataManager;
     }
 
     public async Task HandleEventAsync(CrawlResultEto eventData)
@@ -65,16 +70,19 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
             var url = eventData.EcommercePayloads.Url;
             if (url.Contains(PageDataSourceConsts.LongChauUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.LongChau,eventData.EcommercePayloads );
                 await _productManagerLongChau.ProcessingDataAsync(eventData.EcommercePayloads);
             }
             
             if (url.Contains(PageDataSourceConsts.AladinUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.Aladin,eventData.EcommercePayloads );
                 await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
             }
             
             if (url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.SieuThiSongKhoe,eventData.EcommercePayloads );
                 await _productManagerSieuThiSongKhoe.ProcessingDataAsync(eventData.EcommercePayloads);
             }
         }
@@ -85,36 +93,43 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
             var url = eventData.ArticlePayloads.Url;
             if (url.Contains(PageDataSourceConsts.LongChauUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.LongChau, eventData.ArticlePayloads );
                 await _articleManangerLongChau.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
             
             if (url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.SucKhoeDoiSong, eventData.ArticlePayloads );
                 await _articleManangerSucKhoeDoiSong.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
             
             if (url.Contains(PageDataSourceConsts.BlogSucKhoeUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.BlogSucKhoe, eventData.ArticlePayloads );
                 await _articleManangerBlogSucKhoe.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
             
             if (url.Contains(PageDataSourceConsts.SucKhoeGiaDinhUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.SucKhoeGiaDinh, eventData.ArticlePayloads );
                 await _articleManangerSucKhoeGiaDinh.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
             
             if (url.Contains(PageDataSourceConsts.AloBacSiUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.AloBacSi, eventData.ArticlePayloads );
                 await _articleManangerAloBacSi.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
             
             if (url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.SieuThiSongKhoe, eventData.ArticlePayloads );
                 await _articleManangerSieuThiSongKhoe.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
             
             if (url.Contains(PageDataSourceConsts.SongKhoeMedplusUrl))
             {
+                await _crawlerDataManager.SaveCrawlerDataArticleAsync(PageDataSource.SongKhoeMedplus, eventData.ArticlePayloads );
                 await _articleManangerSongKhoeMedplusi.ProcessingDataAsync(eventData.ArticlePayloads.ArticlesPayload);
             }
         }

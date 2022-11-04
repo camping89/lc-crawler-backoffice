@@ -33,12 +33,12 @@ public class CrawlerDataManager : DomainService
             Logger.LogException(e, LogLevel.Error);
         }
     }
-    public async Task SaveCrawlerDataArticleAsync(PageDataSource pageDataSource,CrawlEcommercePayload ecommercePayload)
+    public async Task SaveCrawlerDataArticleAsync(PageDataSource pageDataSource,CrawlArticlePayload articlePayload)
     {
         try
         {
-            var fileName = $"DataCrawler/{Enum.GetName(pageDataSource)}/Ecom_{DateTime.UtcNow:dd-MM-yyyy}.json";
-            var jsonData = JsonConvert.SerializeObject(ecommercePayload);
+            var fileName = $"DataCrawler/{Enum.GetName(pageDataSource)}/Article_{DateTime.UtcNow:dd-MM-yyyy}.json";
+            var jsonData = JsonConvert.SerializeObject(articlePayload);
             await using var stream = GenerateStreamFromString(jsonData);
             await _blobContainer.SaveAsync(fileName, stream, true);
         }
