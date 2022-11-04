@@ -40,8 +40,10 @@ public class ArticleManangerLongChau : DomainService
 
         var categories = await _categoryLongChauRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
         
-        foreach (var article in articles)
+        foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
+            var article = rawArticles.First();
+                
             var articleEntity = await _articleLongChauRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
             if (articleEntity == null)
             {
@@ -54,20 +56,24 @@ public class ArticleManangerLongChau : DomainService
                     DataSourceId = dataSource.Id,
                     Tags = article.Tags
                 };
-                var category = categories.FirstOrDefault(x => x.Name == article.Category);
-                if (category == null)
+
+                foreach (var raw in rawArticles)
                 {
-                    category = new Category()
+                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                    if (category == null)
                     {
-                        Name = article.Category,
-                        CategoryType = CategoryType.Article
-                    };
-                    await _categoryLongChauRepository.InsertAsync(category, true);
-                    categories.Add(category);
+                        category = new Category()
+                        {
+                            Name = raw.Category,
+                            CategoryType = CategoryType.Article
+                        };
+                        await _categoryLongChauRepository.InsertAsync(category, true);
+                        categories.Add(category);
+                    }
+                    
+                    articleEntity.AddCategory(category.Id);
                 }
-
-                articleEntity.AddCategory(category.Id);
-
+                
                 if (article.FeatureImage.IsNotNullOrEmpty())
                 {
                     var media = new Media()
@@ -78,8 +84,6 @@ public class ArticleManangerLongChau : DomainService
                     await _mediaLongChauRepository.InsertAsync(media, true);
                     articleEntity.FeaturedMediaId = media.Id;
                 }
-
-                articleEntity.AddCategory(category.Id);
 
                 if (!string.IsNullOrEmpty(article.Content))
                 {
@@ -107,5 +111,4 @@ public class ArticleManangerLongChau : DomainService
             }
         }
     }
-    
 }

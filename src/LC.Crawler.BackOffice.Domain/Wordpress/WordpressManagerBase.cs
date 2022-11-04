@@ -137,13 +137,19 @@ public class WordpressManagerBase : DomainService
         using var auditingScope = _auditingManager.BeginScope();
         try
         {
-            var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
-
-            var encodeName = articleNav.Categories.FirstOrDefault()?.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
-            var wpCate     = wooCategories.FirstOrDefault(x => encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-            if (wpCate != null)
+            if (articleNav.Categories.IsNotNullOrEmpty())
             {
-                post.Categories.Add(wpCate.Id);
+                foreach (var category in articleNav.Categories)
+                {
+                    var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
+
+                    var encodeName = category.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
+                    var wpCate     = wooCategories.FirstOrDefault(x => encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    if (wpCate != null)
+                    {
+                        post.Categories.Add(wpCate.Id);
+                    }
+                }
             }
         }
         catch (Exception ex)

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
@@ -46,9 +48,10 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             return;
         }
         var categories = await _categorySieuThiSongKhoeRepository.GetListAsync();
-        foreach (var rawProduct in ecommercePayload.Products)
+        foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
-            if (rawProduct.Code.IsNullOrEmpty())
+            var rawProduct = rawProducts.First();
+            if (AbpStringExtensions.IsNullOrEmpty(rawProduct.Code))
             {
                 await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
                 {
@@ -62,11 +65,41 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             var productExist = await _productSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
+                var attributes =
+                    await _productAttributeSieuThiSongKhoeRepository.GetListAsync(_ => _.ProductId == productExist.Id);
+
+                //Init new attribute from raw product not in db
+                foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
+                         let attribute =
+                             attributes.Where(_ => _.Key == rawAttribute.Key && _.Value == rawAttribute.Value)
+                         where !attribute.IsNotNullOrEmpty()
+                         select rawAttribute)
+                {
+                    await _productAttributeSieuThiSongKhoeRepository.InsertAsync(new ProductAttribute()
+                    {
+                        Key = rawAttribute.Key,
+                        Slug = rawAttribute.Slug,
+                        Value = rawAttribute.Value,
+                        ProductId = productExist.Id
+                    }, true);
+                }
+
+                //Delete attribute from db not in raw product
+                foreach (var attribute in from attribute in attributes
+                         let rawAttribute =
+                             rawProduct.Attributes.Where(_ => _.Key == attribute.Key && _.Value == attribute.Value)
+                         where rawAttribute.IsNullOrEmpty()
+                         select attribute)
+                {
+                    await _productAttributeSieuThiSongKhoeRepository.DeleteAsync(attribute);
+                }
+
                 productExist.Brand = rawProduct.Brand;
                 productExist.Tags = rawProduct.Tags;
                 await _productSieuThiSongKhoeRepository.UpdateAsync(productExist, true);
                 continue;
             }
+            
             var product = new Product(GuidGenerator.Create())
             {
                 Name = rawProduct.Title,
@@ -78,17 +111,20 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 Tags = rawProduct.Tags
             };
            
-            var category = categories.FirstOrDefault(x => x.Name == rawProduct.Category);
-            if (category == null)
+            foreach (var raw in rawProducts)
             {
-                category = new Category()
+                var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                if (category == null)
                 {
-                    Name = rawProduct.Category
-                };
-                await _categorySieuThiSongKhoeRepository.InsertAsync(category, true);
-                categories.Add(category);
+                    category = new Category()
+                    {
+                        Name = raw.Category
+                    };
+                    await _categorySieuThiSongKhoeRepository.InsertAsync(category, true);
+                    categories.Add(category);
+                }
+                product.AddCategory(category.Id);
             }
-            product.AddCategory(category.Id);
 
             if (rawProduct.ImageUrls != null)
             {

@@ -39,8 +39,9 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
 
         var categories = await _categorySucKhoeGiaDinhRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
         
-        foreach (var article in articles)
+        foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
+            var article = rawArticles.First();
             var articleEntity = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
             if (articleEntity == null)
             {
@@ -53,19 +54,22 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                     DataSourceId = dataSource.Id,
                     Tags = article.Tags
                 };
-                var category = categories.FirstOrDefault(x => x.Name == article.Category);
-                if (category == null)
+                foreach (var raw in rawArticles)
                 {
-                    category = new Category()
+                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                    if (category == null)
                     {
-                        Name = article.Category,
-                        CategoryType = CategoryType.Article
-                    };
-                    await _categorySucKhoeGiaDinhRepository.InsertAsync(category, true);
-                    categories.Add(category);
+                        category = new Category()
+                        {
+                            Name = raw.Category,
+                            CategoryType = CategoryType.Article
+                        };
+                        await _categorySucKhoeGiaDinhRepository.InsertAsync(category, true);
+                        categories.Add(category);
+                    }
+                    
+                    articleEntity.AddCategory(category.Id);
                 }
-
-                articleEntity.AddCategory(category.Id);
 
                 if (article.FeatureImage.IsNotNullOrEmpty())
                 {
@@ -77,8 +81,6 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                     await _mediaSucKhoeGiaDinhRepository.InsertAsync(media, true);
                     articleEntity.FeaturedMediaId = media.Id;
                 }
-
-                articleEntity.AddCategory(category.Id);
 
                 if (!string.IsNullOrEmpty(article.Content))
                 {

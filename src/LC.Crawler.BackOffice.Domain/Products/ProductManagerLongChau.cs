@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
@@ -27,8 +29,11 @@ public class ProductManagerLongChau : DomainService
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly ITrackingDataSourceRepository _trackingDataSourceRepository;
 
-    public ProductManagerLongChau(IProductLongChauRepository productLongChauRepository, ICategoryLongChauRepository categoryLongChauRepository, IMediaLongChauRepository mediaLongChauRepository, IDataSourceRepository dataSourceRepository, IProductVariantLongChauRepository productVariantLongChauRepository,
-        IProductAttributeLongChauRepository productAttributeLongChauRepository, ITrackingDataSourceRepository trackingDataSourceRepository)
+    public ProductManagerLongChau(IProductLongChauRepository productLongChauRepository,
+        ICategoryLongChauRepository categoryLongChauRepository, IMediaLongChauRepository mediaLongChauRepository,
+        IDataSourceRepository dataSourceRepository, IProductVariantLongChauRepository productVariantLongChauRepository,
+        IProductAttributeLongChauRepository productAttributeLongChauRepository,
+        ITrackingDataSourceRepository trackingDataSourceRepository)
     {
         _productLongChauRepository = productLongChauRepository;
         _categoryLongChauRepository = categoryLongChauRepository;
@@ -48,9 +53,10 @@ public class ProductManagerLongChau : DomainService
         }
 
         var categories = await _categoryLongChauRepository.GetListAsync();
-        foreach (var rawProduct in ecommercePayload.Products)
+        foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
-            if (rawProduct.Code.IsNullOrEmpty())
+            var rawProduct = rawProducts.First();
+            if (AbpStringExtensions.IsNullOrEmpty(rawProduct.Code))
             {
                 await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
                 {
@@ -60,14 +66,45 @@ public class ProductManagerLongChau : DomainService
                     Error = TrackingDataSourceConsts.EmptyCode
                 }, true);
             }
+
             var productExist = await _productLongChauRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
+                var attributes =
+                    await _productAttributeLongChauRepository.GetListAsync(_ => _.ProductId == productExist.Id);
+
+                //Init new attribute from raw product not in db
+                foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
+                         let attribute =
+                             attributes.Where(_ => _.Key == rawAttribute.Key && _.Value == rawAttribute.Value)
+                         where !attribute.IsNotNullOrEmpty()
+                         select rawAttribute)
+                {
+                    await _productAttributeLongChauRepository.InsertAsync(new ProductAttribute()
+                    {
+                        Key = rawAttribute.Key,
+                        Slug = rawAttribute.Slug,
+                        Value = rawAttribute.Value,
+                        ProductId = productExist.Id
+                    }, true);
+                }
+
+                //Delete attribute from db not in raw product
+                foreach (var attribute in from attribute in attributes
+                         let rawAttribute =
+                             rawProduct.Attributes.Where(_ => _.Key == attribute.Key && _.Value == attribute.Value)
+                         where rawAttribute.IsNullOrEmpty()
+                         select attribute)
+                {
+                    await _productAttributeLongChauRepository.DeleteAsync(attribute);
+                }
+
                 productExist.Brand = rawProduct.Brand;
                 productExist.Tags = rawProduct.Tags;
                 await _productLongChauRepository.UpdateAsync(productExist, true);
                 continue;
             }
+
             var product = new Product(GuidGenerator.Create())
             {
                 Name = rawProduct.Title,
@@ -78,18 +115,22 @@ public class ProductManagerLongChau : DomainService
                 Brand = rawProduct.Brand,
                 Tags = rawProduct.Tags
             };
-           
-            var category = categories.FirstOrDefault(x => x.Name == rawProduct.Category);
-            if (category == null)
+
+            foreach (var raw in rawProducts)
             {
-                category = new Category()
+                var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                if (category == null)
                 {
-                    Name = rawProduct.Category
-                };
-                await _categoryLongChauRepository.InsertAsync(category, true);
-                categories.Add(category);
+                    category = new Category()
+                    {
+                        Name = raw.Category
+                    };
+                    await _categoryLongChauRepository.InsertAsync(category, true);
+                    categories.Add(category);
+                }
+
+                product.AddCategory(category.Id);
             }
-            product.AddCategory(category.Id);
 
             if (rawProduct.ImageUrls != null)
             {
@@ -99,7 +140,7 @@ public class ProductManagerLongChau : DomainService
                     product.AddMedia(media.Id);
                 }
             }
-            
+
             if (!string.IsNullOrEmpty(rawProduct.Description))
             {
                 var mediaUrls = rawProduct.Description.GetImageUrls();
@@ -114,13 +155,14 @@ public class ProductManagerLongChau : DomainService
                     await _mediaLongChauRepository.InsertManyAsync(medias, true);
 
                     product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
-                        
+
                     foreach (var media in medias)
                     {
                         product.AddMedia(media.Id);
                     }
                 }
             }
+
             //Variants
             if (rawProduct.Variants != null)
             {
@@ -133,10 +175,10 @@ public class ProductManagerLongChau : DomainService
                         DiscountedPrice = variant.DiscountedPrice,
                         DiscountRate = variant.DiscountRate,
                         RetailPrice = variant.RetailPrice
-                    },true);
+                    }, true);
                 }
             }
-            
+
             //Attributes
             if (rawProduct.Attributes != null)
             {
@@ -148,7 +190,7 @@ public class ProductManagerLongChau : DomainService
                         Slug = attribute.Slug,
                         Value = attribute.Value,
                         ProductId = product.Id
-                    },true);
+                    }, true);
                 }
             }
 
@@ -168,6 +210,7 @@ public class ProductManagerLongChau : DomainService
         {
             await _mediaLongChauRepository.InsertManyAsync(medias, true);
         }
+
         return medias;
     }
 
@@ -183,4 +226,77 @@ public class ProductManagerLongChau : DomainService
     //         }
     //     }
     // }
+
+    public async Task UpdateData(CrawlEcommercePayload ecommercePayload)
+    {
+        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        if (dataSource == null)
+        {
+            return;
+        }
+
+        var categories = await _categoryLongChauRepository.GetListAsync();
+        foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
+        {
+            var rawProduct = rawProducts.First();
+
+            var productExist = await _productLongChauRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
+            if (productExist == null)
+            {
+                continue;
+            }
+            
+            foreach (var raw in rawProducts)
+            {
+                var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                if (category == null)
+                {
+                    category = new Category()
+                    {
+                        Name = raw.Category
+                    };
+                    await _categoryLongChauRepository.InsertAsync(category, true);
+                    categories.Add(category);
+                }
+
+                if(productExist.Categories.Select(_ => _.CategoryId).Contains(category.Id))
+                {
+                    productExist.AddCategory(category.Id);
+                }
+            }
+
+            var attributes =
+                await _productAttributeLongChauRepository.GetListAsync(_ => _.ProductId == productExist.Id);
+
+            //Init new attribute from raw product not in db
+            foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
+                     let attribute =
+                         attributes.Where(_ => _.Key == rawAttribute.Key && _.Value == rawAttribute.Value)
+                     where !attribute.IsNotNullOrEmpty()
+                     select rawAttribute)
+            {
+                await _productAttributeLongChauRepository.InsertAsync(new ProductAttribute()
+                {
+                    Key = rawAttribute.Key,
+                    Slug = rawAttribute.Slug,
+                    Value = rawAttribute.Value,
+                    ProductId = productExist.Id
+                }, true);
+            }
+
+            //Delete attribute from db not in raw product
+            foreach (var attribute in from attribute in attributes
+                     let rawAttribute =
+                         rawProduct.Attributes.Where(_ => _.Key == attribute.Key && _.Value == attribute.Value)
+                     where rawAttribute.IsNullOrEmpty()
+                     select attribute)
+            {
+                await _productAttributeLongChauRepository.DeleteAsync(attribute);
+            }
+
+            productExist.Brand = rawProduct.Brand;
+            productExist.Tags = rawProduct.Tags;
+            await _productLongChauRepository.UpdateAsync(productExist, true);
+        }
+    }
 }

@@ -29,9 +29,9 @@ public class CrawlEcommerceProductPayload
     public  List<EcommerceProductComment>   Comments         { get; set; }
     public  int                             TotalReview      => Reviews.Count; 
     public  int                             TotalComment     => Comments.Count;
-
     public string Brand { get; set; }
     public List<string> Tags { get; set; }
+    public int TotalProducts { get; set; }
     public CrawlEcommerceProductPayload()
     {
         Variants   = new List<EcommerceProductVariant>();
