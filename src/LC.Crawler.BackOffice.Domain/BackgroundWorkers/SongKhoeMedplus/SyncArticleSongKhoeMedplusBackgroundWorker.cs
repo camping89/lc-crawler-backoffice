@@ -14,7 +14,7 @@ public class SyncArticleSongKhoeMedplusBackgroundWorker : HangfireBackgroundWork
     {
         _wordpressManagerSongKhoeMedplus = wordpressManagerSongKhoeMedplus;
         
-        RecurringJobId                   = nameof(SyncArticleSongKhoeMedplusBackgroundWorker);
+        RecurringJobId                   = "Sync_Article_SongKhoeMedplus_BackgroundWorker";
         CronExpression                   = Cron.Daily(0, 0);
     }
     

@@ -11,9 +11,9 @@ public class DownloadMediaLongChauBackgroundWorker : HangfireBackgroundWorkerBas
 
     public DownloadMediaLongChauBackgroundWorker(MediaManager mediaManager)
     {
-        _mediaManager = mediaManager;
-        RecurringJobId            = nameof(DownloadMediaLongChauBackgroundWorker);
-        CronExpression            = GlobalCronConsts.Every60Minutes;
+        _mediaManager  = mediaManager;
+        RecurringJobId = "Download_Media_LongChau_BackgroundWorker";
+        CronExpression = GlobalCronConsts.Every60Minutes;
         
     }
 

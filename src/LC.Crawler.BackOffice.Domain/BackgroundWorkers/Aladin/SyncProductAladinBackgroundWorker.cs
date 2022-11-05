@@ -35,7 +35,7 @@ public class SyncProductAladinBackgroundWorker : HangfireBackgroundWorkerBase
     {
         _logger = logger;
         _wooManagerAladin = wooManagerAladin;
-        RecurringJobId            = nameof(SyncProductAladinBackgroundWorker);
+        RecurringJobId            = "Sync_Product_Aladin_BackgroundWorker";
         CronExpression            = Cron.Daily(0,0);
     }
 

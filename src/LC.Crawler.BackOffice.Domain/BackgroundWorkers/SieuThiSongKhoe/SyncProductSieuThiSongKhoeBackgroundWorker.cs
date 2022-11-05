@@ -35,7 +35,7 @@ public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
     {
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         _logger = logger;
-        RecurringJobId            = nameof(SyncProductSieuThiSongKhoeBackgroundWorker);
+        RecurringJobId            = "Sync_Product_SieuThiSongKhoe_BackgroundWorker";
         CronExpression            = Cron.Daily(0,0);
     }
     

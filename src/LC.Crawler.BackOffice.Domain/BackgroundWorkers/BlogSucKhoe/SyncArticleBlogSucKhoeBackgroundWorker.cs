@@ -14,7 +14,7 @@ public class SyncArticleBlogSucKhoeBackgroundWorker : HangfireBackgroundWorkerBa
     {
         _wordpressManagerBlogSucKhoe = wordpressManagerBlogSucKhoe;
 
-        RecurringJobId            = nameof(SyncArticleBlogSucKhoeBackgroundWorker);
+        RecurringJobId            = "Sync_Article_BlogSucKhoe_BackgroundWorker";
         CronExpression            = Cron.Daily(0,0);
     }
 

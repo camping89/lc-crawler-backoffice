@@ -11,7 +11,7 @@ public class SyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     public SyncArticleLongChauBackgroundWorker(WordpressManagerLongChau wordpressManagerLongChau)
     {
         _wordpressManagerLongChau = wordpressManagerLongChau;
-        RecurringJobId            = nameof(SyncArticleLongChauBackgroundWorker);
+        RecurringJobId            = "Sync_Article_LongChau_BackgroundWorker";
         CronExpression            = Cron.Daily(0,0);
     }
 

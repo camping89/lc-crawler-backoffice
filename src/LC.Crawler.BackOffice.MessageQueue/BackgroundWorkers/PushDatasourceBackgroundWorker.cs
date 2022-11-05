@@ -13,7 +13,7 @@ public class PushDatasourceBackgroundWorker : HangfireBackgroundWorkerBase
     {
         _crawlerDataSourceProducer = crawlerDataSourceProducer;
         
-        RecurringJobId            = nameof(PushDatasourceBackgroundWorker);
+        RecurringJobId            = "PushDatasource_BackgroundWorker";
         CronExpression            = Cron.Daily(0);
     }
 

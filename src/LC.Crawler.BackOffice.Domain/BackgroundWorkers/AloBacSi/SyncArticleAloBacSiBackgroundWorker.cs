@@ -25,7 +25,7 @@ public class SyncArticleAloBacSiBackgroundWorker : HangfireBackgroundWorkerBase
     {
         _wordpressManagerAloBacSi = wordpressManagerAloBacSi;
 
-        RecurringJobId            = nameof(SyncArticleAloBacSiBackgroundWorker);
+        RecurringJobId            = "Sync_Article_AloBacSi_BackgroundWorker";
         CronExpression            = Cron.Daily(0,0);
     }
 

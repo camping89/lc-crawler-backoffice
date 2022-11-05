@@ -12,7 +12,7 @@ public class DownloadMediaSongKhoeMedplusBackgroundWorker: HangfireBackgroundWor
     public DownloadMediaSongKhoeMedplusBackgroundWorker(MediaManagerSongKhoeMedplus mediaManager)
     {
         _mediaManager = mediaManager;
-        RecurringJobId            = nameof(DownloadMediaSongKhoeMedplusBackgroundWorker);
+        RecurringJobId            = "Download_Media_SongKhoeMedplus_BackgroundWorker";
         CronExpression            = GlobalCronConsts.Every60Minutes;
     }
     

@@ -25,7 +25,7 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     public SyncProductLongChauBackgroundWorker(WooManagerLongChau wooManagerLongChau)
     {
         _wooManagerLongChau = wooManagerLongChau;
-        RecurringJobId = nameof(SyncProductLongChauBackgroundWorker);
+        RecurringJobId = "Sync_Product_LongChau_BackgroundWorker";
         CronExpression            = Cron.Daily(0,0);
     }
 

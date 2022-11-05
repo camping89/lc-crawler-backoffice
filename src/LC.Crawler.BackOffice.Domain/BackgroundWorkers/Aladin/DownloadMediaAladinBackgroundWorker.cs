@@ -12,7 +12,7 @@ public class DownloadMediaAladinBackgroundWorker : HangfireBackgroundWorkerBase
     public DownloadMediaAladinBackgroundWorker(MediaManagerAladin mediaManager)
     {
         _mediaManager = mediaManager;
-        RecurringJobId            = nameof(DownloadMediaAladinBackgroundWorker);
+        RecurringJobId            = "Download_Media_Aladin_BackgroundWorker";
         CronExpression            = GlobalCronConsts.Every60Minutes;
         
     }

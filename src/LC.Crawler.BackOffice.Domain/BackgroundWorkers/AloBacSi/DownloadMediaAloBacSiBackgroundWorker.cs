@@ -12,7 +12,7 @@ public class DownloadMediaAloBacSiBackgroundWorker : HangfireBackgroundWorkerBas
     public DownloadMediaAloBacSiBackgroundWorker(MediaManagerAloBacSi mediaManager)
     {
         _mediaManager = mediaManager;
-        RecurringJobId            = nameof(DownloadMediaAloBacSiBackgroundWorker);
+        RecurringJobId            = "Download_Media_AloBacSi_BackgroundWorker";
         CronExpression            = GlobalCronConsts.Every60Minutes;
         
     }
