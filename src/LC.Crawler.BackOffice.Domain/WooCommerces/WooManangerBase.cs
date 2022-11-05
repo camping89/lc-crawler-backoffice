@@ -511,7 +511,6 @@ public class WooManangerBase : DomainService
         currentLog.Comments.Add(ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Entity",     entity);
         currentLog.ExtraProperties.Add("C_Message",    ex.Message);
-        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Source",     ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
