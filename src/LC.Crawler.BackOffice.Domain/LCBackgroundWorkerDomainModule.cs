@@ -51,6 +51,7 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //Aladin
             //context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<SyncArticleAladinBackgroundWorker>();
             
             //Suckhoedoisong
             //context.AddBackgroundWorkerAsync<DownloadMediaSucKhoeDoiSongBackgroundWorker>();

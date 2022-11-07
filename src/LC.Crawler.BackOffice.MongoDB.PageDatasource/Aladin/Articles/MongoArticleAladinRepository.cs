@@ -16,7 +16,7 @@ using Volo.Abp.MongoDB;
 
 namespace LC.Crawler.BackOffice.PageDatasource.Aladin.Articles
 {
-    public class MongoArticleAladinRepository : MongoDbRepository<AladinMongoDbContext, Article, Guid>, IArticleLongChauRepository
+    public class MongoArticleAladinRepository : MongoDbRepository<AladinMongoDbContext, Article, Guid>, IArticleAladinRepository
     {
         public MongoArticleAladinRepository(IMongoDbContextProvider<AladinMongoDbContext> dbContextProvider)
             : base(dbContextProvider)
