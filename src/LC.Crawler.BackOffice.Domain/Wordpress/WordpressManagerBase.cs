@@ -142,12 +142,30 @@ public class WordpressManagerBase : DomainService
                 foreach (var category in articleNav.Categories)
                 {
                     var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
-
+                    
                     var encodeName = category.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
-                    var wpCate     = wooCategories.FirstOrDefault(x => encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-                    if (wpCate != null)
+
+                    var wpCategory = wooCategories.FirstOrDefault(x => encodeName != null && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    if (encodeName is not null)
                     {
-                        post.Categories.Add(wpCate.Id);
+                        var wpCategoriesFilter     = wooCategories.Where(x => encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                        foreach (var wpCate in wpCategoriesFilter)
+                        {
+                            var parentCate = wooCategories.FirstOrDefault(x => x.Id == wpCate.Parent);
+                            if (parentCate != null && category.Name.Contains(parentCate.Name))
+                            {
+                                var rootParent = wooCategories.FirstOrDefault(x => x.Id == parentCate.Parent);
+                                if ((rootParent != null && category.Name.Contains(rootParent.Name)) || parentCate.Parent == 0)
+                                {
+                                    wpCategory = wpCate;
+                                }
+                            }
+                        }
+                    }
+
+                    if (wpCategory is not null)
+                    {
+                        post.Categories.Add(wpCategory.Id);
                     }
                 }
             }
@@ -245,7 +263,7 @@ public class WordpressManagerBase : DomainService
             var categoriesTerms = cateStr.Split("->").ToList();
             var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
             var wooRootCategory =
-                wooCategories.FirstOrDefault(x => x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase));
+                wooCategories.FirstOrDefault(x => x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
             if (wooRootCategory == null)
             {
                 try
@@ -272,7 +290,7 @@ public class WordpressManagerBase : DomainService
                     {
                         var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
                         var wooSubCategory = wooCategories.FirstOrDefault(x =>
-                            x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase));
+                            x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == cateParent.Id);
                         if (wooSubCategory == null)
                         {
                             var cateNew = new WordpresCategory
@@ -374,5 +392,4 @@ public class WordpressManagerBase : DomainService
         currentLog.ExtraProperties.Add("C_Source",     ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
-    
 }
