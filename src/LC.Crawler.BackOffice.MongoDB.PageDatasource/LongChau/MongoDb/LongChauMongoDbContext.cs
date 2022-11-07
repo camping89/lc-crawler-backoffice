@@ -2,6 +2,8 @@ using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.ProductVariants;
 using MongoDB.Driver;
@@ -13,6 +15,8 @@ namespace LC.Crawler.BackOffice.PageDatasource.LongChau.MongoDb;
 [ConnectionStringName("LongChau")]
 public class LongChauMongoDbContext : AbpMongoDbContext
 {
+    public IMongoCollection<ProductComment> ProductComments => Collection<ProductComment>();
+    public IMongoCollection<ProductReview> ProductReviews => Collection<ProductReview>();
     public IMongoCollection<ProductAttribute> ProductAttributes => Collection<ProductAttribute>();
     public IMongoCollection<ProductVariant> ProductVariants => Collection<ProductVariant>();
     public IMongoCollection<Product> Products => Collection<Product>();
@@ -40,5 +44,9 @@ public class LongChauMongoDbContext : AbpMongoDbContext
         modelBuilder.Entity<ProductVariant>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductVariants"; });
 
         modelBuilder.Entity<ProductAttribute>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductAttributes"; });
+        
+        modelBuilder.Entity<ProductReview>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductReviews"; });
+        
+        modelBuilder.Entity<ProductComment>(b => { b.CollectionName = BackOfficeConsts.DbTablePrefix + "ProductComments"; });
     }
 }

@@ -12,6 +12,8 @@ using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.TrackingDataSources;
 using Volo.Abp.Domain.Repositories;
@@ -28,8 +30,12 @@ public class ProductManagerSieuThiSongKhoe : DomainService
     private readonly IProductVariantSieuThiSongKhoeRepository _productVariantSieuThiSongKhoeRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly ITrackingDataSourceRepository _trackingDataSourceRepository;
+    private readonly IProductReviewSieuThiSongKhoeRepository _productReviewSieuThiSongKhoeRepository;
+    private readonly IProductCommentSieuThiSongKhoeRepository _productCommentSieuThiSongKhoeRepository;
 
-    public ProductManagerSieuThiSongKhoe(IProductSieuThiSongKhoeRepository productSieuThiSongKhoeRepository, ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository, IMediaSieuThiSongKhoeRepository mediaSieuThiSongKhoeRepository, IProductAttributeSieuThiSongKhoeRepository productAttributeSieuThiSongKhoeRepository, IProductVariantSieuThiSongKhoeRepository productVariantSieuThiSongKhoeRepository, IDataSourceRepository dataSourceRepository, ITrackingDataSourceRepository trackingDataSourceRepository)
+    public ProductManagerSieuThiSongKhoe(IProductSieuThiSongKhoeRepository productSieuThiSongKhoeRepository, ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository, IMediaSieuThiSongKhoeRepository mediaSieuThiSongKhoeRepository, IProductAttributeSieuThiSongKhoeRepository productAttributeSieuThiSongKhoeRepository, IProductVariantSieuThiSongKhoeRepository productVariantSieuThiSongKhoeRepository, IDataSourceRepository dataSourceRepository, ITrackingDataSourceRepository trackingDataSourceRepository,
+        IProductReviewSieuThiSongKhoeRepository productReviewSieuThiSongKhoeRepository,
+        IProductCommentSieuThiSongKhoeRepository productCommentSieuThiSongKhoeRepository)
     {
         _productSieuThiSongKhoeRepository = productSieuThiSongKhoeRepository;
         _categorySieuThiSongKhoeRepository = categorySieuThiSongKhoeRepository;
@@ -38,6 +44,8 @@ public class ProductManagerSieuThiSongKhoe : DomainService
         _productVariantSieuThiSongKhoeRepository = productVariantSieuThiSongKhoeRepository;
         _dataSourceRepository = dataSourceRepository;
         _trackingDataSourceRepository = trackingDataSourceRepository;
+        _productReviewSieuThiSongKhoeRepository = productReviewSieuThiSongKhoeRepository;
+        _productCommentSieuThiSongKhoeRepository = productCommentSieuThiSongKhoeRepository;
     }
     
     public async  Task ProcessingDataAsync(CrawlEcommercePayload ecommercePayload)
@@ -57,7 +65,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 {
                     Url = rawProduct.Url,
                     CrawlType = CrawlType.Ecom,
-                    PageDataSource = PageDataSource.LongChau,
+                    PageDataSource = PageDataSource.SieuThiSongKhoe,
                     Error = TrackingDataSourceConsts.EmptyCode
                 }, true);
             }
@@ -96,6 +104,68 @@ public class ProductManagerSieuThiSongKhoe : DomainService
 
                 productExist.Brand = rawProduct.Brand;
                 productExist.Tags = rawProduct.Tags;
+                
+                //Update price 
+                if (rawProduct.Variants != null)
+                {
+                    foreach (var variant in rawProduct.Variants)
+                    {
+                        var productVariant = await _productVariantSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.ProductId == productExist.Id && x.SKU == variant.SKU);
+                        if (productVariant != null)
+                        {
+                            productVariant.DiscountedPrice = variant.DiscountedPrice;
+                            productVariant.DiscountRate = variant.DiscountRate;
+                            productVariant.RetailPrice = variant.RetailPrice;
+                            await _productVariantSieuThiSongKhoeRepository.UpdateAsync(productVariant,true);
+                        }
+                        else
+                        {
+                            await _productVariantSieuThiSongKhoeRepository.InsertAsync(new ProductVariant()
+                            {
+                                ProductId = productExist.Id,
+                                SKU = variant.SKU,
+                                DiscountedPrice = variant.DiscountedPrice,
+                                DiscountRate = variant.DiscountRate,
+                                RetailPrice = variant.RetailPrice
+                            },true);
+                        }
+                    }
+                }
+                
+                //ProductReviews
+                if (rawProduct.Reviews != null)
+                {
+                    var productReviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => x.ProductId == productExist.Id);
+                    foreach (var review in rawProduct.Reviews.Where(x=> productReviews.All(pr=>pr.Name != x.Name)))
+                    {
+                        await _productReviewSieuThiSongKhoeRepository.InsertAsync(new ProductReview()
+                        {
+                            Name = review.Name,
+                            Content = review.Content,
+                            Rating = review.Rating,
+                            Likes = review.Likes,
+                            ProductId = productExist.Id,
+                            CreatedAt = DateTime.UtcNow
+                        },true);
+                    }
+                }
+
+                //ProductComments
+                if (rawProduct.Comments != null)
+                {
+                    var productComments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => x.ProductId == productExist.Id);
+                    foreach (var comment in rawProduct.Comments.Where(x=> productComments.All(pr=>pr.Name != x.Name)))
+                    {
+                        await _productCommentSieuThiSongKhoeRepository.InsertAsync(new ProductComment()
+                        {
+                            Name = comment.Name,
+                            Content = comment.Content,
+                            Likes = comment.Likes,
+                            ProductId = productExist.Id,
+                            CreatedAt = DateTime.UtcNow
+                        },true);
+                    }
+                }
                 await _productSieuThiSongKhoeRepository.UpdateAsync(productExist, true);
                 continue;
             }
@@ -183,6 +253,39 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                         Slug = attribute.Slug,
                         Value = attribute.Value,
                         ProductId = product.Id
+                    },true);
+                }
+            }
+            
+            //ProductReviews
+            if (rawProduct.Reviews != null)
+            {
+                foreach (var review in rawProduct.Reviews)
+                {
+                    await _productReviewSieuThiSongKhoeRepository.InsertAsync(new ProductReview()
+                    {
+                        Name = review.Name,
+                        Content = review.Content,
+                        Rating = review.Rating,
+                        Likes = review.Likes,
+                        ProductId = product.Id,
+                        CreatedAt = DateTime.UtcNow
+                    },true);
+                }
+            }
+
+            //ProductComments
+            if (rawProduct.Comments != null)
+            {
+                foreach (var comment in rawProduct.Comments)
+                {
+                    await _productCommentSieuThiSongKhoeRepository.InsertAsync(new ProductComment()
+                    {
+                        Name = comment.Name,
+                        Content = comment.Content,
+                        Likes = comment.Likes,
+                        ProductId = product.Id,
+                        CreatedAt = DateTime.UtcNow
                     },true);
                 }
             }

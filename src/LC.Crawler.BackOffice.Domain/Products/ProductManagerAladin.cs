@@ -12,6 +12,8 @@ using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.TrackingDataSources;
 using Volo.Abp.Domain.Repositories;
@@ -28,9 +30,14 @@ public class ProductManagerAladin : DomainService
     private readonly IProductVariantAladinRepository _productVariantAladinRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly ITrackingDataSourceRepository _trackingDataSourceRepository;
+    
+    private readonly IProductReviewAladinRepository _productReviewAladinRepository;
+    private readonly IProductCommentAladinRepository _productCommentAladinRepository;
 
     public ProductManagerAladin(IProductAladinRepository productAladinRepository, ICategoryAladinRepository categoryAladinRepository, IMediaAladinRepository mediaAladinRepository, IDataSourceRepository dataSourceRepository, IProductAttributeAladinRepository productAttributeAladinRepository,
-        IProductVariantAladinRepository productVariantAladinRepository, ITrackingDataSourceRepository trackingDataSourceRepository)
+        IProductVariantAladinRepository productVariantAladinRepository, ITrackingDataSourceRepository trackingDataSourceRepository,
+        IProductReviewAladinRepository productReviewAladinRepository,
+        IProductCommentAladinRepository productCommentAladinRepository)
     {
         _productAladinRepository = productAladinRepository;
         _categoryAladinRepository = categoryAladinRepository;
@@ -39,6 +46,8 @@ public class ProductManagerAladin : DomainService
         _productAttributeAladinRepository = productAttributeAladinRepository;
         _productVariantAladinRepository = productVariantAladinRepository;
         _trackingDataSourceRepository = trackingDataSourceRepository;
+        _productReviewAladinRepository = productReviewAladinRepository;
+        _productCommentAladinRepository = productCommentAladinRepository;
     }
 
     public async  Task ProcessingDataAsync(CrawlEcommercePayload ecommercePayload)
@@ -58,7 +67,7 @@ public class ProductManagerAladin : DomainService
                 {
                     Url = rawProduct.Url,
                     CrawlType = CrawlType.Ecom,
-                    PageDataSource = PageDataSource.LongChau,
+                    PageDataSource = PageDataSource.Aladin,
                     Error = TrackingDataSourceConsts.EmptyCode
                 }, true);
             }
@@ -97,6 +106,69 @@ public class ProductManagerAladin : DomainService
 
                 productExist.Brand = rawProduct.Brand;
                 productExist.Tags = rawProduct.Tags;
+                
+                //Update price 
+                if (rawProduct.Variants != null)
+                {
+                    foreach (var variant in rawProduct.Variants)
+                    {
+                        var productVariant = await _productVariantAladinRepository.FirstOrDefaultAsync(x => x.ProductId == productExist.Id && x.SKU == variant.SKU);
+                        if (productVariant != null)
+                        {
+                            productVariant.DiscountedPrice = variant.DiscountedPrice;
+                            productVariant.DiscountRate = variant.DiscountRate;
+                            productVariant.RetailPrice = variant.RetailPrice;
+                            await _productVariantAladinRepository.UpdateAsync(productVariant,true);
+                        }
+                        else
+                        {
+                            await _productVariantAladinRepository.InsertAsync(new ProductVariant()
+                            {
+                                ProductId = productExist.Id,
+                                SKU = variant.SKU,
+                                DiscountedPrice = variant.DiscountedPrice,
+                                DiscountRate = variant.DiscountRate,
+                                RetailPrice = variant.RetailPrice
+                            },true);
+                        }
+                    }
+                }
+                
+                //ProductReviews
+                if (rawProduct.Reviews != null)
+                {
+                    var productReviews = await _productReviewAladinRepository.GetListAsync(x => x.ProductId == productExist.Id);
+                    foreach (var review in rawProduct.Reviews.Where(x=> productReviews.All(pr=>pr.Name != x.Name)))
+                    {
+                        await _productReviewAladinRepository.InsertAsync(new ProductReview()
+                        {
+                            Name = review.Name,
+                            Content = review.Content,
+                            Rating = review.Rating,
+                            Likes = review.Likes,
+                            ProductId = productExist.Id,
+                            CreatedAt = DateTime.UtcNow
+                        },true);
+                    }
+                }
+
+                //ProductComments
+                if (rawProduct.Comments != null)
+                {
+                    var productComments = await _productCommentAladinRepository.GetListAsync(x => x.ProductId == productExist.Id);
+                    foreach (var comment in rawProduct.Comments.Where(x=> productComments.All(pr=>pr.Name != x.Name)))
+                    {
+                        await _productCommentAladinRepository.InsertAsync(new ProductComment()
+                        {
+                            Name = comment.Name,
+                            Content = comment.Content,
+                            Likes = comment.Likes,
+                            ProductId = productExist.Id,
+                            CreatedAt = DateTime.UtcNow
+                        },true);
+                    }
+                }
+                
                 await _productAladinRepository.UpdateAsync(productExist, true);
                 continue;
             }
@@ -187,6 +259,41 @@ public class ProductManagerAladin : DomainService
                     },true);
                 }
             }
+            
+            
+            //ProductReviews
+            if (rawProduct.Reviews != null)
+            {
+                foreach (var review in rawProduct.Reviews)
+                {
+                    await _productReviewAladinRepository.InsertAsync(new ProductReview()
+                    {
+                        Name = review.Name,
+                        Content = review.Content,
+                        Rating = review.Rating,
+                        Likes = review.Likes,
+                        ProductId = product.Id,
+                        CreatedAt = DateTime.UtcNow
+                    },true);
+                }
+            }
+
+            //ProductComments
+            if (rawProduct.Comments != null)
+            {
+                foreach (var comment in rawProduct.Comments)
+                {
+                    await _productCommentAladinRepository.InsertAsync(new ProductComment()
+                    {
+                        Name = comment.Name,
+                        Content = comment.Content,
+                        Likes = comment.Likes,
+                        ProductId = product.Id,
+                        CreatedAt = DateTime.UtcNow
+                    },true);
+                }
+            }
+
 
             await _productAladinRepository.InsertAsync(product, true);
 

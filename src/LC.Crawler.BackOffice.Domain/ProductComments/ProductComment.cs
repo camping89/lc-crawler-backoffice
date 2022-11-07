@@ -24,6 +24,8 @@ namespace LC.Crawler.BackOffice.ProductComments
 
         public virtual DateTime? CreatedAt { get; set; }
         public Guid ProductId { get; set; }
+        
+        public bool IsSynced { get; set; }
 
         public ProductComment()
         {

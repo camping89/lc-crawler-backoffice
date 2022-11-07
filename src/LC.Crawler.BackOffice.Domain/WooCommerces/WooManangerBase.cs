@@ -9,7 +9,9 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.Products;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Auditing;
 using Svg;
 using Volo.Abp.Domain.Services;
@@ -22,6 +24,7 @@ using WooProductAttribute = WooCommerceNET.WooCommerce.v3.ProductAttribute;
 using WooProduct = WooCommerceNET.WooCommerce.v3.Product;
 using Category = LC.Crawler.BackOffice.Categories.Category;
 using Product = LC.Crawler.BackOffice.Products.Product;
+using ProductReview = LC.Crawler.BackOffice.ProductReviews.ProductReview;
 
 namespace LC.Crawler.BackOffice.WooCommerces;
 
@@ -234,6 +237,60 @@ public class WooManangerBase : DomainService
         }
     }
 
+    public async Task PostProductReviews(WCObject wcObject,string productCode, List<ProductComment> productComments, List<ProductReview> productReviews)
+    {
+        try
+        {
+            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
+            {
+                { "sku", productCode }
+            });
+            if (checkProduct.Count > 0)
+            {
+                var productUpdate = checkProduct.FirstOrDefault();
+                if (productUpdate != null)
+                {
+                    if (productComments != null)
+                    {
+                        foreach (var productComment in productComments)
+                        {
+                            await wcObject.ProductReview.Add(new WooCommerceNET.WooCommerce.v3.ProductReview()
+                            {
+                                reviewer = productComment.Name,
+                                review = productComment.Content,
+                                product_id = productUpdate.id,
+                                date_created = productComment.CreatedAt,
+                                verified = true,
+                                reviewer_email = $"reviewer@gmail.com"
+                                //status = "approved"
+                            });
+                        }
+                    }
+                    if (productReviews != null)
+                    {
+                        foreach (var productReview in productReviews)
+                        {
+                            await wcObject.ProductReview.Add(new WooCommerceNET.WooCommerce.v3.ProductReview()
+                            {
+                                reviewer = productReview.Name,
+                                review = productReview.Content,
+                                product_id = productUpdate.id,
+                                date_created = productReview.CreatedAt,
+                                verified = true,
+                                reviewer_email = $"reviewer@gmail.com"
+                                //status = "approved"
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogException(e);
+        }
+    }
+
     public async Task<WooProduct> PostToWooProduct(DataSource dataSource,
         WCObject wcObject,
         ProductWithNavigationProperties productNav,
@@ -246,7 +303,14 @@ public class WooManangerBase : DomainService
         });
         if (checkProduct.Count > 0)
         {
-            return checkProduct.FirstOrDefault();
+            var productUpdate = checkProduct.FirstOrDefault();
+            if (productUpdate != null)
+            {
+                // add variants
+                await UpdateProductVariants(wcObject, productNav, productUpdate, dataSource.Url);
+                await wcObject.Product.Update(productUpdate.id.To<int>(), productUpdate);
+            }
+            return productUpdate;
         }
 
         var product = productNav.Product;
@@ -380,6 +444,7 @@ public class WooManangerBase : DomainService
                 {
                     var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
                                                                                  {
+                                                                                     sku = variant.SKU,
                                                                                      price         = variant.RetailPrice,
                                                                                      regular_price = variant.RetailPrice,
                                                                                      sale_price    = variant.DiscountedPrice
@@ -388,6 +453,74 @@ public class WooManangerBase : DomainService
                     if (wooVariantResult.id is > 0)
                     {
                         wooProduct.variations.Add(wooVariantResult.id.To<int>());
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductVariants");
+        }
+        finally
+        {
+            //Always save the log
+            await auditingScope.SaveAsync();
+        }
+    }
+    
+    
+    private async Task UpdateProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
+    {
+        using var auditingScope = _auditingManager.BeginScope();
+        
+        try
+        {
+            //Variations
+            var variants = productNav.Variants;
+            if (variants != null)
+            {
+                decimal? productPrice    = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+                decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
+
+                if (productPrice.HasValue && productPrice > 0)
+                {
+                    wooProduct.price         = productPrice;
+                    wooProduct.regular_price = productPrice;
+                }
+
+                if (discountedPrice.HasValue && discountedPrice > 0)
+                {
+                    wooProduct.sale_price = discountedPrice;
+                }
+            }
+
+            if (variants is { Count: > 1 })
+            {
+                var wooProductVariants = await wcObject.Product.Variations.GetAll(wooProduct.id);
+                foreach (var variant in variants)
+                {
+                    var checkVariant = wooProductVariants.FirstOrDefault(x => x.sku == variant.SKU);
+                    if (checkVariant != null)
+                    {
+                        checkVariant.price = variant.RetailPrice;
+                        checkVariant.regular_price = variant.RetailPrice;
+                        checkVariant.sale_price = variant.DiscountedPrice;
+                        await wcObject.Product.Variations.Update(checkVariant.id.To<int>(),checkVariant, wooProduct.id.To<int>());
+                    }
+                    else
+                    {
+                        var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
+                            {
+                                sku = variant.SKU,
+                                price         = variant.RetailPrice,
+                                regular_price = variant.RetailPrice,
+                                sale_price    = variant.DiscountedPrice
+                            },
+                            0);
+                        if (wooVariantResult.id is > 0)
+                        {
+                            wooProduct.variations.Add(wooVariantResult.id.To<int>());
+                        }
                     }
                 }
             }

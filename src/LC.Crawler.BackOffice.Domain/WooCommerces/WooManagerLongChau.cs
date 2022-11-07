@@ -7,10 +7,14 @@ using Volo.Abp.Domain.Services;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Auditing;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;
+using ProductReview = LC.Crawler.BackOffice.ProductReviews.ProductReview;
 
 namespace LC.Crawler.BackOffice.WooCommerces;
 
@@ -22,6 +26,9 @@ public class WooManagerLongChau : DomainService
     private readonly IMediaLongChauRepository            _mediaLongChauRepository;
     private readonly WooManangerBase                     _wooManangerBase;
     private readonly IAuditingManager                    _auditingManager;
+    
+    private readonly IProductReviewLongChauRepository _productReviewLongChauRepository;
+    private readonly IProductCommentLongChauRepository _productCommentLongChauRepository;
 
     private DataSource _dataSource;
 
@@ -30,7 +37,9 @@ public class WooManagerLongChau : DomainService
         IMediaLongChauRepository                         mediaLongChauRepository,
         ICategoryLongChauRepository                      categoryLongChauRepository,
         WooManangerBase                                  wooManangerBase,
-        IAuditingManager                                 auditingManager)
+        IAuditingManager                                 auditingManager,
+        IProductReviewLongChauRepository productReviewLongChauRepository,
+        IProductCommentLongChauRepository productCommentLongChauRepository)
     {
         _productRepository                  = productRepository;
         _dataSourceRepository               = dataSourceRepository;
@@ -38,6 +47,8 @@ public class WooManagerLongChau : DomainService
         _categoryLongChauRepository         = categoryLongChauRepository;
         _wooManangerBase                    = wooManangerBase;
         _auditingManager                    = auditingManager;
+        _productReviewLongChauRepository = productReviewLongChauRepository;
+        _productCommentLongChauRepository = productCommentLongChauRepository;
     }
 
     public async Task DoSyncCategoriesAsync()
@@ -126,6 +137,58 @@ public class WooManagerLongChau : DomainService
             }
         }
     }
+    
+    
+    public async Task DoSyncReviews()
+    {
+        try
+        {
+            _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+            if (_dataSource == null)
+            {
+                return;
+            }
+
+            var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
+                _dataSource.Configuration.ApiSecret);
+            var wc = new WCObject(rest);
+            var products = (await _productRepository.GetQueryableAsync())
+                .Where(x => x.DataSourceId == _dataSource.Id
+                    && x.ExternalId != null
+                )
+                .ToList().ToList();
+        
+            foreach (var product in products.Take(1))
+            {
+                var productReviews = await _productReviewLongChauRepository.GetListAsync(x => x.IsSynced == false);
+                var productComments = await _productCommentLongChauRepository.GetListAsync(x => x.IsSynced == false);
+                
+                await _wooManangerBase.PostProductReviews(wc, product.Code, productComments, productReviews);
+                foreach (var productReview in productReviews)
+                {
+                    productReview.IsSynced = true;
+                }
+                foreach (var productComment in productComments)
+                {
+                    productComment.IsSynced = true;
+                }
+
+                if (productReviews.Any())
+                {
+                    await _productReviewLongChauRepository.UpdateManyAsync(productReviews);
+                }
+                if (productComments.Any())
+                {
+                    await _productCommentLongChauRepository.UpdateManyAsync(productComments);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogException(e);
+        }
+    }
+    
     public async Task DoSyncProductToWooAsync()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
@@ -139,7 +202,9 @@ public class WooManagerLongChau : DomainService
 
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
-        var productIds = (await _productRepository.GetQueryableAsync()).Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null).Select(x=>x.Id).ToList();
+        var productIds = (await _productRepository.GetQueryableAsync()).Where(x => x.DataSourceId == _dataSource.Id 
+                                                                                   //&& x.ExternalId == null
+                                                                                   ).Select(x=>x.Id).ToList();
 
         var number = 1;
         foreach (var productId in productIds)

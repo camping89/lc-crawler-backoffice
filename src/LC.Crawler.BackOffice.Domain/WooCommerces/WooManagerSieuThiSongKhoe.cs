@@ -7,7 +7,10 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.ProductComments;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Services;
 using WooCommerceNET;
@@ -24,6 +27,11 @@ public class WooManagerSieuThiSongKhoe : DomainService
     private readonly IMediaSieuThiSongKhoeRepository _mediaSieuThiSongKhoeRepository;
     private readonly WooManangerBase _wooManangerBase;
     private readonly IAuditingManager _auditingManager;
+    
+    
+    
+    private readonly IProductReviewSieuThiSongKhoeRepository _productReviewSieuThiSongKhoeRepository;
+    private readonly IProductCommentSieuThiSongKhoeRepository _productCommentSieuThiSongKhoeRepository;
 
     private string BASEURL = string.Empty;
 
@@ -34,7 +42,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
         IMediaSieuThiSongKhoeRepository mediaSieuThiSongKhoeRepository,
         ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository,
         WooManangerBase wooManangerBase,
-        IAuditingManager auditingManager)
+        IAuditingManager auditingManager,
+        IProductReviewSieuThiSongKhoeRepository productReviewSieuThiSongKhoeRepository,
+        IProductCommentSieuThiSongKhoeRepository productCommentSieuThiSongKhoeRepository)
     {
         _productRepository = productRepository;
         _dataSourceRepository = dataSourceRepository;
@@ -42,6 +52,8 @@ public class WooManagerSieuThiSongKhoe : DomainService
         _categorySieuThiSongKhoeRepository = categorySieuThiSongKhoeRepository;
         _wooManangerBase = wooManangerBase;
         _auditingManager = auditingManager;
+        _productReviewSieuThiSongKhoeRepository = productReviewSieuThiSongKhoeRepository;
+        _productCommentSieuThiSongKhoeRepository = productCommentSieuThiSongKhoeRepository;
     }
 
     public async Task DoSyncUpdateProduct()
@@ -149,6 +161,55 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
     }
 
+    public async Task DoSyncReviews()
+    {
+        try
+        {
+            _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
+            if (_dataSource == null)
+            {
+                return;
+            }
+
+            var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
+                _dataSource.Configuration.ApiSecret);
+            var wc = new WCObject(rest);
+            var products = (await _productRepository.GetQueryableAsync())
+                .Where(x => x.DataSourceId == _dataSource.Id
+                    && x.ExternalId != null
+                )
+                .ToList().ToList();
+        
+            foreach (var product in products)
+            {
+                var productReviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => x.IsSynced == false);
+                var productComments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => x.IsSynced == false);
+                await _wooManangerBase.PostProductReviews(wc, product.Code, productComments, productReviews);
+                foreach (var productReview in productReviews)
+                {
+                    productReview.IsSynced = true;
+                }
+                foreach (var productComment in productComments)
+                {
+                    productComment.IsSynced = true;
+                }
+
+                if (productReviews.Any())
+                {
+                    await _productReviewSieuThiSongKhoeRepository.UpdateManyAsync(productReviews);
+                }
+                if (productComments.Any())
+                {
+                    await _productCommentSieuThiSongKhoeRepository.UpdateManyAsync(productComments);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogException(e);
+        }
+    }
+    
     public async Task DoSyncCategoriesAsync()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
@@ -177,7 +238,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         var productIds = (await _productRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null).Select(x => x.Id).ToList();
+            .Where(x => x.DataSourceId == _dataSource.Id 
+                        //&& x.ExternalId == null
+                        ).Select(x => x.Id).ToList();
 
         var number = 1;
         foreach (var productId in productIds)

@@ -43,6 +43,8 @@ public class SyncProductAladinBackgroundWorker : HangfireBackgroundWorkerBase
     {
         await _wooManagerAladin.DoSyncCategoriesAsync();
         await _wooManagerAladin.DoSyncProductToWooAsync();
+
+        await _wooManagerAladin.DoSyncReviews();
     }
 
 }

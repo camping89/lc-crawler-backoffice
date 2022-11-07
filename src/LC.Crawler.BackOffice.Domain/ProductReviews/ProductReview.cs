@@ -26,6 +26,8 @@ namespace LC.Crawler.BackOffice.ProductReviews
 
         public virtual int Likes { get; set; }
         public Guid ProductId { get; set; }
+        
+        public bool IsSynced { get; set; }
 
         public ProductReview()
         {

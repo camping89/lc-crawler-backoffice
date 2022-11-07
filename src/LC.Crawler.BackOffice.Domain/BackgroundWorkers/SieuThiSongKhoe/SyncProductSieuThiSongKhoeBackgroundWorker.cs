@@ -43,5 +43,6 @@ public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
     {
         await _wooManagerSieuThiSongKhoe.DoSyncCategoriesAsync();
         await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
+        await _wooManagerSieuThiSongKhoe.DoSyncReviews();
     }
 }

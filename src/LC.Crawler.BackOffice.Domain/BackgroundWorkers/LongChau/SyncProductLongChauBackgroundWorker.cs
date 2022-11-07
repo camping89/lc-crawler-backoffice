@@ -33,5 +33,6 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     {
         await _wooManagerLongChau.DoSyncCategoriesAsync();
         await _wooManagerLongChau.DoSyncProductToWooAsync();
+        await _wooManagerLongChau.DoSyncReviews();
     }
 }

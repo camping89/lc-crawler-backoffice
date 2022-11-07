@@ -6,6 +6,8 @@ using LC.Crawler.BackOffice.PageDatasource.Aladin.Categories;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Medias;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductAttributes;
+using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductComments;
+using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductReviews;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.Products;
 using LC.Crawler.BackOffice.PageDatasource.Aladin.ProductVariants;
 using LC.Crawler.BackOffice.PageDatasource.AloBacSi.Articles;
@@ -20,7 +22,11 @@ using LC.Crawler.BackOffice.PageDatasource.LongChau.Articles;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Categories;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Medias;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.MongoDb;
+using LC.Crawler.BackOffice.PageDatasource.LongChau.ProductAttributes;
+using LC.Crawler.BackOffice.PageDatasource.LongChau.ProductComments;
+using LC.Crawler.BackOffice.PageDatasource.LongChau.ProductReviews;
 using LC.Crawler.BackOffice.PageDatasource.LongChau.Products;
+using LC.Crawler.BackOffice.PageDatasource.LongChau.ProductVariants;
 using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.Articles;
 using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.Categories;
 using LC.Crawler.BackOffice.PageDatasource.SongKhoeMedplus.Medias;
@@ -30,6 +36,8 @@ using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Categories;
 using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Medias;
 using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.MongoDb;
 using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.ProductAttributes;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.ProductComments;
+using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.ProductReviews;
 using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.Products;
 using LC.Crawler.BackOffice.PageDatasource.SieuThiSongKhoe.ProductVariants;
 using LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Articles;
@@ -41,6 +49,7 @@ using LC.Crawler.BackOffice.PageDatasource.SucKhoeGiaDinh.Categories;
 using LC.Crawler.BackOffice.PageDatasource.SucKhoeGiaDinh.Medias;
 using LC.Crawler.BackOffice.PageDatasource.SucKhoeGiaDinh.MongoDb;
 using LC.Crawler.BackOffice.ProductAttributes;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.ProductVariants;
 using Microsoft.Extensions.DependencyInjection;
@@ -95,6 +104,9 @@ public class PageDataSourceMongoDbModule : AbpModule
 
             options.AddRepository<ProductAttribute, MongoProductAttributeAladinRepository>();
             options.AddRepository<ProductVariant, MongoProductVariantAladinRepository>();
+            
+            options.AddRepository<ProductReview, MongoProductReviewAladinRepository>();
+            options.AddRepository<ProductReview, MongoProductCommentAladinRepository>();
 
         });
 
@@ -109,6 +121,12 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Media, MongoMediaLongChauRepository>();
 
             options.AddRepository<Product, MongoProductLongChauRepository>();
+            
+            options.AddRepository<ProductAttribute, MongoProductAttributeLongChauRepository>();
+            options.AddRepository<ProductVariant, MongoProductVariantLongChauRepository>();
+            
+            options.AddRepository<ProductReview, MongoProductReviewLongChauRepository>();
+            options.AddRepository<ProductReview, MongoProductCommentLongChauRepository>();
 
         });
 
@@ -125,6 +143,9 @@ public class PageDataSourceMongoDbModule : AbpModule
             options.AddRepository<Product, MongoProductSieuThiSongKhoeRepository>();
             options.AddRepository<ProductAttribute, MongoProductAttributeSieuThiSongKhoeRepository>();
             options.AddRepository<ProductVariant, MongoProductVariantSieuThiSongKhoeRepository>();
+            
+            options.AddRepository<ProductReview, MongoProductReviewSieuThiSongKhoeRepository>();
+            options.AddRepository<ProductReview, MongoProductCommentSieuThiSongKhoeRepository>();
         });
 
 

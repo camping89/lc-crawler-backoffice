@@ -5,6 +5,7 @@ using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
+using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
 using LC.Crawler.BackOffice.WooCommerces;
 using LC.Crawler.BackOffice.Wordpress;
@@ -41,6 +42,8 @@ public class MasterService : ITransientDependency
     private readonly WooManagerSieuThiSongKhoe _wooManagerSieuThiSongKhoe;
 
     private readonly WordpressManagerAloBacSi _wordpressManagerAloBacSi;
+
+    private readonly IProductReviewLongChauRepository _productReviewLongChauRepository;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
@@ -50,7 +53,8 @@ public class MasterService : ITransientDependency
         WordpressManagerBase wordpressManagerBase,
         WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong,
         WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe,
-        WordpressManagerAloBacSi wordpressManagerAloBacSi)
+        WordpressManagerAloBacSi wordpressManagerAloBacSi,
+        IProductReviewLongChauRepository productReviewLongChauRepository)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -69,6 +73,7 @@ public class MasterService : ITransientDependency
         _wordpressManagerSucKhoeDoiSong = wordpressManagerSucKhoeDoiSong;
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         _wordpressManagerAloBacSi = wordpressManagerAloBacSi;
+        _productReviewLongChauRepository = productReviewLongChauRepository;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -178,5 +183,11 @@ public class MasterService : ITransientDependency
     {
         var dataSource = await _dataSourceRepository.GetAsync(_ => _.Url.Contains(site));
         await _wooApiConsumers.GetArticleBrandApi(dataSource);
+    }
+
+    public async Task TestSyncReviews()
+    {
+        
+        await _wooManagerLongChau.DoSyncReviews();
     }
 }
