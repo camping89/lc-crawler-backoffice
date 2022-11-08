@@ -109,4 +109,10 @@ public class ArticleManangerAloBacSi : DomainService
         }
     }
     
+    public async Task<List<KeyValuePair<string, int>>> CountArticleByCategory()
+    {
+        var articles = await _articleAloBacSiRepository.GetListAsync();
+        var categories = await _categoryAloBacSiRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+    }
 }

@@ -20,6 +20,8 @@ using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
+using RestSharp;
+using RestSharp.Authenticators;
 using Svg;
 using Volo.Abp.Auditing;
 using WordPressPCL;
@@ -41,7 +43,8 @@ public class WordpressManagerBase : DomainService
     public async Task DoUpdatePosts(DataSource dataSource)
     {
         var client = await InitClient(dataSource);
-        var wpPosts = ( await client.Posts.GetAllAsync(useAuth: true)).Where(x=>x.Content.Rendered.Contains("href")).ToList();
+        var wpPosts = (await client.Posts.GetAllAsync(useAuth: true)).Where(x => x.Content.Rendered.Contains("href"))
+            .ToList();
 
         Console.WriteLine($"Total: {wpPosts.Count()}");
         var index = 1;
@@ -65,6 +68,7 @@ public class WordpressManagerBase : DomainService
             index++;
         }
     }
+
     public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav)
     {
         var client = await InitClient(dataSource);
@@ -77,16 +81,16 @@ public class WordpressManagerBase : DomainService
 
         var post = new Post
         {
-            Title         = new Title(article.Title),
-            Content       = new Content(article.Content),
-            Date          = article.CreatedAt,
-            Excerpt       = new Excerpt(article.Excerpt),
-            Status        = Status.Pending,
+            Title = new Title(article.Title),
+            Content = new Content(article.Content),
+            Date = article.CreatedAt,
+            Excerpt = new Excerpt(article.Excerpt),
+            Status = Status.Pending,
             LiveblogLikes = article.LikeCount,
             CommentStatus = OpenStatus.Open,
             FeaturedMedia = featureMedia?.Id,
-            Categories    = new List<int>(),
-            Tags          = new List<int>()
+            Categories = new List<int>(),
+            Tags = new List<int>()
         };
 
         // categories
@@ -102,7 +106,7 @@ public class WordpressManagerBase : DomainService
     private async Task AddPostTags(WordPressClient client, Article article, Post post, string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
-        
+
         try
         {
             var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
@@ -132,30 +136,36 @@ public class WordpressManagerBase : DomainService
         }
     }
 
-    private async Task AddPostCategories(ArticleWithNavigationProperties articleNav, WordPressClient client, Post post, string homeUrl)
+    private async Task AddPostCategories(ArticleWithNavigationProperties articleNav, WordPressClient client, Post post,
+        string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
         try
         {
             if (articleNav.Categories.IsNotNullOrEmpty())
             {
+                post.Categories = new List<int>();
                 foreach (var category in articleNav.Categories)
                 {
                     var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
-                    
+
                     var encodeName = category.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
 
-                    var wpCategory = wooCategories.FirstOrDefault(x => encodeName != null && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    var wpCategory = wooCategories.FirstOrDefault(x =>
+                        encodeName != null && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
                     if (encodeName is not null)
                     {
-                        var wpCategoriesFilter     = wooCategories.Where(x => encodeName.IsNotNullOrEmpty() && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                        var wpCategoriesFilter = wooCategories.Where(x =>
+                            encodeName.IsNotNullOrEmpty() &&
+                            x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
                         foreach (var wpCate in wpCategoriesFilter)
                         {
                             var parentCate = wooCategories.FirstOrDefault(x => x.Id == wpCate.Parent);
                             if (parentCate != null && category.Name.Contains(parentCate.Name))
                             {
                                 var rootParent = wooCategories.FirstOrDefault(x => x.Id == parentCate.Parent);
-                                if ((rootParent != null && category.Name.Contains(rootParent.Name)) || parentCate.Parent == 0)
+                                if ((rootParent != null && category.Name.Contains(rootParent.Name)) ||
+                                    parentCate.Parent == 0)
                                 {
                                     wpCategory = wpCate;
                                 }
@@ -187,7 +197,7 @@ public class WordpressManagerBase : DomainService
         htmlDoc.LoadHtml(contentHtml);
         var divVideos = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class,'VCSortableInPreviewMode')]");
         if (divVideos is null) return contentHtml;
-        
+
         foreach (var divVideo in divVideos)
         {
             var dataVideo = divVideo.Attributes["data-vid"];
@@ -200,15 +210,15 @@ public class WordpressManagerBase : DomainService
                 }
             }
         }
-        
+
         var newHtml = htmlDoc.DocumentNode.WriteTo();
         return newHtml;
     }
 
     private string ReplaceImageUrls(string contentHtml, List<Media> medias)
     {
-        if(!contentHtml.IsNotNullOrEmpty()) return null;
-        
+        if (!contentHtml.IsNotNullOrEmpty()) return null;
+
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
         foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
@@ -263,7 +273,8 @@ public class WordpressManagerBase : DomainService
             var categoriesTerms = cateStr.Split("->").ToList();
             var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
             var wooRootCategory =
-                wooCategories.FirstOrDefault(x => x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
+                wooCategories.FirstOrDefault(x =>
+                    x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
             if (wooRootCategory == null)
             {
                 try
@@ -290,7 +301,8 @@ public class WordpressManagerBase : DomainService
                     {
                         var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
                         var wooSubCategory = wooCategories.FirstOrDefault(x =>
-                            x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == cateParent.Id);
+                            x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) &&
+                            x.Parent == cateParent.Id);
                         if (wooSubCategory == null)
                         {
                             var cateNew = new WordpresCategory
@@ -373,8 +385,9 @@ public class WordpressManagerBase : DomainService
         client.Auth.UseBasicAuth(dataSource.Configuration.Username, dataSource.Configuration.Password);
         return Task.FromResult(client);
     }
-    
-    public void LogException(AuditLogInfo currentLog, Exception ex, Article article, string url, string entity = "Article")
+
+    public void LogException(AuditLogInfo currentLog, Exception ex, Article article, string url,
+        string entity = "Article")
     {
         //Add exceptions
         currentLog.Url = url;
@@ -386,10 +399,17 @@ public class WordpressManagerBase : DomainService
 
         currentLog.Comments.Add($"Id: {article.Id}, DataSourceId {article.DataSourceId}");
         currentLog.Comments.Add(ex.StackTrace);
-        currentLog.ExtraProperties.Add("C_Entity",     entity);
-        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
+        currentLog.ExtraProperties.Add("C_Entity", entity);
+        currentLog.ExtraProperties.Add("C_Message", ex.Message);
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
-        currentLog.ExtraProperties.Add("C_Source",     ex.Source);
+        currentLog.ExtraProperties.Add("C_Source", ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
+    }
+
+    public async Task DoUpdatePostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, Post post)
+    {
+        var client = await InitClient(dataSource);
+        await AddPostCategories(articleNav, client, post, dataSource.Url);
+        await client.Posts.UpdateAsync(post);
     }
 }

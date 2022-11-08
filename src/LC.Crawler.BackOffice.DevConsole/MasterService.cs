@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -20,12 +22,20 @@ public class MasterService : ITransientDependency
 {
     public ILogger<MasterService> Logger { get; set; }
 
+    private readonly ProductManagerAladin _productManagerAladin;
     private readonly ProductManagerLongChau _productManagerLongChau;
     private readonly ProductManagerSieuThiSongKhoe _productManagerSieuThiSongKhoe;
-    private readonly ArticleManangerSongKhoeMedplus _articleManangerSongKhoeMedplus;
-    private readonly WooManagerLongChau _wooManagerLongChau;
-
+    
     private readonly ArticleManangerLongChau _articleManangerLongChau;
+    private readonly ArticleManangerAladin _articleManangerAladin;
+    private readonly ArticleManangerSieuThiSongKhoe _articleManangerSieuThiSongKhoe;
+    private readonly ArticleManangerSongKhoeMedplus _articleManangerSongKhoeMedplus;
+    private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
+    private readonly ArticleManangerSucKhoeGiaDinh _articleManangerSucKhoeGiaDinh;
+    private readonly ArticleManangerAloBacSi _articleManangerAloBacSi;
+    private readonly ArticleManangerBlogSucKhoe _articleManangerBlogSucKhoe;
+    
+    private readonly WooManagerLongChau _wooManagerLongChau;
     private readonly MediaManagerLongChau _mediaManagerLongChau;
 
     private readonly WooManagerAladin _wooManagerAladin;
@@ -54,7 +64,7 @@ public class MasterService : ITransientDependency
         WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong,
         WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe,
         WordpressManagerAloBacSi wordpressManagerAloBacSi,
-        IProductReviewLongChauRepository productReviewLongChauRepository)
+        IProductReviewLongChauRepository productReviewLongChauRepository, ProductManagerAladin productManagerAladin, ArticleManangerAladin articleManangerAladin, ArticleManangerSieuThiSongKhoe articleManangerSieuThiSongKhoe, ArticleManangerSucKhoeDoiSong articleManangerSucKhoeDoiSong, ArticleManangerSucKhoeGiaDinh articleManangerSucKhoeGiaDinh, ArticleManangerAloBacSi articleManangerAloBacSi, ArticleManangerBlogSucKhoe articleManangerBlogSucKhoe)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -74,6 +84,13 @@ public class MasterService : ITransientDependency
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         _wordpressManagerAloBacSi = wordpressManagerAloBacSi;
         _productReviewLongChauRepository = productReviewLongChauRepository;
+        _productManagerAladin = productManagerAladin;
+        _articleManangerAladin = articleManangerAladin;
+        _articleManangerSieuThiSongKhoe = articleManangerSieuThiSongKhoe;
+        _articleManangerSucKhoeDoiSong = articleManangerSucKhoeDoiSong;
+        _articleManangerSucKhoeGiaDinh = articleManangerSucKhoeGiaDinh;
+        _articleManangerAloBacSi = articleManangerAloBacSi;
+        _articleManangerBlogSucKhoe = articleManangerBlogSucKhoe;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -118,26 +135,28 @@ public class MasterService : ITransientDependency
 
     public async Task DoSyncProductToWooAsync()
     {
-        //await _wooManagerLongChau.DoSyncProductToWooAsync();
+        // await _wooManagerLongChau.DoSyncCategoriesAsync();
+        await _wooManagerLongChau.DoSyncProductToWooAsync();
         
-        //await _wooManagerLongChau.DoSyncCategoriesAsync();
+        
         // await _wooManagerAladin.DoSyncProductToWooAsync();
-        await _wooManagerSieuThiSongKhoe.DoSyncUpdateProduct();
+       // await _wooManagerSieuThiSongKhoe.DoSyncUpdateProduct();
+       // await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
     }
 
     public async Task DoSyncArticleToWooAsync()
     {
         //var suckhoeArticle = await _articleSucKhoeDoiSongRepository.GetAsync(x => x.Title == "Lợi ích không ngờ của hành tây với sức khỏe");
         //var text = _wordpressManagerSucKhoeDoiSong.DoSyncCategoriesAsync();
-        //await _wordpressManagerLongChau.DoSyncCategoriesAsync();
-        //await _wordpressManagerLongChau.DoSyncPostAsync();
+        // await _wordpressManagerLongChau.DoSyncCategoriesAsync();
+        // await _wordpressManagerLongChau.DoSyncPostAsync();
         //await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
-        await _wordpressManagerAloBacSi.UpdateDataPostAsync();
+        //await _wordpressManagerAloBacSi.UpdateDataPostAsync();
     }
 
     public async Task DoSyncArticles()
     {
-        await _wordpressManagerLongChau.DoSyncPostAsync();
+        await _wordpressManagerLongChau.DoUpdatePostAsync();
     }
     
     // public async Task DoSyncSongKhoeMedplusArticles()
@@ -147,12 +166,12 @@ public class MasterService : ITransientDependency
 
     public async Task SyncData()
     {
-        using StreamReader file = File.OpenText(@"D:\SieuThiSongKhoe.txt");
+        using StreamReader file = File.OpenText(@"D:\longchau.txt");
         JsonSerializer serializer = new JsonSerializer();
         var crawlResultEtos = (CrawlEcommercePayload)serializer.Deserialize(file, typeof(CrawlEcommercePayload));
         if (crawlResultEtos != null)
         {
-            await _productManagerSieuThiSongKhoe.ProcessingDataAsync(crawlResultEtos);
+            await _productManagerLongChau.ProcessingDataAsync(crawlResultEtos);
         }
     }
     
@@ -187,7 +206,78 @@ public class MasterService : ITransientDependency
 
     public async Task TestSyncReviews()
     {
-        
         await _wooManagerLongChau.DoSyncReviews();
+    }
+    
+    // public async Task CountProductAndArticleByCategory()
+    // {
+    //     var productAladinResult = await _productManagerAladin.CountProductByCategory();
+    //     PrintConsole(productAladinResult, "Product", "Aladin");
+    //
+    //     var productLongChauResult = await _productManagerLongChau.CountProductByCategory();
+    //     PrintConsole(productLongChauResult, "Product", "LongChau");
+    //     
+    //     var productSieuThiSongKhoeResult = await _productManagerSieuThiSongKhoe.CountProductByCategory();
+    //     PrintConsole(productSieuThiSongKhoeResult, "Product", "SieuThiSongKhoe");
+    //     
+    //     var articleAladinResult = await _articleManangerAladin.CountArticleByCategory();
+    //     PrintConsole(articleAladinResult, "Article", "Aladin");
+    //     
+    //     var articleLongChauResult = await _articleManangerLongChau.CountArticleByCategory();
+    //     PrintConsole(articleLongChauResult, "Article", "LongChau");
+    //     
+    //     var articleSieuThiSongKhoeResult = await _articleManangerSieuThiSongKhoe.CountArticleByCategory();
+    //     PrintConsole(articleSieuThiSongKhoeResult, "Article", "SieuThiSucKhoe");
+    //     
+    //     var articleAloBacSiResult = await _articleManangerAloBacSi.CountArticleByCategory();
+    //     PrintConsole(articleAloBacSiResult, "Article", "AloBacSi");
+    //     
+    //     var articleBlogSucKhoeResult = await _articleManangerBlogSucKhoe.CountArticleByCategory();
+    //     PrintConsole(articleBlogSucKhoeResult, "Article", "BlogSucKhoe");
+    //     
+    //     var articleSongKhoeMedplusResult = await _articleManangerSongKhoeMedplus.CountArticleByCategory();
+    //     PrintConsole(articleSongKhoeMedplusResult, "Article", "SongKhoeMedplus");
+    //     
+    //     var articleSucKhoeDoiSongResult = await _articleManangerSucKhoeDoiSong.CountArticleByCategory();
+    //     PrintConsole(articleSucKhoeDoiSongResult, "Article", "SucKhoeDoiSong");
+    //     
+    //     var articleSucKhoeGiaDinhResult = await _articleManangerSucKhoeGiaDinh.CountArticleByCategory();
+    //     PrintConsole(articleSucKhoeGiaDinhResult, "Article", "SucKhoeGiaDinh");
+    //
+    //     var lines = new List<string>();
+    //     lines.Add("----------------------------Product Aladin----------------------");
+    //     lines.AddRange(productAladinResult.Select(item => $"{item.Key} ----- {item.Value}").ToList());
+    //     lines.Add("----------------------------Product LongChau----------------------");
+    //     lines.AddRange(productLongChauResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Product SieuThiSongKhoe----------------------");
+    //     lines.AddRange(productSieuThiSongKhoeResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article Aladin----------------------");
+    //     lines.AddRange(articleAladinResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article LongChau----------------------");
+    //     lines.AddRange(articleLongChauResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article SieuThiSongKhoe----------------------");
+    //     lines.AddRange(articleSieuThiSongKhoeResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article AloBacSi----------------------");
+    //     lines.AddRange(articleAloBacSiResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article BlogSucKhoe----------------------");
+    //     lines.AddRange(articleBlogSucKhoeResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article SongKhoeMedplus----------------------");
+    //     lines.AddRange(articleSongKhoeMedplusResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article SucKhoeDoiSong----------------------");
+    //     lines.AddRange(articleSucKhoeDoiSongResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //     lines.Add("----------------------------Article SucKhoeGiaDinh----------------------");
+    //     lines.AddRange(articleSucKhoeGiaDinhResult.Select(item => $"{item.Key} ----- {item.Value}"));
+    //
+    //     await File.WriteAllLinesAsync("category-result.txt", lines);
+    // }
+
+    private void PrintConsole(List<KeyValuePair<string, int>> result, string type, string site)
+    {
+        Console.WriteLine($"{type} {site} Categories Count: {result.Count}");
+        Console.WriteLine($"{type} {site} Count: {result.Sum(_ => _.Value)}");
+        foreach (var item in result)
+        {
+            Console.WriteLine($"{type} Count: {item.Key} -------------{item.Value}");
+        }
     }
 }

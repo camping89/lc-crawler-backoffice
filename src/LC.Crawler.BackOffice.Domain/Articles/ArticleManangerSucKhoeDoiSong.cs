@@ -109,4 +109,10 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
         }
     }
     
+    public async Task<List<KeyValuePair<string, int>>> CountArticleByCategory()
+    {
+        var articles = await _articleSucKhoeDoiSongRepository.GetListAsync();
+        var categories = await _categorySucKhoeDoiSongRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+    }
 }

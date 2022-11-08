@@ -12,6 +12,7 @@ using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.Products;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Volo.Abp.Auditing;
 using Svg;
 using Volo.Abp.Domain.Services;
@@ -44,6 +45,7 @@ public class WooManangerBase : DomainService
             return null;
         }
 
+        var productImages = new List<ProductImage>();
         //pass the Wordpress REST API base address as string
         var client = new WordPressClient($"{dataSource.PostToSite}/wp-json/");
         client.Auth.UseBasicAuth(dataSource.Configuration.Username, dataSource.Configuration.Password);
@@ -62,12 +64,12 @@ public class WooManangerBase : DomainService
             var fileExtension = Path.GetExtension(media.Url);
             if (!fileExtension.IsNotNullOrEmpty()) continue;
 
-            if (fileExtension is FileExtendHelper.SvgExtend)
+            if (fileExtension.Equals(FileExtendHelper.SvgExtend, StringComparison.InvariantCultureIgnoreCase))
             {
                 var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
                 if (!svgContent.IsNotNullOrEmpty()) continue;
 
-                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
+                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}"; 
                 var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
                 var bitmap = svgDoc.Draw();
                 using var stream = new MemoryStream();
@@ -77,19 +79,31 @@ public class WooManangerBase : DomainService
             }
             else
             {
+                if (!fileExtension.Equals(FileExtendHelper.PngExtend, StringComparison.InvariantCultureIgnoreCase) && !fileExtension.Equals(FileExtendHelper.JpgExtend, StringComparison.InvariantCultureIgnoreCase))
+                    fileExtension = FileExtendHelper.PngExtend;
                 var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
                 if (fileBytes is null) continue;
                 var stream = new MemoryStream(fileBytes);
                 var fileName = $"{media.Id}{fileExtension}";
-                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                //mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
             }
 
-            media.ExternalId = mediaResult.Id.ToString();
-            media.ExternalUrl = mediaResult.SourceUrl;
-            mediaItems.Add(mediaResult);
+            // media.ExternalId = mediaResult.Id.ToString();
+            // media.ExternalUrl = mediaResult.SourceUrl;
+            var productImage = new ProductImage()
+            {
+                src = media.Url
+            };
+            // if (mediaResult.SourceUrl.EndsWith(".webp"))
+            // {
+            //     productImage.src = media.Url;
+            // }
+            productImages.Add(productImage);
+            //mediaItems.Add(mediaResult);
         }
-
-        return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();
+        
+        //return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();
+        return productImages;
     }
 
     public async Task<List<WooProductCategory>> GetWooCategories(DataSource dataSource)
@@ -344,6 +358,7 @@ public class WooManangerBase : DomainService
         // Add tags
         await AddProductTags(wcObject, productNav, productTags, wooProduct, dataSource.Url);
 
+        var x = JsonConvert.SerializeObject(wooProduct);
         return await wcObject.Product.Add(wooProduct);
     }
 

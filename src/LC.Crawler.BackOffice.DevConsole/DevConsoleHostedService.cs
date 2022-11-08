@@ -25,7 +25,7 @@ public class DevConsoleHostedService : IHostedService
         //await _masterService.ProcessLongChauArticleDataAsync();
         //await _masterService.DoSyncArticleToWooAsync();
 
-        await _masterService.TestSyncReviews();
+        await _masterService.DoSyncProductToWooAsync();
         //await _masterService.DoSyncProductToWooAsync();
     }
 

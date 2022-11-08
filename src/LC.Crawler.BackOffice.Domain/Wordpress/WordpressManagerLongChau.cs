@@ -9,6 +9,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using Volo.Abp.Auditing;
+using WordPressPCL;
 using WordpresCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -100,5 +101,47 @@ public class WordpressManagerLongChau : DomainService
                         .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
+    }
+
+    public async Task DoUpdatePostAsync()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+        
+        var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
+            .Where(x => x.DataSourceId == _dataSource.Id)
+            .Select(x=>x.Id).ToList();
+        
+        var client = new WordPressClient($"{_dataSource.PostToSite}/wp-json/");
+        client.Auth.UseBasicAuth(_dataSource.Configuration.Username, _dataSource.Configuration.Password);
+        
+        var posts = (await client.Posts.GetAllAsync(useAuth: true)).ToList();
+
+        foreach (var articleId in articleIds)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            var       articleNav    = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
+            var wpPost = posts.FirstOrDefault(_ =>
+                _.Title.Rendered.Equals(articleNav.Article.Title, StringComparison.InvariantCultureIgnoreCase));
+            if(wpPost is null) continue;
+            
+            try
+            {
+                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, wpPost);
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.LongChauUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+        }
     }
 }

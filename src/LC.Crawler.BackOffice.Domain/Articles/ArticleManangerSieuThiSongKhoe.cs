@@ -108,4 +108,11 @@ public class ArticleManangerSieuThiSongKhoe : DomainService
             }
         }
     }
+    
+    public async Task<List<KeyValuePair<string, int>>> CountArticleByCategory()
+    {
+        var articles = await _articleSieuThiSongKhoeRepository.GetListAsync();
+        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+    }
 }
