@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.ProductReviews;
@@ -62,7 +63,7 @@ public class WooManagerAladin : DomainService
         var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
         var wc = new WCObject(rest);
 
-        var categories = ( await _categoryAladinRepository.GetListAsync(x=>x.Name.Contains("&"))).ToList();
+        var categories = ( await _categoryAladinRepository.GetListAsync(x => x.CategoryType == CategoryType.Ecom)).ToList();
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         foreach (var categoryItem in categories)
@@ -79,7 +80,8 @@ public class WooManagerAladin : DomainService
                     { "sku", productNav.Product.Code }
                 })).FirstOrDefault();
 
-                if (checkProduct != null && checkProduct.categories.Any(x=>x.slug == "uncategorized"))
+                if (checkProduct != null)
+                    //&& checkProduct.categories.Any(x=>x.slug == "uncategorized"))
                 {
                     var category = productNav.Categories.FirstOrDefault();
                     if (category != null)
@@ -89,35 +91,56 @@ public class WooManagerAladin : DomainService
                         //Thuốc -> Vitamin &amp; khoáng chất
                         //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
                         var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
-                
-                        var wooCategory = wooCategories.FirstOrDefault(x =>
-                            encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
-                        if (encodeName != null )
+                        
+                        if (category.Name.Contains("->"))
                         {
-                            category.Name = category.Name.Replace("&", "&amp;").Trim();
-                            var wooCategoriesFilter = wooCategories.Where(x =>
-                                x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
-                            foreach (var wooCate in wooCategoriesFilter)
+                            var wooCategory = wooCategories.FirstOrDefault(x =>
+                                encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                            if (encodeName != null )
                             {
-                                var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
-                                if (parentCate != null && category.Name.Contains(parentCate.name))
+                                category.Name = category.Name.Replace("&", "&amp;").Trim();
+                                var wooCategoriesFilter = wooCategories.Where(x =>
+                                    x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                                foreach (var wooCate in wooCategoriesFilter)
                                 {
-                                    var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
-                                    if ( (rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                                    var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
+                                    if (parentCate != null && category.Name.Contains(parentCate.name))
                                     {
-                                        wooCategory = wooCate;
-                                        checkProduct.categories = new List<ProductCategoryLine>()
+                                        var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
+                                        if ( (rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
                                         {
-                                            new()
+                                            wooCategory = wooCate;
+                                            checkProduct.categories = new List<ProductCategoryLine>()
                                             {
-                                                id = wooCategory.id,
-                                                name = wooCategory.name,
-                                                slug = wooCategory.slug
-                                            }
-                                        };
-                                        await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
+                                                new()
+                                                {
+                                                    id = wooCategory.id,
+                                                    name = wooCategory.name,
+                                                    slug = wooCategory.slug
+                                                }
+                                            };
+                                            await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
+                                        }
                                     }
                                 }
+                            }
+                        }
+                        else
+                        {
+                            var wooCategory = wooCategories.FirstOrDefault(x =>
+                                encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) && x.parent == 0);
+                            if (wooCategory is not null)
+                            {
+                                checkProduct.categories = new List<ProductCategoryLine>()
+                                {
+                                    new()
+                                    {
+                                        id = wooCategory.id,
+                                        name = wooCategory.name,
+                                        slug = wooCategory.slug
+                                    }
+                                };
+                                await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
                             }
                         }
                     }
@@ -153,7 +176,7 @@ public class WooManagerAladin : DomainService
             return;
         }
 
-        var categories = await _categoryAladinRepository.GetListAsync();
+        var categories = await _categoryAladinRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         await _wooManangerBase.SyncCategoriesAsync(_dataSource, categories);
     }
 

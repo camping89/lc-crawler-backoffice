@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductComments;
@@ -67,7 +68,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
         var wc = new WCObject(rest);
 
-        var categories = (await _categorySieuThiSongKhoeRepository.GetListAsync()).ToList();
+        var categories = (await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom)).ToList();
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         
@@ -218,7 +219,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
             return;
         }
 
-        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync();
+        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         await _wooManangerBase.SyncCategoriesAsync(_dataSource, categories);
     }
 

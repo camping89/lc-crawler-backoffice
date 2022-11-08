@@ -589,11 +589,11 @@ public class WooManangerBase : DomainService
                     //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
                     var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
 
-                    var wooCategory = wooCategories.FirstOrDefault(x => encodeName != null && x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    var wooCategory = wooCategories.FirstOrDefault(x => encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
                     if (encodeName != null)
                     {
                         category.Name = category.Name.Replace("&", "&amp;").Trim();
-                        var wooCategoriesFilter = wooCategories.Where(x => x.name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                        var wooCategoriesFilter = wooCategories.Where(x => x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
                         foreach (var wooCate in wooCategoriesFilter)
                         {
                             var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);

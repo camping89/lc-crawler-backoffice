@@ -57,7 +57,7 @@ public class ProductManagerAladin : DomainService
         {
             return;
         }
-        var categories = await _categoryAladinRepository.GetListAsync();
+        var categories = await _categoryAladinRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             var rawProduct = rawProducts.First();

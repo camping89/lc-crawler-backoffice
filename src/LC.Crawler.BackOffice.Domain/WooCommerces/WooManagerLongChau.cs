@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
+using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.ProductReviews;
@@ -59,7 +60,7 @@ public class WooManagerLongChau : DomainService
             return;
         }
 
-        var categories = await _categoryLongChauRepository.GetListAsync();
+        var categories = await _categoryLongChauRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         await _wooManangerBase.SyncCategoriesAsync(_dataSource,categories);
     }
 
@@ -74,7 +75,7 @@ public class WooManagerLongChau : DomainService
         var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
         var wc = new WCObject(rest);
 
-        var categories = ( await _categoryLongChauRepository.GetListAsync(x=>x.Name.Contains("&"))).ToList();
+        var categories = ( await _categoryLongChauRepository.GetListAsync(x=>x.Name.Contains("&") && x.CategoryType == CategoryType.Ecom)).ToList();
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         foreach (var categoryItem in categories)
@@ -157,11 +158,14 @@ public class WooManagerLongChau : DomainService
                     && x.ExternalId != null
                 )
                 .ToList().ToList();
-        
-            foreach (var product in products.Take(1))
+
+            var count = 1;
+            foreach (var product in products)
             {
-                var productReviews = await _productReviewLongChauRepository.GetListAsync(x => x.IsSynced == false);
-                var productComments = await _productCommentLongChauRepository.GetListAsync(x => x.IsSynced == false);
+                var productReviews = await _productReviewLongChauRepository.GetListAsync(x => x.IsSynced == false && x.ProductId == product.Id);
+                var productComments = await _productCommentLongChauRepository.GetListAsync(x => x.IsSynced == false && x.ProductId == product.Id);
+                
+                if(productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
                 
                 await _wooManangerBase.PostProductReviews(wc, product.Code, productComments, productReviews);
                 foreach (var productReview in productReviews)
@@ -181,6 +185,8 @@ public class WooManagerLongChau : DomainService
                 {
                     await _productCommentLongChauRepository.UpdateManyAsync(productComments);
                 }
+                Console.WriteLine($"Product Count: {count}/{products.Count}");
+                count++;
             }
         }
         catch (Exception e)
@@ -237,5 +243,4 @@ public class WooManagerLongChau : DomainService
             }
         }
     }
-
 }

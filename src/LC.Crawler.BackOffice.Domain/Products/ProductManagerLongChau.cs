@@ -61,7 +61,7 @@ public class ProductManagerLongChau : DomainService
             return;
         }
 
-        var categories = await _categoryLongChauRepository.GetListAsync();
+        var categories = await _categoryLongChauRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             var rawProduct = rawProducts.First();
@@ -140,7 +140,7 @@ public class ProductManagerLongChau : DomainService
                 }
                 
                 //ProductReviews
-                if (rawProduct.Reviews != null)
+                if (rawProduct.Reviews.IsNotNullOrEmpty())
                 {
                     var productReviews = await _productReviewLongChauRepository.GetListAsync(x => x.ProductId == productExist.Id);
                     foreach (var review in rawProduct.Reviews.Where(x=> productReviews.All(pr=>pr.Name != x.Name)))
@@ -158,7 +158,7 @@ public class ProductManagerLongChau : DomainService
                 }
 
                 //ProductComments
-                if (rawProduct.Comments != null)
+                if (rawProduct.Comments.IsNotNullOrEmpty())
                 {
                     var productComments = await _productCommentLongChauRepository.GetListAsync(x => x.ProductId == productExist.Id);
                     foreach (var comment in rawProduct.Comments.Where(x=> productComments.All(pr=>pr.Name != x.Name)))
@@ -342,7 +342,7 @@ public class ProductManagerLongChau : DomainService
             return;
         }
 
-        var categories = await _categoryLongChauRepository.GetListAsync();
+        var categories = await _categoryLongChauRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             var rawProduct = rawProducts.First();

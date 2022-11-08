@@ -55,7 +55,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
         {
             return;
         }
-        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync();
+        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             var rawProduct = rawProducts.First();
