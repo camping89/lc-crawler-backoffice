@@ -406,4 +406,11 @@ public class ProductManagerLongChau : DomainService
             await _productLongChauRepository.UpdateAsync(productExist, true);
         }
     }
+    
+    public async Task<List<KeyValuePair<string, int>>> CountProductByCategory()
+    {
+        var products = await _productLongChauRepository.GetListAsync();
+        var categories = await _categoryLongChauRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name, products.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+    }
 }

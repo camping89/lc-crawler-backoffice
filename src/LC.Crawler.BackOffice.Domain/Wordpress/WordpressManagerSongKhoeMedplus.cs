@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -47,8 +48,10 @@ public class WordpressManagerSongKhoeMedplus : DomainService
             return;
         }
         
+        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync()).Where(_ => !_.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) && !_.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase)).ToList();
+        var categoryIds = categories.Select(_ => _.Id).ToList();
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null && x.Categories.Any(_ => _.CategoryId.IsIn(categoryIds)))
                         .Select(x=>x.Id).ToList();
         
         foreach (var articleId in articleIds)
@@ -96,8 +99,7 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         {
             return;
         }
-
-        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync(x => x.CategoryType == CategoryType.Article))
+        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync(x => x.CategoryType == CategoryType.Article)).Where(x => !x.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) && !x.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase))
                         .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);

@@ -306,4 +306,11 @@ public class ProductManagerSieuThiSongKhoe : DomainService
         await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias,true);
         return medias;
     }
+    
+    public async Task<List<KeyValuePair<string, int>>> CountProductByCategory()
+    {
+        var products = await _productSieuThiSongKhoeRepository.GetListAsync();
+        var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name, products.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+    }
 }

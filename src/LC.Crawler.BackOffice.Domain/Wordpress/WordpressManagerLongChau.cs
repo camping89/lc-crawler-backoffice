@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -51,6 +51,7 @@ public class WordpressManagerLongChau : DomainService
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
 
+        var count = 1;
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -86,6 +87,9 @@ public class WordpressManagerLongChau : DomainService
                 //Always save the log
                 await auditingScope.SaveAsync();
             }
+            
+            Console.WriteLine($"-----Count: {count}/{articleIds.Count}");
+            count++;
         }
     }
 

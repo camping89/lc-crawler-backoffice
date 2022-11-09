@@ -68,6 +68,7 @@ public class WooManagerAladin : DomainService
         //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         foreach (var categoryItem in categories)
         {
+            //TODO remove condition ExternalId for updating product
             var productIds = (await _productRepository.GetQueryableAsync()).Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId != null
                 && x.Categories.Any(x=>x.CategoryId == categoryItem.Id))
             .Select(x=>x.Id).ToList();
@@ -244,7 +245,7 @@ public class WooManagerAladin : DomainService
         var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         var productIds = (await _productRepository.GetQueryableAsync())
             .Where(x => x.DataSourceId == _dataSource.Id
-                        //&& x.ExternalId == null
+                        && x.ExternalId == null
                         )
             .ToList().Select(x => x.Id).ToList();
         

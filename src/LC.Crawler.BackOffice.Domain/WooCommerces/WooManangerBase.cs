@@ -85,21 +85,21 @@ public class WooManangerBase : DomainService
                 if (fileBytes is null) continue;
                 var stream = new MemoryStream(fileBytes);
                 var fileName = $"{media.Id}{fileExtension}";
-                //mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
             }
 
-            // media.ExternalId = mediaResult.Id.ToString();
-            // media.ExternalUrl = mediaResult.SourceUrl;
+            media.ExternalId = mediaResult.Id.ToString();
+            media.ExternalUrl = mediaResult.SourceUrl;
             var productImage = new ProductImage()
             {
                 src = media.Url
             };
-            // if (mediaResult.SourceUrl.EndsWith(".webp"))
-            // {
-            //     productImage.src = media.Url;
-            // }
+            if (mediaResult.SourceUrl.EndsWith(".webp"))
+            {
+                productImage.src = media.Url;
+            }
             productImages.Add(productImage);
-            //mediaItems.Add(mediaResult);
+            mediaItems.Add(mediaResult);
         }
         
         //return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();

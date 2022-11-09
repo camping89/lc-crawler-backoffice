@@ -114,7 +114,7 @@ public class WordpressManagerBase : DomainService
             {
                 foreach (var tag in article.Tags)
                 {
-                    var wpTag = wooTags.FirstOrDefault(_ => _.Name == tag);
+                    var wpTag = wooTags.FirstOrDefault(_ => _.Name.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
                     if (wpTag is null)
                     {
                         wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
@@ -215,7 +215,7 @@ public class WordpressManagerBase : DomainService
         return newHtml;
     }
 
-    private string ReplaceImageUrls(string contentHtml, List<Media> medias)
+    public string ReplaceImageUrls(string contentHtml, List<Media> medias)
     {
         if (!contentHtml.IsNotNullOrEmpty()) return null;
 
@@ -332,49 +332,57 @@ public class WordpressManagerBase : DomainService
 
     private async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
     {
-        MediaItem mediaResult;
+        MediaItem mediaResult = null;
 
-        if (media is null || !media.Url.IsNotNullOrEmpty()) return null;
-
-        var client = await InitClient(dataSource);
-        //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
-        if (media.Url.Contains("http") == false)
+        try
         {
-            media.Url = $"{dataSource.Url}{media.Url}";
+            if (media is null || !media.Url.IsNotNullOrEmpty()) return null;
+
+            var client = await InitClient(dataSource);
+            //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
+            if (media.Url.Contains("http") == false)
+            {
+                media.Url = $"{dataSource.Url}{media.Url}";
+            }
+
+            media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
+            var fileExtension = Path.GetExtension(media.Url);
+            if (!fileExtension.IsNotNullOrEmpty()) return null;
+
+            if (fileExtension is FileExtendHelper.SvgExtend)
+            {
+                var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
+                if (!svgContent.IsNotNullOrEmpty()) return null;
+
+                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
+                var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
+                var bitmap = svgDoc.Draw();
+                using var stream = new MemoryStream();
+                bitmap.Save(stream, ImageFormat.Png);
+                stream.Position = 0;
+
+                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+            }
+            else
+            {
+                var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
+                if (fileBytes is null) return null;
+
+                using var stream = new MemoryStream(fileBytes);
+                var fileName = $"{media.Id}{fileExtension}";
+
+                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+            }
+
+            media.ExternalId = mediaResult.Id.ToString();
+            media.ExternalUrl = mediaResult.SourceUrl;
+            
         }
-
-        media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
-        var fileExtension = Path.GetExtension(media.Url);
-        if (!fileExtension.IsNotNullOrEmpty()) return null;
-
-        if (fileExtension is FileExtendHelper.SvgExtend)
+        catch (Exception e)
         {
-            var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
-            if (!svgContent.IsNotNullOrEmpty()) return null;
-
-            var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
-            var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
-            var bitmap = svgDoc.Draw();
-            using var stream = new MemoryStream();
-            bitmap.Save(stream, ImageFormat.Png);
-            stream.Position = 0;
-
-            mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+            Console.WriteLine(e);
         }
-        else
-        {
-            var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
-            if (fileBytes is null) return null;
-
-            using var stream = new MemoryStream(fileBytes);
-            var fileName = $"{media.Id}{fileExtension}";
-
-            mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
-        }
-
-        media.ExternalId = mediaResult.Id.ToString();
-        media.ExternalUrl = mediaResult.SourceUrl;
-
+        
         return mediaResult;
     }
 
@@ -409,6 +417,7 @@ public class WordpressManagerBase : DomainService
     public async Task DoUpdatePostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, Post post)
     {
         var client = await InitClient(dataSource);
+        post.Content.Raw = ReplaceImageUrls(articleNav.Article.Content, articleNav.Medias);
         await AddPostCategories(articleNav, client, post, dataSource.Url);
         await client.Posts.UpdateAsync(post);
     }

@@ -238,9 +238,11 @@ public class WooManagerSieuThiSongKhoe : DomainService
 
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
+        
+        //TODO remove condition ExternalId for updating product
         var productIds = (await _productRepository.GetQueryableAsync())
             .Where(x => x.DataSourceId == _dataSource.Id 
-                        //&& x.ExternalId == null
+                        && x.ExternalId == null
                         ).Select(x => x.Id).ToList();
 
         var number = 1;
