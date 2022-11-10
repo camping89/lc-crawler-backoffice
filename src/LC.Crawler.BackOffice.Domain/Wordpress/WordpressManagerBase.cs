@@ -15,6 +15,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Fizzler.Systems.HtmlAgilityPack;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
@@ -26,6 +27,7 @@ using Svg;
 using Volo.Abp.Auditing;
 using WordPressPCL;
 using WordPressPCL.Models;
+using WordPressPCL.Utility;
 using WordpresCategory = WordPressPCL.Models.Category;
 using WordpresTag = WordPressPCL.Models.Tag;
 
@@ -69,9 +71,52 @@ public class WordpressManagerBase : DomainService
         }
     }
 
+    public async Task CleanDuplicatePostsAsync(DataSource dataSource)
+    {
+        var client = await InitClient(dataSource);
+        var posts = new List<Post>();
+        var pageIndex = 1;
+        while (true)
+        {
+            //var route = "posts".SetQueryParam("status", "pending").SetQueryParam("per_page", "100").SetQueryParam("page", pageIndex.ToString());
+            var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+            {
+                Statuses = new List<Status>()
+                {
+                    Status.Pending
+                },
+                Page = pageIndex,
+                PerPage = 100
+            },true);
+
+            posts.AddRange(resultPosts);
+            Console.WriteLine($"Page {pageIndex}");
+            
+            if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
+            {
+                break;
+            }
+
+            pageIndex++;
+        }
+
+        foreach (var g in posts.GroupBy(x=>x.Title.Rendered))
+        {
+            var count = g.Count();
+            if (count > 1)
+            {
+                foreach (var post in g.Take(count - 1))
+                {
+                    await client.Posts.DeleteAsync(post.Id);
+                    Console.WriteLine($"Delete post {post.Id}");
+                }
+            }
+        }
+    }
     public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav)
     {
         var client = await InitClient(dataSource);
+        
         var featureMedia = await PostMediaAsync(dataSource, articleNav.Media);
         var contentMedias = await PostMediasAsync(dataSource, articleNav);
 

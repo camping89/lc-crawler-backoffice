@@ -313,7 +313,7 @@ public class WooManangerBase : DomainService
     {
         var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
         {
-            { "sku", productNav.Product.Code }
+            { "sku", productNav.Product.Code },
         });
         if (checkProduct.Count > 0)
         {

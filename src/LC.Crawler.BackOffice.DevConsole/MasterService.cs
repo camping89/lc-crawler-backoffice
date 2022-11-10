@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -278,6 +277,29 @@ public class MasterService : ITransientDependency
         foreach (var item in result)
         {
             Console.WriteLine($"{type} Count: {item.Key} -------------{item.Value}");
+        }
+    }
+
+    public async Task CleanPostDuplicate()
+    {
+        while (true)
+        {
+            var dataSources = await _dataSourceRepository.GetListAsync();
+            foreach (var dataSource in dataSources)
+            {
+                try
+                {
+                    Console.WriteLine($"Site {dataSource.Url}");
+                    await _wordpressManagerBase.CleanDuplicatePostsAsync(dataSource);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    //throw;
+                }
+            }
+            Console.WriteLine($"Chờ 1 tiếng chạy lại");
+            await Task.Delay(TimeSpan.FromHours(1));
         }
     }
 }
