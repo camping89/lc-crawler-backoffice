@@ -48,7 +48,12 @@ public class WordpressManagerSongKhoeMedplus : DomainService
             return;
         }
         
-        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync()).Where(_ => !_.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) && !_.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase)).ToList();
+        //TODO Remove after clean data
+        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync()).Where(_ => 
+            !_.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) 
+            && !_.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase) 
+            && !_.Name.Equals("Dinh dưỡng thai kỳ", StringComparison.InvariantCultureIgnoreCase) 
+            && !_.Name.Equals("Sức khỏe -> Bệnh A-Z -> Nhi khoa", StringComparison.InvariantCultureIgnoreCase)).ToList();
         var categoryIds = categories.Select(_ => _.Id).ToList();
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
@@ -101,7 +106,11 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         {
             return;
         }
-        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync(x => x.CategoryType == CategoryType.Article)).Where(x => !x.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) && !x.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase))
+        var categories = (await _categorySongKhoeMedplusRepository.GetListAsync(x => x.CategoryType == CategoryType.Article)).Where(x => 
+                !x.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) 
+                && !x.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase)
+                && !x.Name.Equals("Dinh dưỡng thai kỳ", StringComparison.InvariantCultureIgnoreCase) 
+                && !x.Name.Equals("Sức khỏe -> Bệnh A-Z -> Nhi khoa", StringComparison.InvariantCultureIgnoreCase))
                         .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
