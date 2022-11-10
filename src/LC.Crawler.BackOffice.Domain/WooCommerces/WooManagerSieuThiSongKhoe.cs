@@ -185,6 +185,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
             {
                 var productReviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => x.IsSynced == false);
                 var productComments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => x.IsSynced == false);
+                
+                if(productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
+                
                 await _wooManangerBase.PostProductReviews(wc, product.Code, productComments, productReviews);
                 foreach (var productReview in productReviews)
                 {

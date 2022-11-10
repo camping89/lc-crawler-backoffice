@@ -204,6 +204,9 @@ public class WooManagerAladin : DomainService
             {
                 var productReviews = await _productReviewAladinRepository.GetListAsync(x => x.IsSynced == false);
                 var productComments = await _productCommentAladinRepository.GetListAsync(x => x.IsSynced == false);
+                
+                if(productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
+                
                 await _wooManangerBase.PostProductReviews(wc, product.Code, productComments, productReviews);
                 foreach (var productReview in productReviews)
                 {

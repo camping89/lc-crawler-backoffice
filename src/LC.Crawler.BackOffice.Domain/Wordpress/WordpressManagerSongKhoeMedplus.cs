@@ -51,13 +51,15 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         var categories = (await _categorySongKhoeMedplusRepository.GetListAsync()).Where(_ => !_.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) && !_.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase)).ToList();
         var categoryIds = categories.Select(_ => _.Id).ToList();
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null && x.Categories.Any(_ => _.CategoryId.IsIn(categoryIds)))
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
         
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
             var       articleNav    = await _articleSongKhoeMedplusRepository.GetWithNavigationPropertiesAsync(articleId);
+            
+            if(articleNav.Categories.Any(_ => _.Id.IsIn(categoryIds))) continue;
             
             try
             {
