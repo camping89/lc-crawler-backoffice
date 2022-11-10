@@ -45,6 +45,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LC.Crawler.BackOffice.Core"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LC.Crawler.BackOffice.DevConsole", "src\LC.Crawler.BackOffice.DevConsole\LC.Crawler.BackOffice.DevConsole.csproj", "{6CB90033-5C82-4A77-B379-8B88DE4983FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LC.Crawler.BackOffice.ReceiveCrawlerDataConsole", "src\LC.Crawler.BackOffice.ReceiveCrawlerDataConsole\LC.Crawler.BackOffice.ReceiveCrawlerDataConsole.csproj", "{0C27418F-C264-4D9A-BEF9-4A1C0E57F4AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,10 @@ Global
 		{6CB90033-5C82-4A77-B379-8B88DE4983FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6CB90033-5C82-4A77-B379-8B88DE4983FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6CB90033-5C82-4A77-B379-8B88DE4983FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C27418F-C264-4D9A-BEF9-4A1C0E57F4AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C27418F-C264-4D9A-BEF9-4A1C0E57F4AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C27418F-C264-4D9A-BEF9-4A1C0E57F4AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C27418F-C264-4D9A-BEF9-4A1C0E57F4AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -151,6 +157,7 @@ Global
 		{59CDC09E-F3D4-4E4E-B0D0-742F803BB67E} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{F677B2CA-44B0-488D-BC47-15065597FC32} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{6CB90033-5C82-4A77-B379-8B88DE4983FC} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{0C27418F-C264-4D9A-BEF9-4A1C0E57F4AA} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {516DED71-4230-607F-120F-423BB0A07293}

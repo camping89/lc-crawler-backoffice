@@ -77,7 +77,7 @@ namespace LC.Crawler.BackOffice.Web;
     typeof(AbpAspNetCoreSerilogModule))]
 [DependsOn(
     //typeof(AbpEventBusRabbitMqModule),
-    typeof(LCMessageQueueModule),
+    //typeof(LCMessageQueueModule),
     typeof(LCBackgroundWorkerDomainModule))]
 [DependsOn(typeof(FileManagementWebModule))]
 public class BackOfficeWebModule : AbpModule
