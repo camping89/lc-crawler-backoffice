@@ -192,17 +192,19 @@ public class WordpressManagerBase : DomainService
                 post.Categories = new List<int>();
                 foreach (var category in articleNav.Categories)
                 {
+                    category.Name = category.Name.Replace("&", "&amp;");
+                    
                     var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
 
                     var encodeName = category.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
 
                     var wpCategory = wooCategories.FirstOrDefault(x =>
-                        encodeName != null && x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                        encodeName != null && x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
                     if (encodeName is not null)
                     {
                         var wpCategoriesFilter = wooCategories.Where(x =>
                             encodeName.IsNotNullOrEmpty() &&
-                            x.Name.Contains(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                            x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
                         foreach (var wpCate in wpCategoriesFilter)
                         {
                             var parentCate = wooCategories.FirstOrDefault(x => x.Id == wpCate.Parent);

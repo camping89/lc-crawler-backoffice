@@ -23,10 +23,10 @@ public class DevConsoleHostedService : IHostedService
         //await _masterService.DoSyncProductToWooAsync();
 
         //await _masterService.ProcessLongChauArticleDataAsync();
-        //await _masterService.DoSyncArticleToWooAsync();
+        await _masterService.DoSyncArticles();
 
         //await _masterService.DoSyncProductToWooAsync();
-        await _masterService.CleanPostDuplicate();
+        // _masterService.CleanPostDuplicate();
         //await _masterService.DoSyncProductToWooAsync();
     }
 

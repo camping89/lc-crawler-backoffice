@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
@@ -10,6 +12,8 @@ using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using Volo.Abp.Auditing;
 using WordPressPCL;
+using WordPressPCL.Models;
+using WordPressPCL.Utility;
 using WordpresCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -122,15 +126,43 @@ public class WordpressManagerLongChau : DomainService
         var client = new WordPressClient($"{_dataSource.PostToSite}/wp-json/");
         client.Auth.UseBasicAuth(_dataSource.Configuration.Username, _dataSource.Configuration.Password);
         
-        var posts = (await client.Posts.GetAllAsync(useAuth: true)).ToList();
+        var posts = new List<Post>();
+        var pageIndex = 1;
+        while (true)
+        {
+            //var route = "posts".SetQueryParam("status", "pending").SetQueryParam("per_page", "100").SetQueryParam("page", pageIndex.ToString());
+            var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+            {
+                Statuses = new List<Status>()
+                {
+                    Status.Pending
+                },
+                Page = pageIndex,
+                PerPage = 100
+            },true);
+
+            posts.AddRange(resultPosts);
+            Console.WriteLine($"Page {pageIndex}");
+            
+            if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
+            {
+                break;
+            }
+
+            pageIndex++;
+        }
+
+
 
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
             var       articleNav    = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
+           
             var wpPost = posts.FirstOrDefault(_ =>
                 _.Title.Rendered.Equals(articleNav.Article.Title, StringComparison.InvariantCultureIgnoreCase));
-            if(wpPost is null) continue;
+            if(wpPost is null)
+                continue;
             
             try
             {
