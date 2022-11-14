@@ -51,14 +51,24 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
         
+        //TODO Remove after clean data
+        var categories = (await _categorySucKhoeDoiSongRepository.GetListAsync()).Where(_ => 
+            !_.Name.Contains("Thời Sự", StringComparison.InvariantCultureIgnoreCase)).ToList();
+        
+        var categoryIds = categories.Select(_ => _.Id).ToList();
+        
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+        
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
             var       articleNav    = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(articleId);
             
+            if(articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
+            
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
                     var article = await _articleSucKhoeDoiSongRepository.GetAsync(articleId);
@@ -96,9 +106,9 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         {
             return;
         }
-
-        var categories = (await _categorySucKhoeDoiSongRepository.GetListAsync(x => x.CategoryType == CategoryType.Article))
-                        .Select(x => x.Name).Distinct().ToList();
+        
+        var categories = (await _categorySucKhoeDoiSongRepository.GetListAsync(x => x.CategoryType == CategoryType.Article)).Where(x => !x.Name.Contains("Thời Sự", StringComparison.InvariantCultureIgnoreCase))
+                .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
     }

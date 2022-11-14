@@ -10,19 +10,8 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Threading.Tasks;
-using Fizzler.Systems.HtmlAgilityPack;
 using IdentityServer4.Extensions;
-using LC.Crawler.BackOffice.Categories;
-using LC.Crawler.BackOffice.Core;
-using LC.Crawler.BackOffice.DataSources;
-using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
-using RestSharp;
-using RestSharp.Authenticators;
 using Svg;
 using Volo.Abp.Auditing;
 using WordPressPCL;
@@ -113,7 +102,7 @@ public class WordpressManagerBase : DomainService
             }
         }
     }
-    public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav)
+    public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, List<Tag> wooTags)
     {
         var client = await InitClient(dataSource);
         
@@ -142,28 +131,29 @@ public class WordpressManagerBase : DomainService
         await AddPostCategories(articleNav, client, post, dataSource.Url);
 
         // tags
-        await AddPostTags(client, article, post, dataSource.Url);
+        await AddPostTags(client, article, post, dataSource.Url, wooTags);
+
 
         var result = await client.Posts.CreateAsync(post);
         return result;
     }
 
-    private async Task AddPostTags(WordPressClient client, Article article, Post post, string homeUrl)
+    private async Task AddPostTags(WordPressClient client, Article article, Post post, string homeUrl, List<Tag> wpTags)
     {
         using var auditingScope = _auditingManager.BeginScope();
 
         try
         {
-            var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
+            //var wooTags = (await client.Tags.GetAllAsync(useAuth: true)).ToList();
             if (article.Tags.IsNotNullOrEmpty())
             {
                 foreach (var tag in article.Tags)
                 {
-                    var wpTag = wooTags.FirstOrDefault(_ => _.Name.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
+                    var wpTag = wpTags.FirstOrDefault(_ => _.Name.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
                     if (wpTag is null)
                     {
                         wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
-                        wooTags.Add(wpTag);
+                        wpTags.Add(wpTag);
                     }
 
                     post.Tags.Add(wpTag.Id);
@@ -240,6 +230,8 @@ public class WordpressManagerBase : DomainService
 
     private string ReplaceVideos(string contentHtml)
     {
+        if (!contentHtml.IsNotNullOrEmpty()) return string.Empty;
+        
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
         var divVideos = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class,'VCSortableInPreviewMode')]");
@@ -264,7 +256,7 @@ public class WordpressManagerBase : DomainService
 
     public string ReplaceImageUrls(string contentHtml, List<Media> medias)
     {
-        if (!contentHtml.IsNotNullOrEmpty()) return null;
+        if (!contentHtml.IsNotNullOrEmpty()) return string.Empty;
 
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
@@ -380,7 +372,7 @@ public class WordpressManagerBase : DomainService
     private async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
     {
         MediaItem mediaResult = null;
-
+        using var auditingScope = _auditingManager.BeginScope();
         try
         {
             if (media is null || !media.Url.IsNotNullOrEmpty()) return null;
@@ -423,13 +415,18 @@ public class WordpressManagerBase : DomainService
 
             media.ExternalId = mediaResult.Id.ToString();
             media.ExternalUrl = mediaResult.SourceUrl;
-            
+
         }
         catch (Exception e)
         {
+            LogImageException(_auditingManager.Current.Log, e, media?.Url, "PostImage");
             Console.WriteLine(e);
         }
-        
+        finally
+        {
+            await auditingScope.SaveAsync();
+        }
+
         return mediaResult;
     }
 
@@ -460,6 +457,25 @@ public class WordpressManagerBase : DomainService
         currentLog.ExtraProperties.Add("C_Source", ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
+    
+    public void LogImageException(AuditLogInfo currentLog, Exception ex, string imageUrl,
+        string entity = "Article Image")
+    {
+        //Add exceptions
+        currentLog.Url = imageUrl;
+        currentLog.Exceptions.Add(ex);
+        if (ex.InnerException is not null)
+        {
+            currentLog.Exceptions.Add(ex.InnerException);
+        }
+        
+        currentLog.Comments.Add(ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Entity", entity);
+        currentLog.ExtraProperties.Add("C_Message", ex.Message);
+        currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
+        currentLog.ExtraProperties.Add("C_Source", ex.Source);
+        currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
+    }
 
     public async Task DoUpdatePostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, Post post)
     {
@@ -467,5 +483,11 @@ public class WordpressManagerBase : DomainService
         post.Content.Raw = ReplaceImageUrls(articleNav.Article.Content, articleNav.Medias);
         await AddPostCategories(articleNav, client, post, dataSource.Url);
         await client.Posts.UpdateAsync(post);
+    }
+
+    public async Task<List<Tag>> GetAllTags(DataSource dataSource)
+    {
+        var client = await InitClient(dataSource);
+        return (await client.Tags.GetAllAsync(useAuth: true)).ToList();
     }
 }

@@ -49,6 +49,8 @@ public class WordpressManagerAladin : DomainService
         var articleIds = (await _articleAladinRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
+        
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
 
         foreach (var articleId in articleIds)
         {
@@ -57,7 +59,7 @@ public class WordpressManagerAladin : DomainService
             
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null)
                 {
                     var article = await _articleAladinRepository.GetAsync(articleId);

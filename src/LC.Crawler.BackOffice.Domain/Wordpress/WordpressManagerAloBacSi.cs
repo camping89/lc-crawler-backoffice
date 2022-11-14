@@ -60,7 +60,8 @@ public class WordpressManagerAloBacSi : DomainService
         var articleIds = (await _articleAloBacSiRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
-
+        
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -68,7 +69,7 @@ public class WordpressManagerAloBacSi : DomainService
             
             try
             {
-                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
                     var article = await _articleAloBacSiRepository.GetAsync(articleId);

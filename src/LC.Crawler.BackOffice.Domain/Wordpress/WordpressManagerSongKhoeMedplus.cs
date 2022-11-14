@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -58,17 +57,18 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
-        
+
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
             var       articleNav    = await _articleSongKhoeMedplusRepository.GetWithNavigationPropertiesAsync(articleId);
             
-            if(articleNav.Categories.Any(_ => _.Id.IsIn(categoryIds))) continue;
+            if(articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
             
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
                     var article = await _articleSongKhoeMedplusRepository.GetAsync(articleId);

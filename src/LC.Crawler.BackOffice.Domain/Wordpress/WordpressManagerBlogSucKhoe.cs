@@ -51,14 +51,16 @@ public class WordpressManagerBlogSucKhoe : DomainService
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
         
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
             var       articleNav    = await _articleBlogSucKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
-            
+
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
                     var article = await _articleBlogSucKhoeRepository.GetAsync(articleId);

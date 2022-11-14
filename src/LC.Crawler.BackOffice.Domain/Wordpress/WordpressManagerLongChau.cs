@@ -55,7 +55,7 @@ public class WordpressManagerLongChau : DomainService
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
 
-        var count = 1;
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -63,7 +63,7 @@ public class WordpressManagerLongChau : DomainService
             
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav);
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null)
                 {
                     var article = await _articleLongChauRepository.GetAsync(articleId);
@@ -91,9 +91,6 @@ public class WordpressManagerLongChau : DomainService
                 //Always save the log
                 await auditingScope.SaveAsync();
             }
-            
-            Console.WriteLine($"-----Count: {count}/{articleIds.Count}");
-            count++;
         }
     }
 
