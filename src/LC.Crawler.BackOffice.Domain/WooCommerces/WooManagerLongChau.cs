@@ -185,17 +185,22 @@ public class WooManagerLongChau : DomainService
             var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
                 _dataSource.Configuration.ApiSecret);
             var wc = new WCObject(rest);
+            
+            var reviews = await _productReviewLongChauRepository.GetListAsync(x => !x.IsSynced);
+            var comments = await _productCommentLongChauRepository.GetListAsync(x => !x.IsSynced);
+            
+            if (reviews.IsNullOrEmpty() && comments.IsNullOrEmpty()) return;
+            
             var products = (await _productRepository.GetQueryableAsync())
                 .Where(x => x.DataSourceId == _dataSource.Id
                     && x.ExternalId != null
                 )
                 .ToList().ToList();
-
-            var count = 1;
+            
             foreach (var product in products)
             {
-                var productReviews = await _productReviewLongChauRepository.GetListAsync(x => x.IsSynced == false && x.ProductId == product.Id);
-                var productComments = await _productCommentLongChauRepository.GetListAsync(x => x.IsSynced == false && x.ProductId == product.Id);
+                var productReviews = reviews.Where(x => x.ProductId == product.Id).ToList();
+                var productComments = comments.Where(x => x.ProductId == product.Id).ToList();
                 
                 if(productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
                 
@@ -217,8 +222,6 @@ public class WooManagerLongChau : DomainService
                 {
                     await _productCommentLongChauRepository.UpdateManyAsync(productComments);
                 }
-                Console.WriteLine($"Product Count: {count}/{products.Count}");
-                count++;
             }
         }
         catch (Exception e)

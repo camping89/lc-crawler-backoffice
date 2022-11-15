@@ -175,16 +175,21 @@ public class WooManagerSieuThiSongKhoe : DomainService
             var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
                 _dataSource.Configuration.ApiSecret);
             var wc = new WCObject(rest);
+            var reviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => !x.IsSynced);
+            var comments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => !x.IsSynced);
+            
+            if (reviews.IsNullOrEmpty() && comments.IsNullOrEmpty()) return;
+            
             var products = (await _productRepository.GetQueryableAsync())
                 .Where(x => x.DataSourceId == _dataSource.Id
-                    && x.ExternalId != null
+                            && x.ExternalId != null
                 )
                 .ToList().ToList();
-        
+            
             foreach (var product in products)
             {
-                var productReviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => x.IsSynced == false);
-                var productComments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => x.IsSynced == false);
+                var productReviews = reviews.Where(x => x.ProductId == product.Id).ToList();
+                var productComments = comments.Where(x => x.ProductId == product.Id).ToList();
                 
                 if(productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
                 
