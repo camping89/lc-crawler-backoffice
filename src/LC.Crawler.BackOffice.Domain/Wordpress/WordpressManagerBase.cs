@@ -186,25 +186,30 @@ public class WordpressManagerBase : DomainService
                     
                     var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
 
-                    var encodeName = category.Name.Split("->").LastOrDefault()?.Replace("&", "&amp;").Trim();
+                    var categoriesTerms = category.Name.Split("->").Select(x=>x.Trim()).ToList();
+
+                    var encodeName = categoriesTerms.LastOrDefault()?.Replace("&", "&amp;").Trim();
 
                     var wpCategory = wooCategories.FirstOrDefault(x =>
-                        encodeName != null && x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                        encodeName != null && x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
                     if (encodeName is not null)
                     {
-                        var wpCategoriesFilter = wooCategories.Where(x =>
-                            encodeName.IsNotNullOrEmpty() &&
-                            x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
-                        foreach (var wpCate in wpCategoriesFilter)
+                        if (categoriesTerms.Count > 1)
                         {
-                            var parentCate = wooCategories.FirstOrDefault(x => x.Id == wpCate.Parent);
-                            if (parentCate != null && category.Name.Contains(parentCate.Name))
+                            var wpCategoriesFilter = wooCategories.Where(x =>
+                                encodeName.IsNotNullOrEmpty() &&
+                                x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                            foreach (var wpCate in wpCategoriesFilter)
                             {
-                                var rootParent = wooCategories.FirstOrDefault(x => x.Id == parentCate.Parent);
-                                if ((rootParent != null && category.Name.Contains(rootParent.Name)) ||
-                                    parentCate.Parent == 0)
+                                var parentCate = wooCategories.FirstOrDefault(x => x.Id == wpCate.Parent);
+                                if (parentCate != null && category.Name.Contains(parentCate.Name))
                                 {
-                                    wpCategory = wpCate;
+                                    var rootParent = wooCategories.FirstOrDefault(x => x.Id == parentCate.Parent);
+                                    if ((rootParent != null && category.Name.Contains(rootParent.Name)) ||
+                                        parentCate.Parent == 0)
+                                    {
+                                        wpCategory = wpCate;
+                                    }
                                 }
                             }
                         }
