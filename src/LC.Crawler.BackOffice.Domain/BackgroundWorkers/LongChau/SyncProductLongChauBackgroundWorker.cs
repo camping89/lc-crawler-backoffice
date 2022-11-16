@@ -36,3 +36,20 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
         await _wooManagerLongChau.DoSyncReviews();
     }
 }
+
+public class ReSyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WooManagerLongChau _wooManagerLongChau;
+    
+    public ReSyncProductLongChauBackgroundWorker(WooManagerLongChau wooManagerLongChau)
+    {
+        _wooManagerLongChau = wooManagerLongChau;
+        RecurringJobId      = "ReSync_Product_LongChau_BackgroundWorker";
+        CronExpression      = Cron.Weekly();
+    }
+
+    public override async Task DoWorkAsync()
+    {
+        await _wooManagerLongChau.DoReSyncProductToWooAsync();
+    }
+}

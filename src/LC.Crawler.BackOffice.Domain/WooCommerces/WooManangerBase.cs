@@ -693,4 +693,138 @@ public class WooManangerBase : DomainService
             Console.WriteLine($"-----------------------Deleted Product: {deleteProduct.id}-----------------------");
         }
     }
+
+    /// <summary>
+    ///  Update the products are not found in the latest crawl
+    /// </summary>
+    /// <param name="dataSource"></param>
+    /// <param name="products"></param>
+    public async Task DoChangeStatusWooAsync(DataSource dataSource, List<Product> products)
+    {
+        // Update the products are not found in the latest crawl
+        if (products.IsNotNullOrEmpty())
+        {
+            var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
+            var wc   = new WCObject(rest);
+            
+            foreach (var product in products)
+            {
+                using var auditingScope = _auditingManager.BeginScope();
+                try
+                {
+                    var checkProduct = (await wc.Product.GetAll(new Dictionary<string, string>()
+                                           {
+                                               { "sku", product.Code }
+                                           })).FirstOrDefault();
+                    if (checkProduct is not null && checkProduct.status == "publish")
+                    {
+                        checkProduct.status = "pending";
+                        await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
+                    
+                        Console.WriteLine($"Update product status: {checkProduct.name} - {checkProduct.sku} - {checkProduct.status}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogException(_auditingManager.Current.Log, ex, product, dataSource.Url, "DoChangeStatusWooAsync");
+                }
+                finally
+                {
+                    //Always save the log
+                    await auditingScope.SaveAsync();
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Not found product to update status to pending");
+        }
+    }
+    
+    /// <summary>
+    /// Re sync product to woo to update name, price, content
+    /// </summary>
+    /// <param name="checkProduct"></param>
+    /// <param name="productNav"></param>
+    /// <param name="wcObject"></param>
+    public async Task DoReSyncProductToWooAsync(WooCommerceNET.WooCommerce.v3.Product checkProduct, 
+                                                 ProductWithNavigationProperties productNav, WCObject wcObject)
+    {
+        var product = productNav.Product;
+        if (product is not null)
+        {
+            // update name
+            checkProduct.name = product.Name;
+
+            // update variants, price
+            var variants = productNav.Variants;
+            if (variants != null)
+            {
+                decimal? productPrice    = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+                decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
+
+                if (productPrice.HasValue && productPrice > 0)
+                {
+                    checkProduct.price         = productPrice;
+                    checkProduct.regular_price = productPrice;
+                }
+
+                if (discountedPrice.HasValue && discountedPrice > 0)
+                {
+                    checkProduct.sale_price = discountedPrice;
+                }
+            }
+
+            if (variants is { Count: > 1 })
+            {
+                var wooProductVariants = await wcObject.Product.Variations.GetAll(checkProduct.id);
+                foreach (var variant in variants)
+                {
+                    var checkVariant = wooProductVariants.FirstOrDefault(x => x.sku == variant.SKU);
+                    if (checkVariant != null)
+                    {
+                        checkVariant.price         = variant.RetailPrice;
+                        checkVariant.regular_price = variant.RetailPrice;
+                        checkVariant.sale_price    = variant.DiscountedPrice;
+                        await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant, checkProduct.id.To<int>());
+                    }
+                    else
+                    {
+                        var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
+                                                                                     {
+                                                                                         sku           = variant.SKU,
+                                                                                         price         = variant.RetailPrice,
+                                                                                         regular_price = variant.RetailPrice,
+                                                                                         sale_price    = variant.DiscountedPrice
+                                                                                     },
+                                                                                     0);
+                        if (wooVariantResult.id is > 0)
+                        {
+                            checkProduct.variations.Add(wooVariantResult.id.To<int>());
+                        }
+                    }
+                }
+            }
+
+            // update content
+            var medias = productNav.Medias;
+            if (medias != null)
+            {
+                checkProduct.description = StringHtmlHelper.ReplaceImageUrls(product.Description, medias);
+            }
+            else
+            {
+                checkProduct.description = product.Description;
+            }
+
+            // save product
+            await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);
+            
+            Console.WriteLine($"Update product: {checkProduct.name}");
+        }
+        else
+        {
+            Console.WriteLine($"Not found product: {checkProduct.name}");
+        }
+    }
 }

@@ -76,11 +76,16 @@ public class ProductManagerLongChau : DomainService
                 }, true);
             }
 
+            #region Update product
+
             var productExist = await _productLongChauRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
-                var attributes =
-                    await _productAttributeLongChauRepository.GetListAsync(_ => _.ProductId == productExist.Id);
+                productExist.Name = rawProduct.Title;
+                productExist.Brand = rawProduct.Brand;
+                productExist.Tags  = rawProduct.Tags;
+                
+                var attributes = await _productAttributeLongChauRepository.GetListAsync(_ => _.ProductId == productExist.Id);
 
                 //Init new attribute from raw product not in db
                 foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
@@ -108,10 +113,6 @@ public class ProductManagerLongChau : DomainService
                     await _productAttributeLongChauRepository.DeleteAsync(attribute);
                 }
 
-                productExist.Brand = rawProduct.Brand;
-                productExist.Tags = rawProduct.Tags;
-                
-                
                 //Update price 
                 if (rawProduct.Variants != null)
                 {
@@ -174,9 +175,36 @@ public class ProductManagerLongChau : DomainService
                     }
                 }
                 
+                //ProductDescription
+                var mediaUrls = rawProduct.Description.GetImageUrls();
+                if (mediaUrls.Any())
+                {
+                    var medias = mediaUrls.Select(url => new Media()
+                    {
+                        Url         = url,
+                        IsDowloaded = false
+                    }).ToList();
+                    await _mediaLongChauRepository.InsertManyAsync(medias, true);
+
+                    productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+
+                    foreach (var media in medias)
+                    {
+                        productExist.Medias.Add(new ProductMedia(productExist.Id, media.Id));
+                    }
+                }
+                else
+                {
+                    productExist.Description = rawProduct.Description;
+                }
+                
                 await _productLongChauRepository.UpdateAsync(productExist, true);
                 continue;
             }
+
+            #endregion
+            
+            #region Add new product
 
             var product = new Product(GuidGenerator.Create())
             {
@@ -302,6 +330,8 @@ public class ProductManagerLongChau : DomainService
 
 
             await _productLongChauRepository.InsertAsync(product, true);
+
+            #endregion
         }
     }
 

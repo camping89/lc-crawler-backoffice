@@ -48,3 +48,22 @@ public class SyncProductAladinBackgroundWorker : HangfireBackgroundWorkerBase
     }
 
 }
+
+
+public class ReSyncProductAladinBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WooManagerAladin _wooManagerAladin;
+
+    public ReSyncProductAladinBackgroundWorker(WooManagerAladin wooManagerAladin)
+    {
+        _wooManagerAladin = wooManagerAladin;
+        RecurringJobId    = "ReSync_Product_Aladin_BackgroundWorker";
+        CronExpression    = Cron.Weekly();
+    }
+
+    public override async Task DoWorkAsync()
+    {
+        await _wooManagerAladin.DoReSyncProductToWooAsync();
+    }
+
+}

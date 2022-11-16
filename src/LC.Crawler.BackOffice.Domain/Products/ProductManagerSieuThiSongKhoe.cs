@@ -69,12 +69,17 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                     Error = TrackingDataSourceConsts.EmptyCode
                 }, true);
             }
-            
+
+            #region Update product
+
             var productExist = await _productSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
             if (productExist != null)
             {
-                var attributes =
-                    await _productAttributeSieuThiSongKhoeRepository.GetListAsync(_ => _.ProductId == productExist.Id);
+                productExist.Name  = rawProduct.Title;
+                productExist.Brand = rawProduct.Brand;
+                productExist.Tags  = rawProduct.Tags;
+                
+                var attributes = await _productAttributeSieuThiSongKhoeRepository.GetListAsync(_ => _.ProductId == productExist.Id);
 
                 //Init new attribute from raw product not in db
                 foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
@@ -102,9 +107,6 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                     await _productAttributeSieuThiSongKhoeRepository.DeleteAsync(attribute);
                 }
 
-                productExist.Brand = rawProduct.Brand;
-                productExist.Tags = rawProduct.Tags;
-                
                 //Update price 
                 if (rawProduct.Variants != null)
                 {
@@ -166,9 +168,37 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                         },true);
                     }
                 }
+                
+                //ProductDescription
+                var mediaUrls = rawProduct.Description.GetImageUrls();
+                if (mediaUrls.Any())
+                {
+                    var medias = mediaUrls.Select(url => new Media()
+                    {
+                        Url         = url,
+                        IsDowloaded = false
+                    }).ToList();
+                    await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
+
+                    productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+
+                    foreach (var media in medias)
+                    {
+                        productExist.Medias.Add(new ProductMedia(productExist.Id, media.Id));
+                    }
+                }
+                else
+                {
+                    productExist.Description = rawProduct.Description;
+                }
+                
                 await _productSieuThiSongKhoeRepository.UpdateAsync(productExist, true);
                 continue;
             }
+
+            #endregion
+            
+            #region Add new product
             
             var product = new Product(GuidGenerator.Create())
             {
@@ -291,7 +321,8 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             }
 
             await _productSieuThiSongKhoeRepository.InsertAsync(product, true);
-
+            
+            #endregion
         }
     }
 
