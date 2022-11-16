@@ -46,3 +46,20 @@ public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
         await _wooManagerSieuThiSongKhoe.DoSyncReviews();
     }
 }
+
+public class ReSyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WooManagerSieuThiSongKhoe _wooManagerSieuThiSongKhoe;
+
+    public ReSyncProductSieuThiSongKhoeBackgroundWorker(WooManagerSieuThiSongKhoe wooManagerSieuThiSongKhoe)
+    {
+        _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
+        RecurringJobId             = "ReSync_Product_SieuThiSongKhoe_BackgroundWorker";
+        CronExpression             = Cron.Weekly();
+    }
+    
+    public override async Task DoWorkAsync()
+    {
+        await _wooManagerSieuThiSongKhoe.DoReSyncProductToWooAsync();
+    }
+}

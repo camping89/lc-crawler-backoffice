@@ -9,6 +9,7 @@ using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.MessageQueue.Consumers.Etos;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.WooCommerces;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Distributed;
@@ -18,13 +19,16 @@ namespace LC.Crawler.BackOffice.MessageQueue.Consumers;
 
 public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEto>, ITransientDependency
 {
-    private readonly ProductManagerAladin _productManagerAladin;
+    private readonly ProductManagerAladin  _productManagerAladin;
+    private readonly WooManagerAladin      _wooManagerAladin;
     private readonly ArticleManangerAladin _articleManangerAladin;
 
-    private readonly ProductManagerLongChau _productManagerLongChau;
+    private readonly ProductManagerLongChau  _productManagerLongChau;
+    private readonly WooManagerLongChau      _wooManagerLongChau;
     private readonly ArticleManangerLongChau _articleManangerLongChau;
 
-    private readonly ProductManagerSieuThiSongKhoe _productManagerSieuThiSongKhoe;
+    private readonly ProductManagerSieuThiSongKhoe  _productManagerSieuThiSongKhoe;
+    private readonly WooManagerSieuThiSongKhoe      _wooManagerSieuThiSongKhoe;
     private readonly ArticleManangerSieuThiSongKhoe _articleManangerSieuThiSongKhoe;
 
     private readonly ArticleManangerSucKhoeDoiSong _articleManangerSucKhoeDoiSong;
@@ -45,33 +49,39 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
 
 
     public CrawlerDataReceiveConsumer(IObjectMapper objectMapper,
-        ArticleManangerLongChau articleManangerLongChau,
-        ProductManagerLongChau productManagerLongChau,
-        ProductManagerAladin productManagerAladin,
-        ArticleManangerSucKhoeDoiSong articleManangerSucKhoeDoiSong,
-        ArticleManangerBlogSucKhoe articleManangerBlogSucKhoe,
-        ArticleManangerSucKhoeGiaDinh articleManangerSucKhoeGiaDinh,
-        ArticleManangerAloBacSi articleManangerAloBacSi,
-        ProductManagerSieuThiSongKhoe productManagerSieuThiSongKhoe,
-        ArticleManangerSieuThiSongKhoe articleManangerSieuThiSongKhoe,
-        ArticleManangerSongKhoeMedplus articleManangerSongKhoeMedplusi,
-        CrawlerDataManager crawlerDataManager, ArticleManangerAladin articleManangerAladin,
-        ILogger<CrawlerDataReceiveConsumer> logger)
+        ArticleManangerLongChau                     articleManangerLongChau,
+        ProductManagerLongChau                      productManagerLongChau,
+        ProductManagerAladin                        productManagerAladin,
+        ArticleManangerSucKhoeDoiSong               articleManangerSucKhoeDoiSong,
+        ArticleManangerBlogSucKhoe                  articleManangerBlogSucKhoe,
+        ArticleManangerSucKhoeGiaDinh               articleManangerSucKhoeGiaDinh,
+        ArticleManangerAloBacSi                     articleManangerAloBacSi,
+        ProductManagerSieuThiSongKhoe               productManagerSieuThiSongKhoe,
+        ArticleManangerSieuThiSongKhoe              articleManangerSieuThiSongKhoe,
+        ArticleManangerSongKhoeMedplus              articleManangerSongKhoeMedplusi,
+        CrawlerDataManager                          crawlerDataManager, ArticleManangerAladin articleManangerAladin,
+        ILogger<CrawlerDataReceiveConsumer>         logger,
+        WooManagerAladin                            wooManagerAladin,
+        WooManagerLongChau                          wooManagerLongChau,
+        WooManagerSieuThiSongKhoe                   wooManagerSieuThiSongKhoe)
     {
-        _objectMapper = objectMapper;
-        _articleManangerLongChau = articleManangerLongChau;
-        _productManagerLongChau = productManagerLongChau;
-        _productManagerAladin = productManagerAladin;
-        _articleManangerSucKhoeDoiSong = articleManangerSucKhoeDoiSong;
-        _articleManangerBlogSucKhoe = articleManangerBlogSucKhoe;
-        _articleManangerSucKhoeGiaDinh = articleManangerSucKhoeGiaDinh;
-        _articleManangerAloBacSi = articleManangerAloBacSi;
-        _productManagerSieuThiSongKhoe = productManagerSieuThiSongKhoe;
-        _articleManangerSieuThiSongKhoe = articleManangerSieuThiSongKhoe;
+        _objectMapper                    = objectMapper;
+        _articleManangerLongChau         = articleManangerLongChau;
+        _productManagerLongChau          = productManagerLongChau;
+        _productManagerAladin            = productManagerAladin;
+        _articleManangerSucKhoeDoiSong   = articleManangerSucKhoeDoiSong;
+        _articleManangerBlogSucKhoe      = articleManangerBlogSucKhoe;
+        _articleManangerSucKhoeGiaDinh   = articleManangerSucKhoeGiaDinh;
+        _articleManangerAloBacSi         = articleManangerAloBacSi;
+        _productManagerSieuThiSongKhoe   = productManagerSieuThiSongKhoe;
+        _articleManangerSieuThiSongKhoe  = articleManangerSieuThiSongKhoe;
         _articleManangerSongKhoeMedplusi = articleManangerSongKhoeMedplusi;
-        _crawlerDataManager = crawlerDataManager;
-        _articleManangerAladin = articleManangerAladin;
-        _logger = logger;
+        _crawlerDataManager              = crawlerDataManager;
+        _articleManangerAladin           = articleManangerAladin;
+        _logger                          = logger;
+        _wooManagerAladin                = wooManagerAladin;
+        _wooManagerLongChau              = wooManagerLongChau;
+        _wooManagerSieuThiSongKhoe       = wooManagerSieuThiSongKhoe;
     }
 
     public async Task HandleEventAsync(CrawlResultEto eventData)
@@ -90,12 +100,14 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
                 {
                     await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.LongChau,
                         eventData.EcommercePayloads);
+                    await _wooManagerLongChau.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
                     await _productManagerLongChau.ProcessingDataAsync(eventData.EcommercePayloads);
                 }
 
                 if (url.Contains(PageDataSourceConsts.AladinUrl))
                 {
                     await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.Aladin, eventData.EcommercePayloads);
+                    await _wooManagerAladin.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
                     await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
                 }
 
@@ -103,6 +115,7 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
                 {
                     await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.SieuThiSongKhoe,
                         eventData.EcommercePayloads);
+                    await _wooManagerSieuThiSongKhoe.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
                     await _productManagerSieuThiSongKhoe.ProcessingDataAsync(eventData.EcommercePayloads);
                 }
                 

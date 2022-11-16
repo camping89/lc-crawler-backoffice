@@ -5,16 +5,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
 using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Extensions;
+using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
+using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
+using LC.Crawler.BackOffice.ProductVariants;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Auditing;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;
+using WordPressPCL.Models;
+using Product = LC.Crawler.BackOffice.Products.Product;
 using ProductReview = LC.Crawler.BackOffice.ProductReviews.ProductReview;
 
 namespace LC.Crawler.BackOffice.WooCommerces;
@@ -28,8 +35,9 @@ public class WooManagerLongChau : DomainService
     private readonly WooManangerBase                     _wooManangerBase;
     private readonly IAuditingManager                    _auditingManager;
     
-    private readonly IProductReviewLongChauRepository _productReviewLongChauRepository;
+    private readonly IProductReviewLongChauRepository  _productReviewLongChauRepository;
     private readonly IProductCommentLongChauRepository _productCommentLongChauRepository;
+    private readonly IProductVariantLongChauRepository _productVariantLongChauRepository;
 
     private DataSource _dataSource;
 
@@ -39,17 +47,19 @@ public class WooManagerLongChau : DomainService
         ICategoryLongChauRepository                      categoryLongChauRepository,
         WooManangerBase                                  wooManangerBase,
         IAuditingManager                                 auditingManager,
-        IProductReviewLongChauRepository productReviewLongChauRepository,
-        IProductCommentLongChauRepository productCommentLongChauRepository)
+        IProductReviewLongChauRepository                 productReviewLongChauRepository,
+        IProductCommentLongChauRepository                productCommentLongChauRepository,
+        IProductVariantLongChauRepository                productVariantLongChauRepository)
     {
-        _productRepository                  = productRepository;
-        _dataSourceRepository               = dataSourceRepository;
-        _mediaLongChauRepository            = mediaLongChauRepository;
-        _categoryLongChauRepository         = categoryLongChauRepository;
-        _wooManangerBase                    = wooManangerBase;
-        _auditingManager                    = auditingManager;
-        _productReviewLongChauRepository = productReviewLongChauRepository;
-        _productCommentLongChauRepository = productCommentLongChauRepository;
+        _productRepository                     = productRepository;
+        _dataSourceRepository                  = dataSourceRepository;
+        _mediaLongChauRepository               = mediaLongChauRepository;
+        _categoryLongChauRepository            = categoryLongChauRepository;
+        _wooManangerBase                       = wooManangerBase;
+        _auditingManager                       = auditingManager;
+        _productReviewLongChauRepository       = productReviewLongChauRepository;
+        _productCommentLongChauRepository      = productCommentLongChauRepository;
+        _productVariantLongChauRepository = productVariantLongChauRepository;
     }
 
     public async Task DoSyncCategoriesAsync()
@@ -277,5 +287,84 @@ public class WooManagerLongChau : DomainService
                 await auditingScope.SaveAsync();
             }
         }
+    }
+    
+    public async Task DoReSyncProductToWooAsync()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+        
+        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
+                               _dataSource.Configuration.ApiSecret);
+        var wcObject = new WCObject(rest);
+
+        var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
+        var pageIndex     = 1;
+        while (true)
+        {
+            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
+            {
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+            });
+            if (checkProduct.IsNullOrEmpty()) break;
+
+            checkProducts.AddRange(checkProduct);
+            Console.WriteLine($"Fetching Product: page {pageIndex}");
+            pageIndex++;
+        }
+
+        Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
+
+        foreach (var checkProduct in checkProducts)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            
+            try
+            {
+                var product    = await _productRepository.GetAsync(_ => _.ExternalId == checkProduct.id.To<int>());
+                if (product is null)
+                {
+                    continue;
+                }
+                
+                var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
+                await _wooManangerBase.DoReSyncProductToWooAsync(checkProduct, productNav, wcObject);
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, new Product(),
+                                              PageDataSourceConsts.LongChauUrl, "DoReSyncProductToWooAsync");
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+        }
+    }
+
+    /// <summary>
+    ///  Update the products are not found in the latest crawl
+    /// </summary>
+    /// <param name="products"></param>
+    public async Task DoChangeStatusWooAsync(List<CrawlEcommerceProductPayload> products)
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+        
+        // Update the products are not found in the latest crawl
+        var productCodes     = products.Select(_ => _.Code).ToList();
+        var notFoundProducts = await _productRepository.GetListAsync(_ => !productCodes.Contains(_.Code) && _.ExternalId != null);
+        
+        // Change status
+        await _wooManangerBase.DoChangeStatusWooAsync(_dataSource, notFoundProducts);
     }
 }

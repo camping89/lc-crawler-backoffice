@@ -47,10 +47,12 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductLongChauBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<ReSyncProductLongChauBackgroundWorker>();
             //
             //Aladin
             //context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<ReSyncProductAladinBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleAladinBackgroundWorker>();
             
             //Suckhoedoisong
@@ -60,6 +62,7 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //SieuThiSongKhoe
             //context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<ReSyncProductSieuThiSongKhoeBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSieuThiSongKhoeBackgroundWorker>();
             
             //SongKhoeMedplus
@@ -85,14 +88,17 @@ public class LCBackgroundWorkerDomainModule : AbpModule
             //context.AddBackgroundWorkerAsync<ParserArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleLongChauBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductLongChauBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<ReSyncProductLongChauBackgroundWorker>();
             
             //Aladin
             //context.AddBackgroundWorkerAsync<DownloadMediaAladinBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductAladinBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<ReSyncProductAladinBackgroundWorker>();
             
             //SieuThiSongKhoe
             //context.AddBackgroundWorkerAsync<DownloadMediaSieuThiSongKhoeBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncProductSieuThiSongKhoeBackgroundWorker>();
+            context.AddBackgroundWorkerAsync<ReSyncProductSieuThiSongKhoeBackgroundWorker>();
             context.AddBackgroundWorkerAsync<SyncArticleSieuThiSongKhoeBackgroundWorker>();
             
             //Suckhoedoisong
