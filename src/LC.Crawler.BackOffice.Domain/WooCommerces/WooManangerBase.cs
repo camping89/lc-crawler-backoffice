@@ -108,10 +108,8 @@ public class WooManangerBase : DomainService
 
     public async Task<List<WooProductCategory>> GetWooCategories(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
-            dataSource.Configuration.ApiKey,
-            dataSource.Configuration.ApiSecret);
-        var wcObject = new WCObject(rest);
+        var wcObject = await InitWCObject(dataSource);
+        
         //Category
         var wooCategories = new List<WooProductCategory>();
         var pageIndex = 1;
@@ -138,10 +136,7 @@ public class WooManangerBase : DomainService
 
     public async Task<List<ProductTag>> GetWooProductTagsAsync(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
-            dataSource.Configuration.ApiKey,
-            dataSource.Configuration.ApiSecret);
-        var wcObject = new WCObject(rest);
+        var wcObject = await InitWCObject(dataSource);
         //Category
         var wooTags = new List<ProductTag>();
         var pageIndex = 1;
@@ -172,10 +167,7 @@ public class WooManangerBase : DomainService
         var productTagNeedCreate = tags.Where(x => !wooTags.Any(t => t.name.Equals(x, StringComparison.InvariantCultureIgnoreCase))).ToList();
         if (productTagNeedCreate.IsNotNullOrEmpty())
         {
-            var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
-                dataSource.Configuration.ApiKey,
-                dataSource.Configuration.ApiSecret);
-            var wcObject = new WCObject(rest);
+            var wcObject = await InitWCObject(dataSource);
             foreach (var tag in productTagNeedCreate)
             {
                 await wcObject.Tag.Add(new ProductTag()
@@ -188,10 +180,7 @@ public class WooManangerBase : DomainService
 
     public async Task SyncCategoriesAsync(DataSource dataSource, List<Category> categories, string display = "products")
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
-            dataSource.Configuration.ApiKey,
-            dataSource.Configuration.ApiSecret);
-        var wcObject = new WCObject(rest);
+        var wcObject = await InitWCObject(dataSource);
 
         var categoryNames = categories.Select(x => x.Name).Distinct().ToList();
         var wooCategories = await GetWooCategories(dataSource);
@@ -666,10 +655,7 @@ public class WooManangerBase : DomainService
 
     public async Task DeleteDuplicateWooProduct(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/",
-            dataSource.Configuration.ApiKey,
-            dataSource.Configuration.ApiSecret);
-        var wc = new WCObject(rest);
+        var wc = await InitWCObject(dataSource);
 
         var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
         var pageIndex = 1;
@@ -704,8 +690,7 @@ public class WooManangerBase : DomainService
         // Update the products are not found in the latest crawl
         if (products.IsNotNullOrEmpty())
         {
-            var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
-            var wc   = new WCObject(rest);
+            var wc = await InitWCObject(dataSource);
             
             foreach (var product in products)
             {
@@ -819,5 +804,33 @@ public class WooManangerBase : DomainService
         await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);
         
         Console.WriteLine($"Update product: {checkProduct.name}");
+    }
+    
+    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject)
+    {
+        var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
+        var pageIndex     = 1;
+        
+        while (true)
+        {
+            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>() { { "page", pageIndex.ToString() }, { "per_page", "100" }, });
+            if (checkProduct.IsNullOrEmpty()) break;
+
+            checkProducts.AddRange(checkProduct);
+            Console.WriteLine($"Fetching Product: page {pageIndex}");
+            pageIndex++;
+        }
+
+        Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
+        
+        return checkProducts;
+    }
+
+    public async Task<WCObject> InitWCObject(DataSource dataSource)
+    {
+        var rest     = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
+        var wcObject = new WCObject(rest);
+
+        return wcObject;
     }
 }

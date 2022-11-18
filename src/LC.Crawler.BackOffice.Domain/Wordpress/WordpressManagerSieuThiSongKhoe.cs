@@ -72,6 +72,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
                 if (post is not null) 
                 {
                     var article = await _articleSieuThiSongKhoeRepository.GetAsync(articleId);
+                    article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSieuThiSongKhoeRepository.UpdateAsync(article, true);
 
@@ -89,7 +90,8 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SieuThiSongKhoeUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, 
+                                                   PageDataSourceConsts.SieuThiSongKhoeUrl, "DoSyncPostAsync");
             }
             finally
             {
@@ -101,6 +103,63 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         // update re-sync status
         _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+    }
+    
+    public async Task DoReSyncPostAsync()
+    {
+        // get data source
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
+        if (_dataSource == null || !_dataSource.ShouldReSyncArticle)
+        {
+            return;
+        }
+        
+        // update re-sync status
+        _dataSource.ArticleReSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        
+        // get all posts
+        var client   = await _wordpressManagerBase.InitClient(_dataSource);
+        var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
+
+        // sync articles from wp
+        foreach (var post in allPosts)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            
+            try
+            {
+                var article = await _articleSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>()) 
+                           ?? await _articleSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
+                if (article is not null)
+                {
+                    var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
+                    var medias   = await _mediaSieuThiSongKhoeRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
+                    
+                    await _wordpressManagerBase.UpdatePostDetails(post, article, medias, client);
+
+                    article.LastSyncedAt =   DateTime.UtcNow;
+                    article.ExternalId   ??= post.Id.To<int>();
+                    await _articleSieuThiSongKhoeRepository.UpdateAsync(article, true);
+                }   
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, null, PageDataSourceConsts.SieuThiSongKhoeUrl, "DoReSyncPostAsync");
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+        }
+        
+        // update re-sync status
+        _dataSource.ArticleReSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
         await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
     

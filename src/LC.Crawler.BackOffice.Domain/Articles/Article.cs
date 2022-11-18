@@ -34,6 +34,8 @@ namespace LC.Crawler.BackOffice.Articles
         public virtual int ShareCount { get; set; }
         public Guid? FeaturedMediaId { get; set; }
         public Guid DataSourceId { get; set; }
+        
+        public virtual int? ExternalId { get; set; }
         public ICollection<ArticleCategory> Categories { get; private set; }
         public ICollection<ArticleMedia> Medias { get; private set; }
 

@@ -21,3 +21,19 @@ public class SyncArticleAladinBackgroundWorker : HangfireBackgroundWorkerBase
         await _wordpressManagerAladin.DoSyncPostAsync();
     }
 }
+
+public class ReSyncArticleAladinBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WordpressManagerAladin _wordpressManagerAladin;
+    public ReSyncArticleAladinBackgroundWorker(WordpressManagerAladin wordpressManagerAladin)
+    {
+        _wordpressManagerAladin = wordpressManagerAladin;
+        RecurringJobId            = "ReSync_Article_Aladin_BackgroundWorker";
+        CronExpression            = Cron.Daily(0,0);
+    }
+
+    public override async Task DoWorkAsync()
+    {
+        await _wordpressManagerAladin.DoReSyncPostAsync();
+    }
+}

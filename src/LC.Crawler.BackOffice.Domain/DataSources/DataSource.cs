@@ -60,16 +60,30 @@ namespace LC.Crawler.BackOffice.DataSources
             }
         }
         
-        public DateTime?      LastReSyncedAt { get; set; }
-        public PageSyncStatus ReSyncStatus   { get; set; }
+        public DateTime?      LastProductReSyncedAt { get; set; }
+        public PageSyncStatus ProductReSyncStatus   { get; set; }
         
-        public bool ShouldReSync
+        public bool ShouldReSyncProduct
         {
             get
             {
                 {
-                    var isObsolete = LastReSyncedAt.HasValue && LastReSyncedAt.Value.IsBefore(GlobalConfig.Crawler.SyncTimeOutInHours.Hours().Ago());
-                    return ReSyncStatus != PageSyncStatus.InProgress || isObsolete;
+                    var isObsolete = LastProductReSyncedAt.HasValue && LastProductReSyncedAt.Value.IsBefore(GlobalConfig.Crawler.SyncTimeOutInHours.Hours().Ago());
+                    return ProductReSyncStatus != PageSyncStatus.InProgress || isObsolete;
+                }
+            }
+        }
+        
+        public DateTime?      LastArticleReSyncedAt { get; set; }
+        public PageSyncStatus ArticleReSyncStatus   { get; set; }
+        
+        public bool ShouldReSyncArticle
+        {
+            get
+            {
+                {
+                    var isObsolete = LastArticleReSyncedAt.HasValue && LastArticleReSyncedAt.Value.IsBefore(GlobalConfig.Crawler.SyncTimeOutInHours.Hours().Ago());
+                    return ArticleReSyncStatus != PageSyncStatus.InProgress || isObsolete;
                 }
             }
         }

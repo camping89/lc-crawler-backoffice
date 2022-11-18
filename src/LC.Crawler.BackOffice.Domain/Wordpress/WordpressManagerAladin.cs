@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -9,6 +10,9 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using Volo.Abp.Auditing;
+using Volo.Abp.Domain.Repositories;
+using WordPressPCL;
+using WordPressPCL.Models;
 using WordpresCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -72,6 +76,7 @@ public class WordpressManagerAladin : DomainService
                 if (post is not null)
                 {
                     var article = await _articleAladinRepository.GetAsync(articleId);
+                    article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleAladinRepository.UpdateAsync(article, true);
                 
@@ -89,7 +94,8 @@ public class WordpressManagerAladin : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.AladinUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, 
+                                                   articleNav.Article, PageDataSourceConsts.AladinUrl, "DoSyncPostAsync");
             }
             finally
             {
@@ -101,6 +107,63 @@ public class WordpressManagerAladin : DomainService
         // update re-sync status
         _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+    }
+
+    public async Task DoReSyncPostAsync()
+    {
+        // get data source
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        if (_dataSource == null || !_dataSource.ShouldReSyncArticle)
+        {
+            return;
+        }
+        
+        // update re-sync status
+        _dataSource.ArticleReSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        
+        // get all posts
+        var client   = await _wordpressManagerBase.InitClient(_dataSource);
+        var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
+
+        // sync articles from wp
+        foreach (var post in allPosts)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            
+            try
+            {
+                var article = await _articleAladinRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>())
+                            ?? await _articleAladinRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
+                if (article is not null)
+                {
+                    var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
+                    var medias   = await _mediaAladinRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
+                    
+                    await _wordpressManagerBase.UpdatePostDetails(post, article, medias, client);
+
+                    article.LastSyncedAt =   DateTime.UtcNow;
+                    article.ExternalId   ??= post.Id.To<int>();
+                    await _articleAladinRepository.UpdateAsync(article, true);
+                }   
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, null, PageDataSourceConsts.AladinUrl, "DoReSyncPostAsync");
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+        }
+        
+        // update re-sync status
+        _dataSource.ArticleReSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
         await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 

@@ -34,3 +34,20 @@ public class SyncArticleSucKhoeDoiSongBackgroundWorker : HangfireBackgroundWorke
         await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
     }
 }
+
+public class ReSyncArticleSucKhoeDoiSongBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WordpressManagerSucKhoeDoiSong _wordpressManagerSucKhoeDoiSong;
+    public ReSyncArticleSucKhoeDoiSongBackgroundWorker(WordpressManagerSucKhoeDoiSong wordpressManagerSucKhoeDoiSong)
+    {
+        _wordpressManagerSucKhoeDoiSong = wordpressManagerSucKhoeDoiSong;
+        
+        RecurringJobId                  = "ReSync_Article_SucKhoeDoiSong_BackgroundWorker";
+        CronExpression                  = Cron.Daily(0, 0);
+    }
+
+    public override async Task DoWorkAsync()
+    {
+        await _wordpressManagerSucKhoeDoiSong.DoReSyncPostAsync();
+    }
+}

@@ -25,3 +25,22 @@ public class SyncArticleSucKhoeGiaDinhBackgroundWorker : HangfireBackgroundWorke
         await _wordpressManagerSucKhoeGiaDinh.DoSyncPostAsync();
     }
 }
+
+public class ReSyncArticleSucKhoeGiaDinhBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WordpressManagerSucKhoeGiaDinh    _wordpressManagerSucKhoeGiaDinh;
+    
+    
+    public ReSyncArticleSucKhoeGiaDinhBackgroundWorker(WordpressManagerSucKhoeGiaDinh wordpressManagerSucKhoeGiaDinh)
+    {
+        _wordpressManagerSucKhoeGiaDinh = wordpressManagerSucKhoeGiaDinh;
+        
+        RecurringJobId                  = "ReSync_Article_SucKhoeGiaDinh_BackgroundWorker";
+        CronExpression                  = Cron.Daily(0, 0);
+    }
+
+    public override async Task DoWorkAsync()
+    {
+        await _wordpressManagerSucKhoeGiaDinh.DoReSyncPostAsync();
+    }
+}

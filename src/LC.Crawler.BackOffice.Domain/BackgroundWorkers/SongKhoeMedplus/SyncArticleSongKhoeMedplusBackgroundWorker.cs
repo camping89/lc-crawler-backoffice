@@ -24,3 +24,21 @@ public class SyncArticleSongKhoeMedplusBackgroundWorker : HangfireBackgroundWork
         await _wordpressManagerSongKhoeMedplus.DoSyncPostAsync();
     }
 }
+
+public class ReSyncArticleSongKhoeMedplusBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WordpressManagerSongKhoeMedplus _wordpressManagerSongKhoeMedplus;
+
+    public ReSyncArticleSongKhoeMedplusBackgroundWorker(WordpressManagerSongKhoeMedplus wordpressManagerSongKhoeMedplus)
+    {
+        _wordpressManagerSongKhoeMedplus = wordpressManagerSongKhoeMedplus;
+        
+        RecurringJobId                   = "ReSync_Article_SongKhoeMedplus_BackgroundWorker";
+        CronExpression                   = Cron.Daily(0, 0);
+    }
+    
+    public override async Task DoWorkAsync()
+    {
+        await _wordpressManagerSongKhoeMedplus.DoReSyncPostAsync();
+    }
+}

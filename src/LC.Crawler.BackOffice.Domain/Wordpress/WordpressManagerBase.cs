@@ -435,7 +435,7 @@ public class WordpressManagerBase : DomainService
         return mediaResult;
     }
 
-    private Task<WordPressClient> InitClient(DataSource dataSource)
+    public Task<WordPressClient> InitClient(DataSource dataSource)
     {
         //pass the Wordpress REST API base address as string
         var client = new WordPressClient($"{dataSource.PostToSite}/wp-json/");
@@ -454,7 +454,11 @@ public class WordpressManagerBase : DomainService
             currentLog.Exceptions.Add(ex.InnerException);
         }
 
-        currentLog.Comments.Add($"Id: {article.Id}, DataSourceId {article.DataSourceId}");
+        if (article is not null)
+        {
+            currentLog.Comments.Add($"Id: {article.Id}, DataSourceId {article.DataSourceId}");
+        }
+        
         currentLog.Comments.Add(ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Entity", entity);
         currentLog.ExtraProperties.Add("C_Message", ex.Message);
@@ -494,5 +498,53 @@ public class WordpressManagerBase : DomainService
     {
         var client = await InitClient(dataSource);
         return (await client.Tags.GetAllAsync(useAuth: true)).ToList();
+    }
+
+    public async Task<List<Post>> GetAllPosts(DataSource dataSource, WordPressClient client = null)
+    {
+        if (client is null)
+        {
+            client = await InitClient(dataSource);
+        }
+        
+        var posts = new List<Post>();
+        var pageIndex = 1;
+            
+        while (true)
+        {
+            var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+            {
+                Page    = pageIndex,
+                PerPage = 100
+            },true);
+
+            posts.AddRange(resultPosts);
+            Console.WriteLine($"Page {pageIndex}");
+                
+            if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
+            {
+                break;
+            }
+
+            pageIndex++;
+        }
+
+        return posts;
+    }
+    
+    public async Task UpdatePostDetails(Post post, Article article, List<Media> medias, WordPressClient client)
+    {
+        post.Title.Raw   = article.Title;
+        post.Excerpt.Raw = article.Excerpt;
+
+        if (medias.IsNotNullOrEmpty())
+        {
+            article.Content  = ReplaceImageUrls(article.Content, medias);
+            article.Content  = ReplaceVideos(article.Content);
+        }
+        
+        post.Content.Raw = article.Content;
+
+        await client.Posts.UpdateAsync(post);
     }
 }

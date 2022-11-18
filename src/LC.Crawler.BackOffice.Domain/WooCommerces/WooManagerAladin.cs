@@ -13,6 +13,7 @@ using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.Products;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.Auditing;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using WooCommerceNET;
 using WooCommerceNET.WooCommerce.v3;
@@ -62,10 +63,10 @@ public class WooManagerAladin : DomainService
             return;
         }
 
-        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
-        var wc = new WCObject(rest);
-
-        var categories = ( await _categoryAladinRepository.GetListAsync(x => x.CategoryType == CategoryType.Ecom)).ToList();
+        // get rest api, wc object
+        var wc      = await _wooManangerBase.InitWCObject(_dataSource);
+        
+        var categories    = ( await _categoryAladinRepository.GetListAsync(x => x.CategoryType == CategoryType.Ecom)).ToList();
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         foreach (var categoryItem in categories)
@@ -193,9 +194,9 @@ public class WooManagerAladin : DomainService
                 return;
             }
 
-            var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
-                _dataSource.Configuration.ApiSecret);
-            var wc = new WCObject(rest);
+            // get rest api, wc object
+            var wc = await _wooManangerBase.InitWCObject(_dataSource);
+        
             var reviews = await _productReviewAladinRepository.GetListAsync(x => !x.IsSynced);
             var comments = await _productCommentAladinRepository.GetListAsync(x => !x.IsSynced);
             
@@ -254,9 +255,7 @@ public class WooManagerAladin : DomainService
         await _dataSourceRepository.UpdateAsync(_dataSource, true);
         
         // get rest api, wc object
-        var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
-            _dataSource.Configuration.ApiSecret);
-        var wc = new WCObject(rest);
+        var wc = await _wooManangerBase.InitWCObject(_dataSource);
 
         // get woo categories, product tags, product ids
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
@@ -311,34 +310,21 @@ public class WooManagerAladin : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSync)
+        if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
         {
             return;
         }
         
         // update re-sync status
-        _dataSource.ReSyncStatus   = PageSyncStatus.InProgress;
-        _dataSource.LastReSyncedAt = DateTime.UtcNow; 
+        _dataSource.ProductReSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastProductReSyncedAt = DateTime.UtcNow; 
         await _dataSourceRepository.UpdateAsync(_dataSource, true);
 
         // get rest api, wc object
-        var rest     = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
-        var wcObject = new WCObject(rest);
+        var wcObject = await _wooManangerBase.InitWCObject(_dataSource);
 
         // get all products
-        var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
-        var pageIndex     = 1;
-        while (true)
-        {
-            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>() { { "page", pageIndex.ToString() }, { "per_page", "100" }, });
-            if (checkProduct.IsNullOrEmpty()) break;
-
-            checkProducts.AddRange(checkProduct);
-            Console.WriteLine($"Fetching Product: page {pageIndex}");
-            pageIndex++;
-        }
-
-        Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
+        var checkProducts = await _wooManangerBase.GetAllProducts(wcObject);
 
         // Update wo products
         foreach (var checkProduct in checkProducts)
@@ -347,7 +333,7 @@ public class WooManagerAladin : DomainService
 
             try
             {
-                var product = await _productRepository.GetAsync(_ => _.ExternalId == checkProduct.id.To<int>());
+                var product = await _productRepository.FirstOrDefaultAsync(_ => _.ExternalId == checkProduct.id.To<int>());
                 if (product is null)
                 {
                     continue;
@@ -373,8 +359,8 @@ public class WooManagerAladin : DomainService
         }
         
         // update re-sync status
-        _dataSource.ReSyncStatus   = PageSyncStatus.Completed;
-        _dataSource.LastReSyncedAt = DateTime.UtcNow;
+        _dataSource.ProductReSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastProductReSyncedAt = DateTime.UtcNow;
         await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 

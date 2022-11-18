@@ -21,3 +21,19 @@ public class SyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
         await _wordpressManagerLongChau.DoSyncPostAsync();
     }
 }
+
+public class ReSyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
+{
+    private readonly WordpressManagerLongChau _wordpressManagerLongChau;
+    public ReSyncArticleLongChauBackgroundWorker(WordpressManagerLongChau wordpressManagerLongChau)
+    {
+        _wordpressManagerLongChau = wordpressManagerLongChau;
+        RecurringJobId            = "ReSync_Article_LongChau_BackgroundWorker";
+        CronExpression            = Cron.Daily(0,0);
+    }
+
+    public override async Task DoWorkAsync()
+    {
+        await _wordpressManagerLongChau.DoReSyncPostAsync();
+    }
+}
