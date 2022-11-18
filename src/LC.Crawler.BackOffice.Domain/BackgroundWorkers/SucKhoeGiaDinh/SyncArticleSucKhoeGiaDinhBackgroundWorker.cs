@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Hangfire;
+using LC.Crawler.BackOffice.Configs;
 using LC.Crawler.BackOffice.Wordpress;
 using Volo.Abp.BackgroundWorkers.Hangfire;
 using WooCategory = WordPressPCL.Models.Category;
@@ -16,7 +17,7 @@ public class SyncArticleSucKhoeGiaDinhBackgroundWorker : HangfireBackgroundWorke
         _wordpressManagerSucKhoeGiaDinh = wordpressManagerSucKhoeGiaDinh;
         
         RecurringJobId                  = "Sync_Article_SucKhoeGiaDinh_BackgroundWorker";
-        CronExpression                  = Cron.Daily(0, 0);
+        CronExpression                  = Cron.Daily(GlobalConfig.Crawler.SyncTimeHours, 0);
     }
 
     public override async Task DoWorkAsync()
@@ -36,7 +37,7 @@ public class ReSyncArticleSucKhoeGiaDinhBackgroundWorker : HangfireBackgroundWor
         _wordpressManagerSucKhoeGiaDinh = wordpressManagerSucKhoeGiaDinh;
         
         RecurringJobId                  = "ReSync_Article_SucKhoeGiaDinh_BackgroundWorker";
-        CronExpression                  = Cron.Daily(0, 0);
+        CronExpression                  = Cron.Daily(GlobalConfig.Crawler.ReSyncTimeHours, 0);
     }
 
     public override async Task DoWorkAsync()

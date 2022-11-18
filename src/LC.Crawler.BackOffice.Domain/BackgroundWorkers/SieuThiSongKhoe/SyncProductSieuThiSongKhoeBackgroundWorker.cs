@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Hangfire;
 using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.Configs;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductAttributes;
@@ -36,7 +37,7 @@ public class SyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWork
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         _logger = logger;
         RecurringJobId            = "Sync_Product_SieuThiSongKhoe_BackgroundWorker";
-        CronExpression            = Cron.Daily(0,0);
+        CronExpression            = Cron.Daily(GlobalConfig.Crawler.SyncTimeHours,0);
     }
     
     public override async Task DoWorkAsync()
@@ -55,7 +56,7 @@ public class ReSyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWo
     {
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         RecurringJobId             = "ReSync_Product_SieuThiSongKhoe_BackgroundWorker";
-        CronExpression             = Cron.Daily(0, 0);
+        CronExpression             = Cron.Daily(GlobalConfig.Crawler.ReSyncTimeHours, 0);
     }
     
     public override async Task DoWorkAsync()

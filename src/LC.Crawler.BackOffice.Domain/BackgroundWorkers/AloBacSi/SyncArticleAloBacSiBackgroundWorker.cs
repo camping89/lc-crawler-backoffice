@@ -6,6 +6,7 @@ using Hangfire;
 using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
+using LC.Crawler.BackOffice.Configs;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Wordpress;
@@ -26,7 +27,7 @@ public class SyncArticleAloBacSiBackgroundWorker : HangfireBackgroundWorkerBase
         _wordpressManagerAloBacSi = wordpressManagerAloBacSi;
 
         RecurringJobId            = "Sync_Article_AloBacSi_BackgroundWorker";
-        CronExpression            = Cron.Daily(0,0);
+        CronExpression            = Cron.Daily(GlobalConfig.Crawler.SyncTimeHours,0);
     }
 
     public override async Task DoWorkAsync()
@@ -45,7 +46,7 @@ public class ReSyncArticleAloBacSiBackgroundWorker : HangfireBackgroundWorkerBas
         _wordpressManagerAloBacSi = wordpressManagerAloBacSi;
 
         RecurringJobId            = "ReSync_Article_AloBacSi_BackgroundWorker";
-        CronExpression            = Cron.Daily(0,0);
+        CronExpression            = Cron.Daily(GlobalConfig.Crawler.ReSyncTimeHours,0);
     }
 
     public override async Task DoWorkAsync()

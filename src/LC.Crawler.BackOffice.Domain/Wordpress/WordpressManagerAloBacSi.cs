@@ -61,7 +61,7 @@ public class WordpressManagerAloBacSi : DomainService
         // update re-sync status
         _dataSource.ArticleSyncStatus   = PageSyncStatus.InProgress;
         _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
-        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
         
         // get article ids
         var articleIds = (await _articleAloBacSiRepository.GetQueryableAsync())
@@ -114,7 +114,7 @@ public class WordpressManagerAloBacSi : DomainService
         // update re-sync status
         _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
-        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
     
     public async Task DoReSyncPostAsync()
@@ -129,7 +129,7 @@ public class WordpressManagerAloBacSi : DomainService
         // update re-sync status
         _dataSource.ArticleReSyncStatus   = PageSyncStatus.InProgress;
         _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
-        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
         
         // get all posts
         var client   = await _wordpressManagerBase.InitClient(_dataSource);
@@ -171,7 +171,7 @@ public class WordpressManagerAloBacSi : DomainService
         // update re-sync status
         _dataSource.ArticleReSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
-        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 
     public async Task DoSyncCategoriesAsync()

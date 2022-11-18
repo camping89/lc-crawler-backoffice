@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Hangfire;
 using LC.Crawler.BackOffice.Articles;
+using LC.Crawler.BackOffice.Configs;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Products;
@@ -26,7 +27,7 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     {
         _wooManagerLongChau = wooManagerLongChau;
         RecurringJobId = "Sync_Product_LongChau_BackgroundWorker";
-        CronExpression            = Cron.Daily(0,0);
+        CronExpression            = Cron.Daily(GlobalConfig.Crawler.SyncTimeHours,0);
     }
 
     public override async Task DoWorkAsync()
@@ -45,7 +46,7 @@ public class ReSyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBas
     {
         _wooManagerLongChau = wooManagerLongChau;
         RecurringJobId      = "ReSync_Product_LongChau_BackgroundWorker";
-        CronExpression      = Cron.Daily(0, 0);
+        CronExpression      = Cron.Daily(GlobalConfig.Crawler.ReSyncTimeHours, 0);
     }
 
     public override async Task DoWorkAsync()

@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Hangfire;
+using LC.Crawler.BackOffice.Configs;
 using LC.Crawler.BackOffice.Wordpress;
 using Volo.Abp.BackgroundWorkers.Hangfire;
 
@@ -12,7 +13,7 @@ public class SyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     {
         _wordpressManagerLongChau = wordpressManagerLongChau;
         RecurringJobId            = "Sync_Article_LongChau_BackgroundWorker";
-        CronExpression            = Cron.Daily(0,0);
+        CronExpression            = Cron.Daily(GlobalConfig.Crawler.SyncTimeHours,0);
     }
 
     public override async Task DoWorkAsync()
@@ -29,7 +30,7 @@ public class ReSyncArticleLongChauBackgroundWorker : HangfireBackgroundWorkerBas
     {
         _wordpressManagerLongChau = wordpressManagerLongChau;
         RecurringJobId            = "ReSync_Article_LongChau_BackgroundWorker";
-        CronExpression            = Cron.Daily(0,0);
+        CronExpression            = Cron.Daily(GlobalConfig.Crawler.ReSyncTimeHours,0);
     }
 
     public override async Task DoWorkAsync()
