@@ -40,18 +40,27 @@ public class WordpressManagerAladin : DomainService
 
     public async Task DoSyncPostAsync()
     {
+        // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
-        if (_dataSource == null)
+        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
         {
             return;
         }
         
+        // update re-sync status
+        _dataSource.ArticleSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        
+        // get article ids
         var articleIds = (await _articleAladinRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
         
+        // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
 
+        // sync article to wp
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -88,6 +97,11 @@ public class WordpressManagerAladin : DomainService
                 await auditingScope.SaveAsync();
             }
         }
+        
+        // update re-sync status
+        _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 
     public async Task DoSyncCategoriesAsync()

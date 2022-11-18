@@ -6,10 +6,11 @@ public class GlobalConfig
     
     public class Crawler
     {
-        public const int Batch = 5;
-        public const int CrawlingInterval = 15;
+        public const int Batch                   = 5;
+        public const int CrawlingInterval        = 15;
         public const int DefaultCrawlingInterval = 60;
-        public const int CrawlerAccountPerProxy = 10;
+        public const int CrawlerAccountPerProxy  = 10;
+        public const int SyncTimeOutInHours      = 24;
     }
 }
 

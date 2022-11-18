@@ -8,8 +8,9 @@ namespace LC.Crawler.BackOffice.MessageQueue.Producers.Etos;
 [EventName("Veek.DataProvider.Social.CrawlerDataSourceEto")]
 public class CrawlerDataSourceEto
 {
-    public List<CrawlerDataSourceItem> Items { get; set; }
-    public CrawlerCredentialEto Credential { get; set; }
+    public Guid                        Id         { get; set; }
+    public List<CrawlerDataSourceItem> Items      { get; set; }
+    public CrawlerCredentialEto        Credential { get; set; }
 }
 
 public class CrawlerDataSourceItem

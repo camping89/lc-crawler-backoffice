@@ -41,24 +41,36 @@ public class WordpressManagerSongKhoeMedplus : DomainService
 
     public async Task DoSyncPostAsync()
     {
+        // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SongKhoeMedplusUrl));
-        if (_dataSource == null)
+        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
         {
             return;
         }
         
+        // update re-sync status
+        _dataSource.ArticleSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        
         //TODO Remove after clean data
+        // get categories
         var categories = (await _categorySongKhoeMedplusRepository.GetListAsync()).Where(_ => 
             !_.Name.Contains("Thuốc A-Z", StringComparison.InvariantCultureIgnoreCase) 
             && !_.Name.Contains("Nuôi dạy con -> Kỹ năng nuôi con ->", StringComparison.InvariantCultureIgnoreCase) 
             && !_.Name.Equals("Dinh dưỡng thai kỳ", StringComparison.InvariantCultureIgnoreCase) 
             && !_.Name.Equals("Sức khỏe -> Bệnh A-Z -> Nhi khoa", StringComparison.InvariantCultureIgnoreCase)).ToList();
         var categoryIds = categories.Select(_ => _.Id).ToList();
+        
+        // get article ids
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
 
+        // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+        
+        // sync article to wp
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -97,6 +109,11 @@ public class WordpressManagerSongKhoeMedplus : DomainService
                 await auditingScope.SaveAsync();
             }
         }
+        
+        // update re-sync status
+        _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
     
     public async Task DoSyncCategoriesAsync()
