@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentDateTime" Version="2.1.0" />
     <PackageReference Include="RestSharp" Version="108.0.2" />
     <PackageReference Include="Svg" Version="3.4.3" />
     <PackageReference Include="Volo.Abp.BackgroundWorkers.Hangfire" Version="5.3.4" />

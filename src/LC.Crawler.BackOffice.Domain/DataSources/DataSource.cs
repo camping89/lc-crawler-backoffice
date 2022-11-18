@@ -2,10 +2,14 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using FluentDate;
+using FluentDateTime;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using JetBrains.Annotations;
+using LC.Crawler.BackOffice.Configs;
+using LC.Crawler.BackOffice.Enums;
 using Volo.Abp.Domain.Entities;
 
 using Volo.Abp;
@@ -24,6 +28,51 @@ namespace LC.Crawler.BackOffice.DataSources
 
         public string ConcurrencyStamp { get; set; }
         public Configuration Configuration { get; set; }
+
+        public DateTime?      LastCrawledAt  { get; set; }
+        public PageSyncStatus CrawlerStatus  { get; set; }
+
+        public DateTime?      LastProductSyncedAt   { get; set; }
+        public PageSyncStatus ProductSyncStatus     { get; set; }
+        
+        public bool ShouldSyncProduct
+        {
+            get
+            {
+                {
+                    var isObsolete = LastProductSyncedAt.HasValue && LastProductSyncedAt.Value.IsBefore(GlobalConfig.Crawler.SyncTimeOutInHours.Hours().Ago());
+                    return ProductSyncStatus != PageSyncStatus.InProgress || isObsolete;
+                }
+            }
+        }
+        
+        public DateTime?      LastArticleSyncedAt { get; set; }
+        public PageSyncStatus ArticleSyncStatus   { get; set; }
+        
+        public bool ShouldSyncArticle
+        {
+            get
+            {
+                {
+                    var isObsolete = LastArticleSyncedAt.HasValue && LastArticleSyncedAt.Value.IsBefore(GlobalConfig.Crawler.SyncTimeOutInHours.Hours().Ago());
+                    return ArticleSyncStatus != PageSyncStatus.InProgress || isObsolete;
+                }
+            }
+        }
+        
+        public DateTime?      LastReSyncedAt { get; set; }
+        public PageSyncStatus ReSyncStatus   { get; set; }
+        
+        public bool ShouldReSync
+        {
+            get
+            {
+                {
+                    var isObsolete = LastReSyncedAt.HasValue && LastReSyncedAt.Value.IsBefore(GlobalConfig.Crawler.SyncTimeOutInHours.Hours().Ago());
+                    return ReSyncStatus != PageSyncStatus.InProgress || isObsolete;
+                }
+            }
+        }
 
         public DataSource()
         {

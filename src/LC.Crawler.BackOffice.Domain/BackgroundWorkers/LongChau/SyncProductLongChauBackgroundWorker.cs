@@ -45,7 +45,7 @@ public class ReSyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBas
     {
         _wooManagerLongChau = wooManagerLongChau;
         RecurringJobId      = "ReSync_Product_LongChau_BackgroundWorker";
-        CronExpression      = Cron.Weekly();
+        CronExpression      = Cron.Daily(0, 0);
     }
 
     public override async Task DoWorkAsync()

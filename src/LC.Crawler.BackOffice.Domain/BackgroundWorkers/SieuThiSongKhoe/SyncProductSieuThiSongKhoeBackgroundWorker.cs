@@ -55,7 +55,7 @@ public class ReSyncProductSieuThiSongKhoeBackgroundWorker : HangfireBackgroundWo
     {
         _wooManagerSieuThiSongKhoe = wooManagerSieuThiSongKhoe;
         RecurringJobId             = "ReSync_Product_SieuThiSongKhoe_BackgroundWorker";
-        CronExpression             = Cron.Weekly();
+        CronExpression             = Cron.Daily(0, 0);
     }
     
     public override async Task DoWorkAsync()

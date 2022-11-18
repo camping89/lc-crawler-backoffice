@@ -180,8 +180,7 @@ public class WooManagerLongChau : DomainService
             categoryCount++;
         }
     }
-    
-    
+
     public async Task DoSyncReviews()
     {
         try
@@ -242,21 +241,30 @@ public class WooManagerLongChau : DomainService
     
     public async Task DoSyncProductToWooAsync()
     {
+        // get datasource
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
-        if (_dataSource == null)
+        if (_dataSource == null || !_dataSource.ShouldSyncProduct)
         {
             return;
         }
+        
+        // update re-sync status
+        _dataSource.ProductSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastProductSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
 
+        // get rest api, wc object
         var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey, _dataSource.Configuration.ApiSecret);
         var wc = new WCObject(rest);
 
+        // get woo categories, product tags, product ids
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         var productIds = (await _productRepository.GetQueryableAsync()).Where(x => x.DataSourceId == _dataSource.Id 
                                                                                    && x.ExternalId == null
                                                                                    ).Select(x=>x.Id).ToList();
 
+        // sync product to wp
         var number = 1;
         foreach (var productId in productIds)
         {
@@ -287,20 +295,33 @@ public class WooManagerLongChau : DomainService
                 await auditingScope.SaveAsync();
             }
         }
+        
+        // update re-sync status
+        _dataSource.ProductSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastProductSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
     
     public async Task DoReSyncProductToWooAsync()
     {
+        // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
-        if (_dataSource == null)
+        if (_dataSource == null || !_dataSource.ShouldReSync)
         {
             return;
         }
         
+        // update re-sync status
+        _dataSource.ReSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastReSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        
+        // get rest api, wc object
         var rest = new RestAPI($"{_dataSource.PostToSite}/wp-json/wc/v3/", _dataSource.Configuration.ApiKey,
                                _dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
 
+        // get all products
         var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
         var pageIndex     = 1;
         while (true)
@@ -319,6 +340,7 @@ public class WooManagerLongChau : DomainService
 
         Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
 
+        // Update wo products
         foreach (var checkProduct in checkProducts)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -346,6 +368,11 @@ public class WooManagerLongChau : DomainService
                 await auditingScope.SaveAsync();
             }
         }
+        
+        // update re-sync status
+        _dataSource.ReSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastReSyncedAt = DateTime.UtcNow;
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 
     /// <summary>

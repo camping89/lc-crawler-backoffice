@@ -58,7 +58,7 @@ public class ReSyncProductAladinBackgroundWorker : HangfireBackgroundWorkerBase
     {
         _wooManagerAladin = wooManagerAladin;
         RecurringJobId    = "ReSync_Product_Aladin_BackgroundWorker";
-        CronExpression    = Cron.Weekly();
+        CronExpression    = Cron.Daily(0, 0);
     }
 
     public override async Task DoWorkAsync()

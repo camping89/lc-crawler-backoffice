@@ -40,18 +40,27 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
 
     public async Task DoSyncPostAsync()
     {
+        // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
-        if (_dataSource == null)
+        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
         {
             return;
         }
         
+        // update re-sync status
+        _dataSource.ArticleSyncStatus   = PageSyncStatus.InProgress;
+        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        
+        // get article ids
         var articleIds = (await _articleSieuThiSongKhoeRepository.GetQueryableAsync())
                         .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
         
+        // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
         
+        // sync articles to wp
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -87,9 +96,12 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
                 //Always save the log
                 await auditingScope.SaveAsync();
             }
-
-            
         }
+        
+        // update re-sync status
+        _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
+        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
     
     public async Task DoSyncCategoriesAsync()
