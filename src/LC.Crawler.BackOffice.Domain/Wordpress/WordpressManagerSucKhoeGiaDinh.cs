@@ -8,6 +8,7 @@ using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Auditing;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using WooCategory = WordPressPCL.Models.Category;
@@ -160,6 +161,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
         // update re-sync status
         _dataSource.ArticleReSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
+        _dataSource.SetConcurrencyStampIfNotNull( Guid.NewGuid().ToString("N"));
         _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 

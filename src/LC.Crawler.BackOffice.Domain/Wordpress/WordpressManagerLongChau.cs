@@ -11,10 +11,12 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using Volo.Abp.Auditing;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using WordPressPCL;
 using WordPressPCL.Models;
 using WordPressPCL.Utility;
+using Guid = System.Guid;
 using WordpresCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -109,6 +111,7 @@ public class WordpressManagerLongChau : DomainService
         // update re-sync status
         _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
+        _dataSource.SetConcurrencyStampIfNotNull( Guid.NewGuid().ToString("N"));
         _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
     
@@ -166,6 +169,7 @@ public class WordpressManagerLongChau : DomainService
         // update re-sync status
         _dataSource.ArticleReSyncStatus   = PageSyncStatus.Completed;
         _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
+        _dataSource.SetConcurrencyStampIfNotNull( Guid.NewGuid().ToString("N"));
         _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
     }
 
