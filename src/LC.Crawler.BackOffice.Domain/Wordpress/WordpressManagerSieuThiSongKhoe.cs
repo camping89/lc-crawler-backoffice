@@ -24,12 +24,14 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
     private readonly WordpressManagerBase               _wordpressManagerBase;
     private readonly IAuditingManager                   _auditingManager;
 
+    private readonly DataSourceManager _dataSourceManager;
     public WordpressManagerSieuThiSongKhoe(IDataSourceRepository              dataSourceRepository, 
                                            IMediaSieuThiSongKhoeRepository    mediaSieuThiSongKhoeRepository, 
                                            IArticleSieuThiSongKhoeRepository  articleSieuThiSongKhoeRepository,
                                            WordpressManagerBase               wordpressManagerBase,
                                            ICategorySieuThiSongKhoeRepository categorySieuThiSongKhoeRepository,
-                                           IAuditingManager                   auditingManager)
+                                           IAuditingManager                   auditingManager,
+                                           DataSourceManager dataSourceManager)
     {
         _dataSourceRepository              = dataSourceRepository;
         _mediaSieuThiSongKhoeRepository    = mediaSieuThiSongKhoeRepository;
@@ -37,6 +39,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         _wordpressManagerBase              = wordpressManagerBase;
         _categorySieuThiSongKhoeRepository = categorySieuThiSongKhoeRepository;
         _auditingManager                   = auditingManager;
+        _dataSourceManager = dataSourceManager;
     }
 
     public async Task DoSyncPostAsync()
@@ -49,9 +52,8 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ArticleSyncStatus   = PageSyncStatus.InProgress;
-        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
+
         
         // get article ids
         var articleIds = (await _articleSieuThiSongKhoeRepository.GetQueryableAsync())
@@ -102,10 +104,8 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ArticleSyncStatus   = PageSyncStatus.Completed;
-        _dataSource.LastArticleSyncedAt = DateTime.UtcNow; 
-        _dataSource.SetConcurrencyStampIfNotNull( Guid.NewGuid().ToString("N"));
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.Completed);
+
     }
     
     public async Task DoReSyncPostAsync()
@@ -118,10 +118,8 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ArticleReSyncStatus   = PageSyncStatus.InProgress;
-        _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
-        
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
+
         // get all posts
         var client   = await _wordpressManagerBase.InitClient(_dataSource);
         var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
@@ -160,10 +158,8 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ArticleReSyncStatus   = PageSyncStatus.Completed;
-        _dataSource.LastArticleReSyncedAt = DateTime.UtcNow; 
-        _dataSource.SetConcurrencyStampIfNotNull( Guid.NewGuid().ToString("N"));
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.Completed);
+
     }
     
     public async Task DoSyncCategoriesAsync()

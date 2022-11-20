@@ -31,6 +31,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
     private readonly WooManangerBase _wooManangerBase;
     private readonly IAuditingManager _auditingManager;
     
+    private readonly DataSourceManager _dataSourceManager;
     
     
     private readonly IProductReviewSieuThiSongKhoeRepository _productReviewSieuThiSongKhoeRepository;
@@ -47,7 +48,8 @@ public class WooManagerSieuThiSongKhoe : DomainService
         WooManangerBase wooManangerBase,
         IAuditingManager auditingManager,
         IProductReviewSieuThiSongKhoeRepository productReviewSieuThiSongKhoeRepository,
-        IProductCommentSieuThiSongKhoeRepository productCommentSieuThiSongKhoeRepository)
+        IProductCommentSieuThiSongKhoeRepository productCommentSieuThiSongKhoeRepository,
+        DataSourceManager dataSourceManager)
     {
         _productRepository = productRepository;
         _dataSourceRepository = dataSourceRepository;
@@ -57,6 +59,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         _auditingManager = auditingManager;
         _productReviewSieuThiSongKhoeRepository = productReviewSieuThiSongKhoeRepository;
         _productCommentSieuThiSongKhoeRepository = productCommentSieuThiSongKhoeRepository;
+        _dataSourceManager = dataSourceManager;
     }
 
     public async Task DoSyncUpdateProduct()
@@ -243,9 +246,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ProductSyncStatus   = PageSyncStatus.InProgress;
-        _dataSource.LastProductSyncedAt = DateTime.UtcNow; 
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.InProgress);
 
         // get rest api, wc object
         var wc = await _wooManangerBase.InitWCObject(_dataSource);
@@ -297,9 +298,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ProductSyncStatus   = PageSyncStatus.Completed;
-        _dataSource.LastProductSyncedAt = DateTime.UtcNow; 
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.Completed);
     }
     
     public async Task DoReSyncProductToWooAsync()
@@ -312,9 +311,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ProductReSyncStatus   = PageSyncStatus.InProgress;
-        _dataSource.LastProductReSyncedAt = DateTime.UtcNow; 
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
         
         // get rest api, wc object
         var wcObject = await _wooManangerBase.InitWCObject(_dataSource);
@@ -351,9 +348,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
         
         // update re-sync status
-        _dataSource.ProductReSyncStatus   = PageSyncStatus.Completed;
-        _dataSource.LastProductReSyncedAt = DateTime.UtcNow;
-        _dataSource = await _dataSourceRepository.UpdateAsync(_dataSource, true);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.Completed);
     }
 
     /// <summary>

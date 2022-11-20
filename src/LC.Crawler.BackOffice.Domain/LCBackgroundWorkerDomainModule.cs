@@ -40,7 +40,7 @@ public class LCBackgroundWorkerDomainModule : AbpModule
     {
         var hostEnvironment = context.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
-        if (hostEnvironment.IsProduction())
+        if (true)
         {
             // Process download and save image
             //context.AddBackgroundWorkerAsync<DownloadMediaLongChauBackgroundWorker>();

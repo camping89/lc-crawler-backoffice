@@ -7,3 +7,10 @@ public enum PageSyncStatus
     InProgress = 20,
     Completed  = 30
 }
+public enum PageSyncStatusType
+{
+    SyncArticle,
+    ResyncArticle,
+    SyncProduct,
+    ResyncProduct
+}
