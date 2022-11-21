@@ -42,17 +42,23 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
             var article = rawArticles.First();
+            if (article.Content is null)
+            {
+                continue;
+            }
+            
             var articleEntity = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
             if (articleEntity == null)
             {
                 articleEntity = new Article(GuidGenerator.Create())
                 {
-                    Title = article.Title,
-                    CreatedAt = article.CreatedAt,
-                    Excerpt = article.ShortDescription,
-                    Content = article.Content,
+                    Title        = article.Title,
+                    CreatedAt    = article.CreatedAt,
+                    Excerpt      = article.ShortDescription,
+                    Content      = article.Content,
                     DataSourceId = dataSource.Id,
-                    Tags = article.Tags
+                    Tags         = article.Tags,
+                    Url          = article.Url
                 };
                 foreach (var raw in rawArticles)
                 {
@@ -105,6 +111,14 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                 }
 
                 await _articleSucKhoeGiaDinhRepository.InsertAsync(articleEntity);
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(articleEntity.Url))
+                {
+                    articleEntity.Url = article.Url;
+                    await _articleSucKhoeGiaDinhRepository.UpdateAsync(articleEntity);
+                }
             }
         }
     }

@@ -264,6 +264,8 @@ public class WooManagerAladin : DomainService
         var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         var productIds = (await _productRepository.GetQueryableAsync())
             .Where(x => x.DataSourceId == _dataSource.Id
+                        && x.Name != null
+                        && x.Code != null
                         && x.ExternalId == null
                         )
             .ToList().Select(x => x.Id).ToList();

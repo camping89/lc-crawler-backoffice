@@ -258,6 +258,8 @@ public class WooManagerSieuThiSongKhoe : DomainService
         //TODO remove condition ExternalId for updating product
         var productIds = (await _productRepository.GetQueryableAsync())
             .Where(x => x.DataSourceId == _dataSource.Id 
+                        && x.Name != null
+                        && x.Code != null
                         && x.ExternalId == null
                         ).Select(x => x.Id).ToList();
 

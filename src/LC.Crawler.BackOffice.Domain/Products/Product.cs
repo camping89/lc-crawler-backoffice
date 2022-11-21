@@ -38,6 +38,7 @@ namespace LC.Crawler.BackOffice.Products
         public virtual List<string> Tags { get; set; }
 
         public string ConcurrencyStamp { get; set; }
+        public string Url { get; set; }
 
         public Product()
         {

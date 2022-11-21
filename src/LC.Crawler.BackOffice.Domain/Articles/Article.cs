@@ -40,6 +40,7 @@ namespace LC.Crawler.BackOffice.Articles
         public ICollection<ArticleMedia> Medias { get; private set; }
 
         public string ConcurrencyStamp { get; set; }
+        public string Url { get; set; }
         
         public DateTime? LastSyncedAt { get; set; }
 

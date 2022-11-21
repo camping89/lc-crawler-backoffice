@@ -59,6 +59,11 @@ public class ProductManagerSieuThiSongKhoe : DomainService
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             var rawProduct = rawProducts.First();
+            if (rawProduct.Code is null && rawProduct.Title is null)
+            {
+                continue;
+            }
+            
             if (AbpStringExtensions.IsNullOrEmpty(rawProduct.Code))
             {
                 await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
@@ -78,6 +83,11 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 productExist.Name  = rawProduct.Title;
                 productExist.Brand = rawProduct.Brand;
                 productExist.Tags  = rawProduct.Tags;
+
+                if (string.IsNullOrEmpty(productExist.Url))
+                {
+                    productExist.Url = rawProduct.Url;
+                }
                 
                 var attributes = await _productAttributeSieuThiSongKhoeRepository.GetListAsync(_ => _.ProductId == productExist.Id);
 
@@ -202,13 +212,14 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             
             var product = new Product(GuidGenerator.Create())
             {
-                Name = rawProduct.Title,
-                Code = rawProduct.Code,
-                Description = rawProduct.Description,
+                Name             = rawProduct.Title,
+                Code             = rawProduct.Code,
+                Description      = rawProduct.Description,
                 ShortDescription = rawProduct.ShortDescription,
-                DataSourceId = dataSource.Id,
-                Brand = rawProduct.Brand,
-                Tags = rawProduct.Tags
+                DataSourceId     = dataSource.Id,
+                Brand            = rawProduct.Brand,
+                Tags             = rawProduct.Tags,
+                Url              = rawProduct.Url
             };
            
             foreach (var raw in rawProducts)

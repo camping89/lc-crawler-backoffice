@@ -58,7 +58,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
         
         // get article ids
         var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.LastSyncedAt == null)
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt == null)
                         .Select(x=>x.Id).ToList();
         
         // get all tags
