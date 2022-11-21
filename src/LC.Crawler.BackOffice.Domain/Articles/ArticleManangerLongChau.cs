@@ -32,7 +32,7 @@ public class ArticleManangerLongChau : DomainService
 
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-       var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
         if (dataSource == null)
         {
             return;
@@ -42,108 +42,113 @@ public class ArticleManangerLongChau : DomainService
         
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
-            var article = rawArticles.First();
-            if (article.Content is null)
+            try
             {
-                continue;
-            }
-            
-            var articleEntity = await _articleLongChauRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
-            if (articleEntity == null)
-            {
-                articleEntity = new Article(GuidGenerator.Create())
+                var article = rawArticles.First();
+                if (article.Content is null)
                 {
-                    Title        = article.Title,
-                    CreatedAt    = article.CreatedAt,
-                    Excerpt      = article.ShortDescription,
-                    Content      = article.Content,
-                    DataSourceId = dataSource.Id,
-                    Tags         = article.Tags,
-                    Url          = article.Url
-                };
-
-                foreach (var raw in rawArticles)
-                {
-                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
-                    if (category == null)
-                    {
-                        category = new Category()
-                        {
-                            Name = raw.Category,
-                            CategoryType = CategoryType.Article
-                        };
-                        await _categoryLongChauRepository.InsertAsync(category, true);
-                        categories.Add(category);
-                    }
-                    
-                    articleEntity.AddCategory(category.Id);
+                    continue;
                 }
                 
-                if (article.FeatureImage.IsNotNullOrEmpty())
+                var articleEntity = await _articleLongChauRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+                if (articleEntity == null)
                 {
-                    var media = new Media()
+                    articleEntity = new Article(GuidGenerator.Create())
                     {
-                        Url = article.FeatureImage,
-                        IsDowloaded = false
+                        Title        = article.Title,
+                        CreatedAt    = article.CreatedAt,
+                        Excerpt      = article.ShortDescription,
+                        Content      = article.Content,
+                        DataSourceId = dataSource.Id,
+                        Tags         = article.Tags,
+                        Url          = article.Url
                     };
-                    await _mediaLongChauRepository.InsertAsync(media, true);
-                    articleEntity.FeaturedMediaId = media.Id;
-                }
 
-                if (!string.IsNullOrEmpty(article.Content))
-                {
-                    var mediaUrls = article.Content.GetImageUrls();
-
-                    if (mediaUrls.Any())
+                    foreach (var raw in rawArticles)
                     {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        if (category == null)
                         {
-                            Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
-                            IsDowloaded = false
-                        }).ToList();
-                        await _mediaLongChauRepository.InsertManyAsync(medias);
-
-                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
-
-                        foreach (var media in medias)
-                        {
-                            articleEntity.AddMedia(media.Id);
+                            category = new Category()
+                            {
+                                Name = raw.Category,
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categoryLongChauRepository.InsertAsync(category, true);
+                            categories.Add(category);
                         }
+                        
+                        articleEntity.AddCategory(category.Id);
                     }
-                }
-
-                await _articleLongChauRepository.InsertAsync(articleEntity);
-            }
-            else
-            {
-                articleEntity.Url ??= article.Url;
-                if (articleEntity.Content is null && !string.IsNullOrEmpty(article.Content))
-                {
-                    System.Console.WriteLine($"UPDATE URL: {article.Url}");
                     
-                    var mediaUrls = article.Content.GetImageUrls();
-                    if (mediaUrls.Any())
+                    if (article.FeatureImage.IsNotNullOrEmpty())
                     {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var media = new Media()
                         {
-                            Url         = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                            Url = article.FeatureImage,
                             IsDowloaded = false
-                        }).ToList();
-                        await _mediaLongChauRepository.InsertManyAsync(medias);
+                        };
+                        await _mediaLongChauRepository.InsertAsync(media, true);
+                        articleEntity.FeaturedMediaId = media.Id;
+                    }
 
-                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+                    if (!string.IsNullOrEmpty(article.Content))
+                    {
+                        var mediaUrls = article.Content.GetImageUrls();
 
-                        foreach (var media in medias)
+                        if (mediaUrls.Any())
                         {
-                            articleEntity.AddMedia(media.Id);
+                            var medias = mediaUrls.Select(url => new Media()
+                            {
+                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                IsDowloaded = false
+                            }).ToList();
+                            await _mediaLongChauRepository.InsertManyAsync(medias);
+
+                            articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+
+                            foreach (var media in medias)
+                            {
+                                articleEntity.AddMedia(media.Id);
+                            }
                         }
                     }
-                    else
-                    {
-                        articleEntity.Content = article.Content;
-                    }
+
+                    await _articleLongChauRepository.InsertAsync(articleEntity);
                 }
-                await _articleLongChauRepository.UpdateAsync(articleEntity);
+                else
+                {
+                    articleEntity.Url ??= article.Url;
+                    if (articleEntity.Content is null && !string.IsNullOrEmpty(article.Content))
+                    {
+                        var mediaUrls = article.Content.GetImageUrls();
+                        if (mediaUrls.Any())
+                        {
+                            var medias = mediaUrls.Select(url => new Media()
+                            {
+                                Url         = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                IsDowloaded = false
+                            }).ToList();
+                            await _mediaLongChauRepository.InsertManyAsync(medias);
+
+                            articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+
+                            foreach (var media in medias)
+                            {
+                                articleEntity.AddMedia(media.Id);
+                            }
+                        }
+                        else
+                        {
+                            articleEntity.Content = article.Content;
+                        }
+                    }
+                    await _articleLongChauRepository.UpdateAsync(articleEntity);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
     }

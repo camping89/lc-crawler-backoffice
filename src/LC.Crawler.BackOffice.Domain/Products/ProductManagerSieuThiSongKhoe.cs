@@ -58,97 +58,252 @@ public class ProductManagerSieuThiSongKhoe : DomainService
         var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
-            var rawProduct = rawProducts.First();
-            if (rawProduct.Code is null && rawProduct.Title is null)
+            try
             {
-                continue;
-            }
-            
-            if (AbpStringExtensions.IsNullOrEmpty(rawProduct.Code))
-            {
-                await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
+                var rawProduct = rawProducts.First();
+                if (rawProduct.Code is null && rawProduct.Title is null)
                 {
-                    Url = rawProduct.Url,
-                    CrawlType = CrawlType.Ecom,
-                    PageDataSource = PageDataSource.SieuThiSongKhoe,
-                    Error = TrackingDataSourceConsts.EmptyCode
-                }, true);
-            }
-
-            #region Update product
-
-            var productExist = await _productSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
-            if (productExist != null)
-            {
-                productExist.Name  = rawProduct.Title;
-                productExist.Brand = rawProduct.Brand;
-                productExist.Tags  = rawProduct.Tags;
-
-                if (string.IsNullOrEmpty(productExist.Url))
-                {
-                    productExist.Url = rawProduct.Url;
+                    continue;
                 }
                 
-                var attributes = await _productAttributeSieuThiSongKhoeRepository.GetListAsync(_ => _.ProductId == productExist.Id);
-
-                //Init new attribute from raw product not in db
-                foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
-                         let attribute =
-                             attributes.Where(_ => _.Key == rawAttribute.Key && _.Value == rawAttribute.Value)
-                         where !attribute.IsNotNullOrEmpty()
-                         select rawAttribute)
+                if (AbpStringExtensions.IsNullOrEmpty(rawProduct.Code))
                 {
-                    await _productAttributeSieuThiSongKhoeRepository.InsertAsync(new ProductAttribute()
+                    await _trackingDataSourceRepository.InsertAsync(new TrackingDataSource()
                     {
-                        Key = rawAttribute.Key,
-                        Slug = rawAttribute.Slug,
-                        Value = rawAttribute.Value,
-                        ProductId = productExist.Id
+                        Url = rawProduct.Url,
+                        CrawlType = CrawlType.Ecom,
+                        PageDataSource = PageDataSource.SieuThiSongKhoe,
+                        Error = TrackingDataSourceConsts.EmptyCode
                     }, true);
                 }
 
-                //Delete attribute from db not in raw product
-                foreach (var attribute in from attribute in attributes
-                         let rawAttribute =
-                             rawProduct.Attributes.Where(_ => _.Key == attribute.Key && _.Value == attribute.Value)
-                         where rawAttribute.IsNullOrEmpty()
-                         select attribute)
+                #region Update product
+
+                var productExist = await _productSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.Code == rawProduct.Code);
+                if (productExist != null)
                 {
-                    await _productAttributeSieuThiSongKhoeRepository.DeleteAsync(attribute);
+                    productExist.Name  = rawProduct.Title;
+                    productExist.Brand = rawProduct.Brand;
+                    productExist.Tags  = rawProduct.Tags;
+
+                    if (string.IsNullOrEmpty(productExist.Url))
+                    {
+                        productExist.Url = rawProduct.Url;
+                    }
+                    
+                    var attributes = await _productAttributeSieuThiSongKhoeRepository.GetListAsync(_ => _.ProductId == productExist.Id);
+
+                    //Init new attribute from raw product not in db
+                    foreach (var rawAttribute in from rawAttribute in rawProduct.Attributes
+                             let attribute =
+                                 attributes.Where(_ => _.Key == rawAttribute.Key && _.Value == rawAttribute.Value)
+                             where !attribute.IsNotNullOrEmpty()
+                             select rawAttribute)
+                    {
+                        await _productAttributeSieuThiSongKhoeRepository.InsertAsync(new ProductAttribute()
+                        {
+                            Key = rawAttribute.Key,
+                            Slug = rawAttribute.Slug,
+                            Value = rawAttribute.Value,
+                            ProductId = productExist.Id
+                        }, true);
+                    }
+
+                    //Delete attribute from db not in raw product
+                    foreach (var attribute in from attribute in attributes
+                             let rawAttribute =
+                                 rawProduct.Attributes.Where(_ => _.Key == attribute.Key && _.Value == attribute.Value)
+                             where rawAttribute.IsNullOrEmpty()
+                             select attribute)
+                    {
+                        await _productAttributeSieuThiSongKhoeRepository.DeleteAsync(attribute);
+                    }
+
+                    //Update price 
+                    if (rawProduct.Variants != null)
+                    {
+                        foreach (var variant in rawProduct.Variants)
+                        {
+                            var productVariant = await _productVariantSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.ProductId == productExist.Id && x.SKU == variant.SKU);
+                            if (productVariant != null)
+                            {
+                                productVariant.DiscountedPrice = variant.DiscountedPrice;
+                                productVariant.DiscountRate = variant.DiscountRate;
+                                productVariant.RetailPrice = variant.RetailPrice;
+                                await _productVariantSieuThiSongKhoeRepository.UpdateAsync(productVariant,true);
+                            }
+                            else
+                            {
+                                await _productVariantSieuThiSongKhoeRepository.InsertAsync(new ProductVariant()
+                                {
+                                    ProductId = productExist.Id,
+                                    SKU = variant.SKU,
+                                    DiscountedPrice = variant.DiscountedPrice,
+                                    DiscountRate = variant.DiscountRate,
+                                    RetailPrice = variant.RetailPrice
+                                },true);
+                            }
+                        }
+                    }
+                    
+                    //ProductReviews
+                    if (rawProduct.Reviews != null)
+                    {
+                        var productReviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => x.ProductId == productExist.Id);
+                        foreach (var review in rawProduct.Reviews.Where(x=> productReviews.All(pr=>pr.Name != x.Name)))
+                        {
+                            await _productReviewSieuThiSongKhoeRepository.InsertAsync(new ProductReview()
+                            {
+                                Name = review.Name,
+                                Content = review.Content,
+                                Rating = review.Rating,
+                                Likes = review.Likes,
+                                ProductId = productExist.Id,
+                                CreatedAt = DateTime.UtcNow
+                            },true);
+                        }
+                    }
+
+                    //ProductComments
+                    if (rawProduct.Comments != null)
+                    {
+                        var productComments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => x.ProductId == productExist.Id);
+                        foreach (var comment in rawProduct.Comments.Where(x=> productComments.All(pr=>pr.Name != x.Name)))
+                        {
+                            await _productCommentSieuThiSongKhoeRepository.InsertAsync(new ProductComment()
+                            {
+                                Name = comment.Name,
+                                Content = comment.Content,
+                                Likes = comment.Likes,
+                                ProductId = productExist.Id,
+                                CreatedAt = DateTime.UtcNow
+                            },true);
+                        }
+                    }
+                    
+                    //ProductDescription
+                    var mediaUrls = rawProduct.Description.GetImageUrls();
+                    if (mediaUrls.Any())
+                    {
+                        var medias = mediaUrls.Select(url => new Media()
+                        {
+                            Url         = url,
+                            IsDowloaded = false
+                        }).ToList();
+                        await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
+
+                        productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+
+                        foreach (var media in medias)
+                        {
+                            productExist.Medias.Add(new ProductMedia(productExist.Id, media.Id));
+                        }
+                    }
+                    else
+                    {
+                        productExist.Description = rawProduct.Description;
+                    }
+                    
+                    await _productSieuThiSongKhoeRepository.UpdateAsync(productExist, true);
+                    continue;
                 }
 
-                //Update price 
+                #endregion
+                
+                #region Add new product
+                
+                var product = new Product(GuidGenerator.Create())
+                {
+                    Name             = rawProduct.Title,
+                    Code             = rawProduct.Code,
+                    Description      = rawProduct.Description,
+                    ShortDescription = rawProduct.ShortDescription,
+                    DataSourceId     = dataSource.Id,
+                    Brand            = rawProduct.Brand,
+                    Tags             = rawProduct.Tags,
+                    Url              = rawProduct.Url
+                };
+               
+                foreach (var raw in rawProducts)
+                {
+                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                    if (category == null)
+                    {
+                        category = new Category()
+                        {
+                            Name = raw.Category
+                        };
+                        await _categorySieuThiSongKhoeRepository.InsertAsync(category, true);
+                        categories.Add(category);
+                    }
+                    product.AddCategory(category.Id);
+                }
+
+                if (rawProduct.ImageUrls != null)
+                {
+                    var medias = await CreateMediasAsync(rawProduct.ImageUrls);
+                    foreach (var media in medias)
+                    {
+                        product.AddMedia(media.Id);
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(rawProduct.Description))
+                {
+                    var mediaUrls = rawProduct.Description.GetImageUrls();
+
+                    if (mediaUrls.Any())
+                    {
+                        var medias = mediaUrls.Select(url => new Media()
+                        {
+                            Url = url,
+                            IsDowloaded = false
+                        }).ToList();
+                        await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
+
+                        product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+                            
+                        foreach (var media in medias)
+                        {
+                            product.AddMedia(media.Id);
+                        }
+                    }
+                }
+                //Variants
                 if (rawProduct.Variants != null)
                 {
                     foreach (var variant in rawProduct.Variants)
                     {
-                        var productVariant = await _productVariantSieuThiSongKhoeRepository.FirstOrDefaultAsync(x => x.ProductId == productExist.Id && x.SKU == variant.SKU);
-                        if (productVariant != null)
+                        await _productVariantSieuThiSongKhoeRepository.InsertAsync(new ProductVariant()
                         {
-                            productVariant.DiscountedPrice = variant.DiscountedPrice;
-                            productVariant.DiscountRate = variant.DiscountRate;
-                            productVariant.RetailPrice = variant.RetailPrice;
-                            await _productVariantSieuThiSongKhoeRepository.UpdateAsync(productVariant,true);
-                        }
-                        else
+                            ProductId = product.Id,
+                            SKU = variant.SKU,
+                            DiscountedPrice = variant.DiscountedPrice,
+                            DiscountRate = variant.DiscountRate,
+                            RetailPrice = variant.RetailPrice
+                        },true);
+                    }
+                }
+                
+                //Attributes
+                if (rawProduct.Attributes != null)
+                {
+                    foreach (var attribute in rawProduct.Attributes)
+                    {
+                        await _productAttributeSieuThiSongKhoeRepository.InsertAsync(new ProductAttribute()
                         {
-                            await _productVariantSieuThiSongKhoeRepository.InsertAsync(new ProductVariant()
-                            {
-                                ProductId = productExist.Id,
-                                SKU = variant.SKU,
-                                DiscountedPrice = variant.DiscountedPrice,
-                                DiscountRate = variant.DiscountRate,
-                                RetailPrice = variant.RetailPrice
-                            },true);
-                        }
+                            Key = attribute.Key,
+                            Slug = attribute.Slug,
+                            Value = attribute.Value,
+                            ProductId = product.Id
+                        },true);
                     }
                 }
                 
                 //ProductReviews
                 if (rawProduct.Reviews != null)
                 {
-                    var productReviews = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => x.ProductId == productExist.Id);
-                    foreach (var review in rawProduct.Reviews.Where(x=> productReviews.All(pr=>pr.Name != x.Name)))
+                    foreach (var review in rawProduct.Reviews)
                     {
                         await _productReviewSieuThiSongKhoeRepository.InsertAsync(new ProductReview()
                         {
@@ -156,7 +311,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                             Content = review.Content,
                             Rating = review.Rating,
                             Likes = review.Likes,
-                            ProductId = productExist.Id,
+                            ProductId = product.Id,
                             CreatedAt = DateTime.UtcNow
                         },true);
                     }
@@ -165,175 +320,28 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 //ProductComments
                 if (rawProduct.Comments != null)
                 {
-                    var productComments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => x.ProductId == productExist.Id);
-                    foreach (var comment in rawProduct.Comments.Where(x=> productComments.All(pr=>pr.Name != x.Name)))
+                    foreach (var comment in rawProduct.Comments)
                     {
                         await _productCommentSieuThiSongKhoeRepository.InsertAsync(new ProductComment()
                         {
                             Name = comment.Name,
                             Content = comment.Content,
                             Likes = comment.Likes,
-                            ProductId = productExist.Id,
+                            ProductId = product.Id,
                             CreatedAt = DateTime.UtcNow
                         },true);
                     }
                 }
+
+                await _productSieuThiSongKhoeRepository.InsertAsync(product, true);
                 
-                //ProductDescription
-                var mediaUrls = rawProduct.Description.GetImageUrls();
-                if (mediaUrls.Any())
-                {
-                    var medias = mediaUrls.Select(url => new Media()
-                    {
-                        Url         = url,
-                        IsDowloaded = false
-                    }).ToList();
-                    await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
-
-                    productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
-
-                    foreach (var media in medias)
-                    {
-                        productExist.Medias.Add(new ProductMedia(productExist.Id, media.Id));
-                    }
-                }
-                else
-                {
-                    productExist.Description = rawProduct.Description;
-                }
-                
-                await _productSieuThiSongKhoeRepository.UpdateAsync(productExist, true);
-                continue;
+                #endregion
             }
-
-            #endregion
-            
-            #region Add new product
-            
-            var product = new Product(GuidGenerator.Create())
+            catch (Exception e)
             {
-                Name             = rawProduct.Title,
-                Code             = rawProduct.Code,
-                Description      = rawProduct.Description,
-                ShortDescription = rawProduct.ShortDescription,
-                DataSourceId     = dataSource.Id,
-                Brand            = rawProduct.Brand,
-                Tags             = rawProduct.Tags,
-                Url              = rawProduct.Url
-            };
-           
-            foreach (var raw in rawProducts)
-            {
-                var category = categories.FirstOrDefault(x => x.Name == raw.Category);
-                if (category == null)
-                {
-                    category = new Category()
-                    {
-                        Name = raw.Category
-                    };
-                    await _categorySieuThiSongKhoeRepository.InsertAsync(category, true);
-                    categories.Add(category);
-                }
-                product.AddCategory(category.Id);
-            }
-
-            if (rawProduct.ImageUrls != null)
-            {
-                var medias = await CreateMediasAsync(rawProduct.ImageUrls);
-                foreach (var media in medias)
-                {
-                    product.AddMedia(media.Id);
-                }
+                Console.WriteLine(e);
             }
             
-            if (!string.IsNullOrEmpty(rawProduct.Description))
-            {
-                var mediaUrls = rawProduct.Description.GetImageUrls();
-
-                if (mediaUrls.Any())
-                {
-                    var medias = mediaUrls.Select(url => new Media()
-                    {
-                        Url = url,
-                        IsDowloaded = false
-                    }).ToList();
-                    await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
-
-                    product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
-                        
-                    foreach (var media in medias)
-                    {
-                        product.AddMedia(media.Id);
-                    }
-                }
-            }
-            //Variants
-            if (rawProduct.Variants != null)
-            {
-                foreach (var variant in rawProduct.Variants)
-                {
-                    await _productVariantSieuThiSongKhoeRepository.InsertAsync(new ProductVariant()
-                    {
-                        ProductId = product.Id,
-                        SKU = variant.SKU,
-                        DiscountedPrice = variant.DiscountedPrice,
-                        DiscountRate = variant.DiscountRate,
-                        RetailPrice = variant.RetailPrice
-                    },true);
-                }
-            }
-            
-            //Attributes
-            if (rawProduct.Attributes != null)
-            {
-                foreach (var attribute in rawProduct.Attributes)
-                {
-                    await _productAttributeSieuThiSongKhoeRepository.InsertAsync(new ProductAttribute()
-                    {
-                        Key = attribute.Key,
-                        Slug = attribute.Slug,
-                        Value = attribute.Value,
-                        ProductId = product.Id
-                    },true);
-                }
-            }
-            
-            //ProductReviews
-            if (rawProduct.Reviews != null)
-            {
-                foreach (var review in rawProduct.Reviews)
-                {
-                    await _productReviewSieuThiSongKhoeRepository.InsertAsync(new ProductReview()
-                    {
-                        Name = review.Name,
-                        Content = review.Content,
-                        Rating = review.Rating,
-                        Likes = review.Likes,
-                        ProductId = product.Id,
-                        CreatedAt = DateTime.UtcNow
-                    },true);
-                }
-            }
-
-            //ProductComments
-            if (rawProduct.Comments != null)
-            {
-                foreach (var comment in rawProduct.Comments)
-                {
-                    await _productCommentSieuThiSongKhoeRepository.InsertAsync(new ProductComment()
-                    {
-                        Name = comment.Name,
-                        Content = comment.Content,
-                        Likes = comment.Likes,
-                        ProductId = product.Id,
-                        CreatedAt = DateTime.UtcNow
-                    },true);
-                }
-            }
-
-            await _productSieuThiSongKhoeRepository.InsertAsync(product, true);
-            
-            #endregion
         }
     }
 

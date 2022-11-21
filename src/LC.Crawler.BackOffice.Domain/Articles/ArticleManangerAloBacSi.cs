@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
@@ -31,7 +32,7 @@ public class ArticleManangerAloBacSi : DomainService
 
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-       var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AloBacSiUrl));
+        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AloBacSiUrl));
         if (dataSource == null)
         {
             return;
@@ -41,82 +42,89 @@ public class ArticleManangerAloBacSi : DomainService
         
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
-            var article = rawArticles.First();
-            if (article.Content is null)
+            try
             {
-                continue;
-            }
-            
-            var articleEntity = await _articleAloBacSiRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
-            if (articleEntity == null)
-            {
-                articleEntity = new Article(GuidGenerator.Create())
+                var article = rawArticles.First();
+                if (article.Content is null)
                 {
-                    Title        = article.Title,
-                    CreatedAt    = article.CreatedAt,
-                    Excerpt      = article.ShortDescription,
-                    Content      = article.Content,
-                    DataSourceId = dataSource.Id,
-                    Tags         = article.Tags,
-                    Url          = article.Url
-                };
-                foreach (var raw in rawArticles)
-                {
-                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
-                    if (category == null)
-                    {
-                        category = new Category()
-                        {
-                            Name = raw.Category,
-                            CategoryType = CategoryType.Article
-                        };
-                        await _categoryAloBacSiRepository.InsertAsync(category, true);
-                        categories.Add(category);
-                    }
-                    
-                    articleEntity.AddCategory(category.Id);
+                    continue;
                 }
-
-                if (article.FeatureImage.IsNotNullOrEmpty())
+                
+                var articleEntity = await _articleAloBacSiRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+                if (articleEntity == null)
                 {
-                    var media = new Media()
+                    articleEntity = new Article(GuidGenerator.Create())
                     {
-                        Url = article.FeatureImage,
-                        IsDowloaded = false
+                        Title        = article.Title,
+                        CreatedAt    = article.CreatedAt,
+                        Excerpt      = article.ShortDescription,
+                        Content      = article.Content,
+                        DataSourceId = dataSource.Id,
+                        Tags         = article.Tags,
+                        Url          = article.Url
                     };
-                    await _mediaAloBacSiRepository.InsertAsync(media, true);
-                    articleEntity.FeaturedMediaId = media.Id;
-                }
-
-                if (!string.IsNullOrEmpty(article.Content))
-                {
-                    var mediaUrls = article.Content.GetImageUrls();
-
-                    if (mediaUrls.Any())
+                    foreach (var raw in rawArticles)
                     {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        if (category == null)
                         {
-                            Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                            category = new Category()
+                            {
+                                Name = raw.Category,
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categoryAloBacSiRepository.InsertAsync(category, true);
+                            categories.Add(category);
+                        }
+                        
+                        articleEntity.AddCategory(category.Id);
+                    }
+
+                    if (article.FeatureImage.IsNotNullOrEmpty())
+                    {
+                        var media = new Media()
+                        {
+                            Url = article.FeatureImage,
                             IsDowloaded = false
-                        }).ToList();
-                        await _mediaAloBacSiRepository.InsertManyAsync(medias);
+                        };
+                        await _mediaAloBacSiRepository.InsertAsync(media, true);
+                        articleEntity.FeaturedMediaId = media.Id;
+                    }
 
-                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+                    if (!string.IsNullOrEmpty(article.Content))
+                    {
+                        var mediaUrls = article.Content.GetImageUrls();
 
-                        foreach (var media in medias)
+                        if (mediaUrls.Any())
                         {
-                            articleEntity.AddMedia(media.Id);
+                            var medias = mediaUrls.Select(url => new Media()
+                            {
+                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                IsDowloaded = false
+                            }).ToList();
+                            await _mediaAloBacSiRepository.InsertManyAsync(medias);
+
+                            articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+
+                            foreach (var media in medias)
+                            {
+                                articleEntity.AddMedia(media.Id);
+                            }
                         }
                     }
-                }
 
-                await _articleAloBacSiRepository.InsertAsync(articleEntity);
+                    await _articleAloBacSiRepository.InsertAsync(articleEntity);
+                }
+                else
+                {
+                    articleEntity.Url ??= article.Url;
+                    articleEntity.Tags ??= article.Tags;
+                    await _articleAloBacSiRepository.UpdateAsync(articleEntity);
+                }
             }
-            else
+            catch (Exception e)
             {
-                articleEntity.Url ??= article.Url;
-                articleEntity.Tags ??= article.Tags;
-                await _articleAloBacSiRepository.UpdateAsync(articleEntity);
+                Console.WriteLine(e);
             }
         }
     }

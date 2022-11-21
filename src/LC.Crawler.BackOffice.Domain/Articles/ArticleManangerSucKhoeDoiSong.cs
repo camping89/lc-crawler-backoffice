@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
@@ -31,7 +32,7 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
 
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-       var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
+        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
         if (dataSource == null)
         {
             return;
@@ -41,84 +42,91 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
         
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
-            var article = rawArticles.First();
-            if (article.Content is null)
+            try
             {
-                continue;
-            }
-            
-            var articleEntity = await _articleSucKhoeDoiSongRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
-            if (articleEntity == null)
-            {
-                articleEntity = new Article(GuidGenerator.Create())
+                var article = rawArticles.First();
+                if (article.Content is null)
                 {
-                    Title        = article.Title,
-                    CreatedAt    = article.CreatedAt,
-                    Excerpt      = article.ShortDescription,
-                    Content      = article.Content,
-                    DataSourceId = dataSource.Id,
-                    Tags         = article.Tags,
-                    Url          = article.Url
-                };
-                foreach (var raw in rawArticles)
-                {
-                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
-                    if (category == null)
-                    {
-                        category = new Category()
-                        {
-                            Name = raw.Category,
-                            CategoryType = CategoryType.Article
-                        };
-                        await _categorySucKhoeDoiSongRepository.InsertAsync(category, true);
-                        categories.Add(category);
-                    }
-                    
-                    articleEntity.AddCategory(category.Id);
+                    continue;
                 }
-
-                if (article.FeatureImage.IsNotNullOrEmpty())
+                
+                var articleEntity = await _articleSucKhoeDoiSongRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+                if (articleEntity == null)
                 {
-                    var media = new Media()
+                    articleEntity = new Article(GuidGenerator.Create())
                     {
-                        Url = article.FeatureImage,
-                        IsDowloaded = false
+                        Title        = article.Title,
+                        CreatedAt    = article.CreatedAt,
+                        Excerpt      = article.ShortDescription,
+                        Content      = article.Content,
+                        DataSourceId = dataSource.Id,
+                        Tags         = article.Tags,
+                        Url          = article.Url
                     };
-                    await _mediaSucKhoeDoiSongRepository.InsertAsync(media, true);
-                    articleEntity.FeaturedMediaId = media.Id;
-                }
-
-                if (!string.IsNullOrEmpty(article.Content))
-                {
-                    var mediaUrls = article.Content.GetImageUrls();
-
-                    if (mediaUrls.Any())
+                    foreach (var raw in rawArticles)
                     {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        if (category == null)
                         {
-                            Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                            category = new Category()
+                            {
+                                Name = raw.Category,
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categorySucKhoeDoiSongRepository.InsertAsync(category, true);
+                            categories.Add(category);
+                        }
+                        
+                        articleEntity.AddCategory(category.Id);
+                    }
+
+                    if (article.FeatureImage.IsNotNullOrEmpty())
+                    {
+                        var media = new Media()
+                        {
+                            Url = article.FeatureImage,
                             IsDowloaded = false
-                        }).ToList();
-                        await _mediaSucKhoeDoiSongRepository.InsertManyAsync(medias);
+                        };
+                        await _mediaSucKhoeDoiSongRepository.InsertAsync(media, true);
+                        articleEntity.FeaturedMediaId = media.Id;
+                    }
 
-                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+                    if (!string.IsNullOrEmpty(article.Content))
+                    {
+                        var mediaUrls = article.Content.GetImageUrls();
 
-                        foreach (var media in medias)
+                        if (mediaUrls.Any())
                         {
-                            articleEntity.AddMedia(media.Id);
+                            var medias = mediaUrls.Select(url => new Media()
+                            {
+                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                IsDowloaded = false
+                            }).ToList();
+                            await _mediaSucKhoeDoiSongRepository.InsertManyAsync(medias);
+
+                            articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+
+                            foreach (var media in medias)
+                            {
+                                articleEntity.AddMedia(media.Id);
+                            }
                         }
                     }
-                }
 
-                await _articleSucKhoeDoiSongRepository.InsertAsync(articleEntity);
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(articleEntity.Url))
-                {
-                    articleEntity.Url = article.Url;
-                    await _articleSucKhoeDoiSongRepository.UpdateAsync(articleEntity);
+                    await _articleSucKhoeDoiSongRepository.InsertAsync(articleEntity);
                 }
+                else
+                {
+                    if (string.IsNullOrEmpty(articleEntity.Url))
+                    {
+                        articleEntity.Url = article.Url;
+                        await _articleSucKhoeDoiSongRepository.UpdateAsync(articleEntity);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
     }

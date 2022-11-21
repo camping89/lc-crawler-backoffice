@@ -32,7 +32,7 @@ public class ArticleManangerAladin : DomainService
 
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-       var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
         if (dataSource == null)
         {
             return;
@@ -42,85 +42,92 @@ public class ArticleManangerAladin : DomainService
         
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
-            var article = rawArticles.First();
-            if (article.Content is null)
+            try
             {
-                continue;
-            }
-                
-            var articleEntity = await _articleAladinRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
-            if (articleEntity == null)
-            {
-                articleEntity = new Article(GuidGenerator.Create())
+                var article = rawArticles.First();
+                if (article.Content is null)
                 {
-                    Title        = article.Title,
-                    CreatedAt    = article.CreatedAt,
-                    Excerpt      = article.ShortDescription,
-                    Content      = article.Content,
-                    DataSourceId = dataSource.Id,
-                    Tags         = article.Tags,
-                    Url          = article.Url
-                };
-
-                foreach (var raw in rawArticles)
+                    continue;
+                }
+                    
+                var articleEntity = await _articleAladinRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+                if (articleEntity == null)
                 {
-                    var category = categories.FirstOrDefault(x => x.Name == raw.Category);
-                    if (category == null)
+                    articleEntity = new Article(GuidGenerator.Create())
                     {
-                        category = new Category()
+                        Title        = article.Title,
+                        CreatedAt    = article.CreatedAt,
+                        Excerpt      = article.ShortDescription,
+                        Content      = article.Content,
+                        DataSourceId = dataSource.Id,
+                        Tags         = article.Tags,
+                        Url          = article.Url
+                    };
+
+                    foreach (var raw in rawArticles)
+                    {
+                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        if (category == null)
                         {
-                            Name = raw.Category,
-                            CategoryType = CategoryType.Article
-                        };
-                        await _categoryAladinRepository.InsertAsync(category, true);
-                        categories.Add(category);
+                            category = new Category()
+                            {
+                                Name = raw.Category,
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categoryAladinRepository.InsertAsync(category, true);
+                            categories.Add(category);
+                        }
+                        
+                        articleEntity.AddCategory(category.Id);
                     }
                     
-                    articleEntity.AddCategory(category.Id);
-                }
-                
-                if (article.FeatureImage.IsNotNullOrEmpty())
-                {
-                    var media = new Media()
+                    if (article.FeatureImage.IsNotNullOrEmpty())
                     {
-                        Url = article.FeatureImage,
-                        IsDowloaded = false
-                    };
-                    await _mediaAladinRepository.InsertAsync(media, true);
-                    articleEntity.FeaturedMediaId = media.Id;
-                }
-
-                if (!string.IsNullOrEmpty(article.Content))
-                {
-                    var mediaUrls = article.Content.GetImageUrls();
-
-                    if (mediaUrls.Any())
-                    {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var media = new Media()
                         {
-                            Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                            Url = article.FeatureImage,
                             IsDowloaded = false
-                        }).ToList();
-                        await _mediaAladinRepository.InsertManyAsync(medias);
+                        };
+                        await _mediaAladinRepository.InsertAsync(media, true);
+                        articleEntity.FeaturedMediaId = media.Id;
+                    }
 
-                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+                    if (!string.IsNullOrEmpty(article.Content))
+                    {
+                        var mediaUrls = article.Content.GetImageUrls();
 
-                        foreach (var media in medias)
+                        if (mediaUrls.Any())
                         {
-                            articleEntity.AddMedia(media.Id);
+                            var medias = mediaUrls.Select(url => new Media()
+                            {
+                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                IsDowloaded = false
+                            }).ToList();
+                            await _mediaAladinRepository.InsertManyAsync(medias);
+
+                            articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+
+                            foreach (var media in medias)
+                            {
+                                articleEntity.AddMedia(media.Id);
+                            }
                         }
                     }
-                }
 
-                await _articleAladinRepository.InsertAsync(articleEntity);
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(articleEntity.Url))
-                {
-                    articleEntity.Url = article.Url;
-                    await _articleAladinRepository.UpdateAsync(articleEntity);
+                    await _articleAladinRepository.InsertAsync(articleEntity);
                 }
+                else
+                {
+                    if (string.IsNullOrEmpty(articleEntity.Url))
+                    {
+                        articleEntity.Url = article.Url;
+                        await _articleAladinRepository.UpdateAsync(articleEntity);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
     }
