@@ -116,11 +116,34 @@ public class ArticleManangerLongChau : DomainService
             }
             else
             {
-                if (string.IsNullOrEmpty(articleEntity.Url))
+                articleEntity.Url ??= article.Url;
+                if (articleEntity.Content is null && !string.IsNullOrEmpty(article.Content))
                 {
-                    articleEntity.Url = article.Url;
-                    await _articleLongChauRepository.UpdateAsync(articleEntity);
+                    System.Console.WriteLine($"UPDATE URL: {article.Url}");
+                    
+                    var mediaUrls = article.Content.GetImageUrls();
+                    if (mediaUrls.Any())
+                    {
+                        var medias = mediaUrls.Select(url => new Media()
+                        {
+                            Url         = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                            IsDowloaded = false
+                        }).ToList();
+                        await _mediaLongChauRepository.InsertManyAsync(medias);
+
+                        articleEntity.Content = StringHtmlHelper.SetContentMediaIds(article.Content, medias);
+
+                        foreach (var media in medias)
+                        {
+                            articleEntity.AddMedia(media.Id);
+                        }
+                    }
+                    else
+                    {
+                        articleEntity.Content = article.Content;
+                    }
                 }
+                await _articleLongChauRepository.UpdateAsync(articleEntity);
             }
         }
     }

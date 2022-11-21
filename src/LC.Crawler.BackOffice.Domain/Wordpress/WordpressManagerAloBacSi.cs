@@ -54,6 +54,48 @@ public class WordpressManagerAloBacSi : DomainService
 
         await _wordpressManagerBase.DoUpdatePosts(_dataSource);
     }
+    
+    public async Task UpdatePostTagsAsync()
+    {
+        _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.AloBacSiUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+        
+        // get all tags
+        var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+
+        var client   = await _wordpressManagerBase.InitClient(_dataSource);
+        var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
+        
+        // sync articles from wp
+        foreach (var post in allPosts)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            
+            try
+            {
+                var article = await _articleAloBacSiRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>()) 
+                           ?? await _articleAloBacSiRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
+                if (article is not null && article.Tags.IsNotNullOrEmpty())
+                {
+                    await _wordpressManagerBase.DoUpdatePostTags(wpTags, article.Tags, post, client);
+                }   
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, null, PageDataSourceConsts.AloBacSiUrl, "UpdatePostTagsAsync");
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+        }
+    }
+
     public async Task DoSyncPostAsync()
     {
         // get datasource

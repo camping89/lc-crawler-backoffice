@@ -59,6 +59,34 @@ public class WordpressManagerBase : DomainService
             index++;
         }
     }
+    
+    public async Task DoUpdatePostTags(List<Tag> wpTags, List<string> tags, Post post, WordPressClient client)
+    {
+        if (tags.IsNotNullOrEmpty())
+        {
+            var tagIds = new List<int>();
+            foreach (var tag in tags)
+            {
+                var wpTag = wpTags.FirstOrDefault(_ => _.Name.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
+                if (wpTag is null)
+                {
+                    wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
+                    wpTags.Add(wpTag);
+                }
+
+                tagIds.Add(wpTag.Id);
+            }
+
+            var deleteTags = post.Tags.Where(_ => !tagIds.Contains(_)).ToList();
+            if (deleteTags.IsNotNullOrEmpty())
+            {
+                post.Tags.RemoveAll(_ => deleteTags.Contains(_));
+            }
+            
+            post.Tags.AddRange(tagIds);
+            await client.Posts.UpdateAsync(post);
+        }
+    }
 
     public async Task CleanDuplicatePostsAsync(DataSource dataSource)
     {

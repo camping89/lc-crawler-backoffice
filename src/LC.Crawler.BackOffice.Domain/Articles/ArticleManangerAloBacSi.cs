@@ -114,11 +114,9 @@ public class ArticleManangerAloBacSi : DomainService
             }
             else
             {
-                if (string.IsNullOrEmpty(articleEntity.Url))
-                {
-                    articleEntity.Url = article.Url;
-                    await _articleAloBacSiRepository.UpdateAsync(articleEntity);
-                }
+                articleEntity.Url ??= article.Url;
+                articleEntity.Tags ??= article.Tags;
+                await _articleAloBacSiRepository.UpdateAsync(articleEntity);
             }
         }
     }
