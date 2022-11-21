@@ -9,6 +9,7 @@ namespace LC.Crawler.BackOffice.MessageQueue.Producers.Etos;
 public class CrawlerDataSourceEto
 {
     public Guid                        Id         { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
     public List<CrawlerDataSourceItem> Items      { get; set; }
     public CrawlerCredentialEto        Credential { get; set; }
 }

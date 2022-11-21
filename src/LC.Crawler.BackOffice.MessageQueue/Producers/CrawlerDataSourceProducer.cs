@@ -38,7 +38,8 @@ public class CrawlerDataSourceProducer : ITransientDependency
             {
                 var crawlerDataSourceEto = new CrawlerDataSourceEto
                 {
-                    Id = new Guid(),
+                    Id = Guid.NewGuid(),
+                    CreatedAtUtc = DateTime.UtcNow,
                     Items = new List<CrawlerDataSourceItem>()
                     {
                         new()
