@@ -100,7 +100,8 @@ public class WordpressManagerBase : DomainService
             {
                 Statuses = new List<Status>()
                 {
-                    Status.Pending
+                    Status.Pending,
+                    Status.Publish
                 },
                 Page = pageIndex,
                 PerPage = 100
