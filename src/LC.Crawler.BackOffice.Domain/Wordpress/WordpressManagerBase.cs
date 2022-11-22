@@ -82,8 +82,15 @@ public class WordpressManagerBase : DomainService
             {
                 post.Tags.RemoveAll(_ => deleteTags.Contains(_));
             }
+
+            foreach (var tagId in tagIds)
+            {
+                if (post.Tags.All(_ => _ != tagId))
+                {
+                    post.Tags.AddRange(tagIds);
+                }
+            }
             
-            post.Tags.AddRange(tagIds);
             await client.Posts.UpdateAsync(post);
         }
     }
@@ -541,22 +548,32 @@ public class WordpressManagerBase : DomainService
             
         while (true)
         {
-            var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+            var wpPosts = new List<Post>();
+            try
             {
-                Statuses = new List<Status>()
+                var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
                 {
-                    Status.Pending,
-                    Status.Publish
-                },
-                Page    = pageIndex,
-                PerPage = 100,
+                    Statuses = new List<Status>()
+                    {
+                        Status.Pending,
+                        Status.Publish
+                    },
+                    Page    = pageIndex,
+                    PerPage = 100,
                 
-            },true);
+                },true);
+                
+                wpPosts.AddRange(resultPosts);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
-            posts.AddRange(resultPosts);
+            posts.AddRange(wpPosts);
             Console.WriteLine($"Page {pageIndex}");
                 
-            if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
+            if (wpPosts.IsNullOrEmpty() || wpPosts.Count() < 100)
             {
                 break;
             }

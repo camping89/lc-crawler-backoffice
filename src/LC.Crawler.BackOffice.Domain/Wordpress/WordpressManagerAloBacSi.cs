@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
@@ -69,9 +70,6 @@ public class WordpressManagerAloBacSi : DomainService
         var client   = await _wordpressManagerBase.InitClient(_dataSource);
         var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
 
-        var index = 1;
-        var total = allPosts.Count();
-        
         // sync articles from wp
         foreach (var post in allPosts)
         {
@@ -83,6 +81,7 @@ public class WordpressManagerAloBacSi : DomainService
                            ?? await _articleAloBacSiRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
                 if (article is not null && article.Tags.IsNotNullOrEmpty())
                 {
+                    Console.WriteLine($"Update Post : {post.Title.Rendered}");
                     await _wordpressManagerBase.DoUpdatePostTags(wpTags, article.Tags, post, client);
                 }   
             }
@@ -95,8 +94,6 @@ public class WordpressManagerAloBacSi : DomainService
             {
                 //Always save the log
                 await auditingScope.SaveAsync();
-                Console.WriteLine($"UserName : {index}/{total}");
-                index++;
             }
         }
     }
