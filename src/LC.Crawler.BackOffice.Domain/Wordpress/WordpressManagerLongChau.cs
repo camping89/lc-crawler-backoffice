@@ -123,7 +123,7 @@ public class WordpressManagerLongChau : DomainService
         }
         
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
+        //await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
         
         // get all posts
         var client   = await _wordpressManagerBase.InitClient(_dataSource);
@@ -142,9 +142,10 @@ public class WordpressManagerLongChau : DomainService
                 {
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias   = await _mediaLongChauRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
+                    await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
                     
-                    await _wordpressManagerBase.UpdatePostDetails(post, article, medias, client);
-
+                    await _mediaLongChauRepository.UpdateManyAsync(medias);
+                    
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleLongChauRepository.UpdateAsync(article, true);

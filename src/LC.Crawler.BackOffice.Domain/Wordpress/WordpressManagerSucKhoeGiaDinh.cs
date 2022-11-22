@@ -18,29 +18,29 @@ namespace LC.Crawler.BackOffice.Wordpress;
 public class WordpressManagerSucKhoeGiaDinh : DomainService
 {
     private readonly ICategorySucKhoeGiaDinhRepository _categorySucKhoeGiaDinhRepository;
-    private readonly IArticleSucKhoeGiaDinhRepository  _articleSucKhoeGiaDinhRepository;
-    private readonly IMediaSucKhoeGiaDinhRepository    _mediaSucKhoeGiaDinhRepository;
-    private readonly IDataSourceRepository             _dataSourceRepository;
-    private          DataSource                        _dataSource;
-    private readonly WordpressManagerBase              _wordpressManagerBase;
-    private readonly IAuditingManager                  _auditingManager;
+    private readonly IArticleSucKhoeGiaDinhRepository _articleSucKhoeGiaDinhRepository;
+    private readonly IMediaSucKhoeGiaDinhRepository _mediaSucKhoeGiaDinhRepository;
+    private readonly IDataSourceRepository _dataSourceRepository;
+    private DataSource _dataSource;
+    private readonly WordpressManagerBase _wordpressManagerBase;
+    private readonly IAuditingManager _auditingManager;
 
     private readonly DataSourceManager _dataSourceManager;
 
-    public WordpressManagerSucKhoeGiaDinh(ICategorySucKhoeGiaDinhRepository categorySucKhoeGiaDinhRepository, 
-                                          IArticleSucKhoeGiaDinhRepository  articleSucKhoeGiaDinhRepository, 
-                                          IMediaSucKhoeGiaDinhRepository    mediaSucKhoeGiaDinhRepository, 
-                                          IDataSourceRepository             dataSourceRepository,
-                                          WordpressManagerBase              wordpressManagerBase,
-                                          IAuditingManager                  auditingManager,
-                                          DataSourceManager dataSourceManager)
+    public WordpressManagerSucKhoeGiaDinh(ICategorySucKhoeGiaDinhRepository categorySucKhoeGiaDinhRepository,
+        IArticleSucKhoeGiaDinhRepository articleSucKhoeGiaDinhRepository,
+        IMediaSucKhoeGiaDinhRepository mediaSucKhoeGiaDinhRepository,
+        IDataSourceRepository dataSourceRepository,
+        WordpressManagerBase wordpressManagerBase,
+        IAuditingManager auditingManager,
+        DataSourceManager dataSourceManager)
     {
         _categorySucKhoeGiaDinhRepository = categorySucKhoeGiaDinhRepository;
-        _articleSucKhoeGiaDinhRepository  = articleSucKhoeGiaDinhRepository;
-        _mediaSucKhoeGiaDinhRepository    = mediaSucKhoeGiaDinhRepository;
-        _dataSourceRepository             = dataSourceRepository;
-        _wordpressManagerBase             = wordpressManagerBase;
-        _auditingManager                  = auditingManager;
+        _articleSucKhoeGiaDinhRepository = articleSucKhoeGiaDinhRepository;
+        _mediaSucKhoeGiaDinhRepository = mediaSucKhoeGiaDinhRepository;
+        _dataSourceRepository = dataSourceRepository;
+        _wordpressManagerBase = wordpressManagerBase;
+        _auditingManager = auditingManager;
         _dataSourceManager = dataSourceManager;
     }
 
@@ -52,35 +52,35 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
         {
             return;
         }
-        
+
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
-        
+
         // get article ids
         var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt == null)
-                        .Select(x=>x.Id).ToList();
-        
+            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt == null)
+            .Select(x => x.Id).ToList();
+
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
-        
+
         // sync article to wp
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleSucKhoeGiaDinhRepository.GetWithNavigationPropertiesAsync(articleId);
-            
+            var articleNav = await _articleSucKhoeGiaDinhRepository.GetWithNavigationPropertiesAsync(articleId);
+
             try
             {
-                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
-                if (post is not null) 
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                if (post is not null)
                 {
                     var article = await _articleSucKhoeGiaDinhRepository.GetAsync(articleId);
-                    article.ExternalId   = post.Id.To<int>();
+                    article.ExternalId = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSucKhoeGiaDinhRepository.UpdateAsync(article, true);
 
-                    if (articleNav.Media is not null) 
+                    if (articleNav.Media is not null)
                     {
                         await _mediaSucKhoeGiaDinhRepository.UpdateAsync(articleNav.Media, true);
                     }
@@ -102,11 +102,11 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
                 await auditingScope.SaveAsync();
             }
         }
-        
+
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.Completed);
     }
-    
+
     public async Task DoReSyncPostAsync()
     {
         // get data source
@@ -115,34 +115,36 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
         {
             return;
         }
-        
+
         // // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
-        
+
         // get all posts
-        var client   = await _wordpressManagerBase.InitClient(_dataSource);
+        var client = await _wordpressManagerBase.InitClient(_dataSource);
         var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
 
         // sync articles from wp
         foreach (var post in allPosts)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            
+
             try
             {
-                var article = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>()) 
-                           ?? await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
+                var article = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>())
+                              ?? await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
                 if (article is not null)
                 {
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
-                    var medias   = await _mediaSucKhoeGiaDinhRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
-                    
-                    await _wordpressManagerBase.UpdatePostDetails(post, article, medias, client);
+                    var medias = await _mediaSucKhoeGiaDinhRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
 
-                    article.LastSyncedAt =   DateTime.UtcNow;
-                    article.ExternalId   ??= post.Id.To<int>();
+                    await _wordpressManagerBase.UpdatePostDetails(_dataSource, post, article, medias, client);
+
+                    await _mediaSucKhoeGiaDinhRepository.UpdateManyAsync(medias);
+
+                    article.LastSyncedAt = DateTime.UtcNow;
+                    article.ExternalId ??= post.Id.To<int>();
                     await _articleSucKhoeGiaDinhRepository.UpdateAsync(article, true);
-                }   
+                }
             }
             catch (Exception ex)
             {
@@ -155,7 +157,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
                 await auditingScope.SaveAsync();
             }
         }
-        
+
         // // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.Completed);
     }
@@ -169,7 +171,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
         }
 
         var categories = (await _categorySucKhoeGiaDinhRepository.GetListAsync(x => x.CategoryType == CategoryType.Article))
-                        .Select(x => x.Name).Distinct().ToList();
+            .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
     }

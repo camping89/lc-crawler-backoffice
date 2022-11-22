@@ -69,7 +69,7 @@ public class WooManangerBase : DomainService
                 var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
                 if (!svgContent.IsNotNullOrEmpty()) continue;
 
-                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}"; 
+                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
                 var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
                 var bitmap = svgDoc.Draw();
                 using var stream = new MemoryStream();
@@ -98,10 +98,11 @@ public class WooManangerBase : DomainService
             {
                 productImage.src = media.Url;
             }
+
             productImages.Add(productImage);
             mediaItems.Add(mediaResult);
         }
-        
+
         //return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();
         return productImages;
     }
@@ -109,7 +110,7 @@ public class WooManangerBase : DomainService
     public async Task<List<WooProductCategory>> GetWooCategories(DataSource dataSource)
     {
         var wcObject = await InitWCObject(dataSource);
-        
+
         //Category
         var wooCategories = new List<WooProductCategory>();
         var pageIndex = 1;
@@ -191,7 +192,7 @@ public class WooManangerBase : DomainService
                 continue;
             }
 
-            var categoriesTerms = cateStr.Split("->").Select(x=>x.Trim()).ToList();
+            var categoriesTerms = cateStr.Split("->").Select(x => x.Trim()).ToList();
 
             var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
             var wooRootCategory =
@@ -240,7 +241,7 @@ public class WooManangerBase : DomainService
         }
     }
 
-    public async Task PostProductReviews(WCObject wcObject,string productCode, List<ProductComment> productComments, List<ProductReview> productReviews)
+    public async Task PostProductReviews(WCObject wcObject, string productCode, List<ProductComment> productComments, List<ProductReview> productReviews)
     {
         try
         {
@@ -269,6 +270,7 @@ public class WooManangerBase : DomainService
                             });
                         }
                     }
+
                     if (productReviews != null)
                     {
                         foreach (var productReview in productReviews)
@@ -313,6 +315,7 @@ public class WooManangerBase : DomainService
                 await UpdateProductVariants(wcObject, productNav, productUpdate, dataSource.Url);
                 await wcObject.Product.Update(productUpdate.id.To<int>(), productUpdate);
             }
+
             return productUpdate;
         }
 
@@ -334,7 +337,7 @@ public class WooManangerBase : DomainService
 
         // add categories
         await AddProductCategories(productNav, wooCategories, product, wooProduct, dataSource.Url);
-        
+
         // add medias
         await AddProductMedias(dataSource, productNav, product, wooProduct, dataSource.Url);
 
@@ -351,11 +354,14 @@ public class WooManangerBase : DomainService
         return await wcObject.Product.Add(wooProduct);
     }
 
-    private async Task AddProductTags(WCObject         wcObject,    ProductWithNavigationProperties productNav, 
-                                      List<ProductTag> productTags, WooProduct                      wooProduct, string homeUrl)
+    private async Task AddProductTags(WCObject wcObject,
+        ProductWithNavigationProperties productNav,
+        List<ProductTag> productTags,
+        WooProduct wooProduct,
+        string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
-        
+
         try
         {
             //Tags 
@@ -420,19 +426,19 @@ public class WooManangerBase : DomainService
     private async Task AddProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
-        
+
         try
         {
             //Variations
             var variants = productNav.Variants;
             if (variants != null)
             {
-                decimal? productPrice    = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+                decimal? productPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
                 decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
 
                 if (productPrice.HasValue && productPrice > 0)
                 {
-                    wooProduct.price         = productPrice;
+                    wooProduct.price = productPrice;
                     wooProduct.regular_price = productPrice;
                 }
 
@@ -447,13 +453,13 @@ public class WooManangerBase : DomainService
                 foreach (var variant in variants)
                 {
                     var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
-                                                                                 {
-                                                                                     sku = variant.SKU,
-                                                                                     price         = variant.RetailPrice,
-                                                                                     regular_price = variant.RetailPrice,
-                                                                                     sale_price    = variant.DiscountedPrice
-                                                                                 },
-                                                                                 0);
+                        {
+                            sku = variant.SKU,
+                            price = variant.RetailPrice,
+                            regular_price = variant.RetailPrice,
+                            sale_price = variant.DiscountedPrice
+                        },
+                        0);
                     if (wooVariantResult.id is > 0)
                     {
                         wooProduct.variations.Add(wooVariantResult.id.To<int>());
@@ -471,24 +477,24 @@ public class WooManangerBase : DomainService
             await auditingScope.SaveAsync();
         }
     }
-    
-    
+
+
     private async Task UpdateProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
-        
+
         try
         {
             //Variations
             var variants = productNav.Variants;
             if (variants != null)
             {
-                decimal? productPrice    = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+                decimal? productPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
                 decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
 
                 if (productPrice.HasValue && productPrice > 0)
                 {
-                    wooProduct.price         = productPrice;
+                    wooProduct.price = productPrice;
                     wooProduct.regular_price = productPrice;
                 }
 
@@ -509,16 +515,16 @@ public class WooManangerBase : DomainService
                         checkVariant.price = variant.RetailPrice;
                         checkVariant.regular_price = variant.RetailPrice;
                         checkVariant.sale_price = variant.DiscountedPrice;
-                        await wcObject.Product.Variations.Update(checkVariant.id.To<int>(),checkVariant, wooProduct.id.To<int>());
+                        await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant, wooProduct.id.To<int>());
                     }
                     else
                     {
                         var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
                             {
                                 sku = variant.SKU,
-                                price         = variant.RetailPrice,
+                                price = variant.RetailPrice,
                                 regular_price = variant.RetailPrice,
-                                sale_price    = variant.DiscountedPrice
+                                sale_price = variant.DiscountedPrice
                             },
                             0);
                         if (wooVariantResult.id is > 0)
@@ -540,8 +546,11 @@ public class WooManangerBase : DomainService
         }
     }
 
-    private async Task AddProductMedias(DataSource dataSource, ProductWithNavigationProperties productNav, 
-                                        Product    product,    WooProduct                      wooProduct, string homeUrl)
+    private async Task AddProductMedias(DataSource dataSource,
+        ProductWithNavigationProperties productNav,
+        Product product,
+        WooProduct wooProduct,
+        string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
         try
@@ -572,8 +581,11 @@ public class WooManangerBase : DomainService
         }
     }
 
-    private async Task AddProductCategories(ProductWithNavigationProperties productNav, List<WooProductCategory> wooCategories, 
-                                            Product product, WooProduct wooProduct, string homeUrl)
+    private async Task AddProductCategories(ProductWithNavigationProperties productNav,
+        List<WooProductCategory> wooCategories,
+        Product product,
+        WooProduct wooProduct,
+        string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
         try
@@ -631,10 +643,10 @@ public class WooManangerBase : DomainService
     }
 
     public void LogException(AuditLogInfo currentLog,
-                             Exception    ex,
-                             Product      product,
-                             string       url,
-                             string entity = "Product")
+        Exception ex,
+        Product product,
+        string url,
+        string entity = "Product")
     {
         //Add exceptions
         currentLog.Url = url;
@@ -646,10 +658,10 @@ public class WooManangerBase : DomainService
 
         currentLog.Comments.Add($"Id: {product.Id}, DataSourceId {product.DataSourceId}");
         currentLog.Comments.Add(ex.StackTrace);
-        currentLog.ExtraProperties.Add("C_Entity",     entity);
-        currentLog.ExtraProperties.Add("C_Message",    ex.Message);
+        currentLog.ExtraProperties.Add("C_Entity", entity);
+        currentLog.ExtraProperties.Add("C_Message", ex.Message);
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);
-        currentLog.ExtraProperties.Add("C_Source",     ex.Source);
+        currentLog.ExtraProperties.Add("C_Source", ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
 
@@ -691,21 +703,21 @@ public class WooManangerBase : DomainService
         if (products.IsNotNullOrEmpty())
         {
             var wc = await InitWCObject(dataSource);
-            
+
             foreach (var product in products)
             {
                 using var auditingScope = _auditingManager.BeginScope();
                 try
                 {
                     var checkProduct = (await wc.Product.GetAll(new Dictionary<string, string>()
-                                           {
-                                               { "sku", product.Code }
-                                           })).FirstOrDefault();
+                    {
+                        { "sku", product.Code }
+                    })).FirstOrDefault();
                     if (checkProduct is not null && checkProduct.status == "publish")
                     {
                         checkProduct.status = "pending";
                         await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
-                    
+
                         Console.WriteLine($"Update product status: {checkProduct.name} - {checkProduct.sku} - {checkProduct.status}");
                     }
                 }
@@ -725,15 +737,16 @@ public class WooManangerBase : DomainService
             Console.WriteLine($"Not found product to update status to pending");
         }
     }
-    
+
     /// <summary>
     /// Re sync product to woo to update name, price, content
     /// </summary>
     /// <param name="checkProduct"></param>
     /// <param name="productNav"></param>
     /// <param name="wcObject"></param>
-    public async Task DoReSyncProductToWooAsync(WooCommerceNET.WooCommerce.v3.Product checkProduct, 
-                                                 ProductWithNavigationProperties productNav, WCObject wcObject)
+    public async Task DoReSyncProductToWooAsync(WooCommerceNET.WooCommerce.v3.Product checkProduct,
+        ProductWithNavigationProperties productNav,
+        WCObject wcObject)
     {
         var product = productNav.Product;
         // update name
@@ -743,12 +756,12 @@ public class WooManangerBase : DomainService
         var variants = productNav.Variants;
         if (variants != null)
         {
-            decimal? productPrice    = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+            decimal? productPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
             decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
 
             if (productPrice.HasValue && productPrice > 0)
             {
-                checkProduct.price         = productPrice;
+                checkProduct.price = productPrice;
                 checkProduct.regular_price = productPrice;
             }
 
@@ -766,21 +779,21 @@ public class WooManangerBase : DomainService
                 var checkVariant = wooProductVariants.FirstOrDefault(x => x.sku == variant.SKU);
                 if (checkVariant != null)
                 {
-                    checkVariant.price         = variant.RetailPrice;
+                    checkVariant.price = variant.RetailPrice;
                     checkVariant.regular_price = variant.RetailPrice;
-                    checkVariant.sale_price    = variant.DiscountedPrice;
+                    checkVariant.sale_price = variant.DiscountedPrice;
                     await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant, checkProduct.id.To<int>());
                 }
                 else
                 {
                     var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
-                                                                                 {
-                                                                                     sku           = variant.SKU,
-                                                                                     price         = variant.RetailPrice,
-                                                                                     regular_price = variant.RetailPrice,
-                                                                                     sale_price    = variant.DiscountedPrice
-                                                                                 },
-                                                                                 0);
+                        {
+                            sku = variant.SKU,
+                            price = variant.RetailPrice,
+                            regular_price = variant.RetailPrice,
+                            sale_price = variant.DiscountedPrice
+                        },
+                        0);
                     if (wooVariantResult.id is > 0)
                     {
                         checkProduct.variations.Add(wooVariantResult.id.To<int>());
@@ -802,18 +815,18 @@ public class WooManangerBase : DomainService
 
         // save product
         await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);
-        
+
         Console.WriteLine($"Update product: {checkProduct.name}");
     }
-    
-    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject)
+
+    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject, string search = null)
     {
         var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
-        var pageIndex     = 1;
-        
+        var pageIndex = 1;
+
         while (true)
         {
-            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>() { { "page", pageIndex.ToString() }, { "per_page", "100" }, });
+            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>() { { "page", pageIndex.ToString() }, { "per_page", "100" }, { "search", search }, });
             if (checkProduct.IsNullOrEmpty()) break;
 
             checkProducts.AddRange(checkProduct);
@@ -822,13 +835,13 @@ public class WooManangerBase : DomainService
         }
 
         Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
-        
+
         return checkProducts;
     }
 
     public async Task<WCObject> InitWCObject(DataSource dataSource)
     {
-        var rest     = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
 
         return wcObject;

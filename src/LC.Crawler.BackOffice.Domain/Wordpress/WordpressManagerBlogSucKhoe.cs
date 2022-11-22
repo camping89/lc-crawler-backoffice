@@ -138,8 +138,10 @@ public class WordpressManagerBlogSucKhoe : DomainService
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias   = await _mediaBlogSucKhoeRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
                     
-                    await _wordpressManagerBase.UpdatePostDetails(post, article, medias, client);
+                    await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
 
+                    await _mediaBlogSucKhoeRepository.UpdateManyAsync(medias);
+                    
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleBlogSucKhoeRepository.UpdateAsync(article, true);

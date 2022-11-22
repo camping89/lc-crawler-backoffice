@@ -317,7 +317,7 @@ public class WordpressManagerBase : DomainService
             if (articleNav.Medias != null)
             {
                 var mediaItems = new List<MediaItem>();
-                foreach (var media in articleNav.Medias.Where(media => media.Url.IsNotNullOrEmpty()))
+                foreach (var media in articleNav.Medias.Where(media => string.IsNullOrEmpty(media.ExternalUrl) && media.Url.IsNotNullOrEmpty()))
                 {
                     var mediaResult = await PostMediaAsync(dataSource, media);
                     if (mediaResult is null) continue;
@@ -403,7 +403,7 @@ public class WordpressManagerBase : DomainService
         }
     }
 
-    private async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
+    public async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
     {
         MediaItem mediaResult = null;
         using var auditingScope = _auditingManager.BeginScope();
@@ -549,7 +549,8 @@ public class WordpressManagerBase : DomainService
                     Status.Publish
                 },
                 Page    = pageIndex,
-                PerPage = 100
+                PerPage = 100,
+                
             },true);
 
             posts.AddRange(resultPosts);
@@ -566,11 +567,16 @@ public class WordpressManagerBase : DomainService
         return posts;
     }
     
-    public async Task UpdatePostDetails(Post post, Article article, List<Media> medias, WordPressClient client)
+    public async Task UpdatePostDetails(DataSource dataSource,Post post, Article article, List<Media> medias, WordPressClient client)
     {
         post.Title.Raw   = article.Title;
         post.Excerpt.Raw = article.Excerpt;
-
+        
+        foreach (var media in medias)
+        {
+            await PostMediaAsync(dataSource, media);
+            
+        }
         if (medias.IsNotNullOrEmpty())
         {
             article.Content  = ReplaceImageUrls(article.Content, medias);

@@ -142,8 +142,9 @@ public class WordpressManagerAladin : DomainService
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias   = await _mediaAladinRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
                     
-                    await _wordpressManagerBase.UpdatePostDetails(post, article, medias, client);
+                    await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
 
+                    await _mediaAladinRepository.UpdateManyAsync(medias);
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleAladinRepository.UpdateAsync(article, true);
