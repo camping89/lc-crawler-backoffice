@@ -542,6 +542,11 @@ public class WordpressManagerBase : DomainService
         {
             var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
             {
+                Statuses = new List<Status>()
+                {
+                    Status.Pending,
+                    Status.Publish
+                },
                 Page    = pageIndex,
                 PerPage = 100
             },true);

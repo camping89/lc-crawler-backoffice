@@ -68,6 +68,9 @@ public class WordpressManagerAloBacSi : DomainService
 
         var client   = await _wordpressManagerBase.InitClient(_dataSource);
         var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
+
+        var index = 1;
+        var total = allPosts.Count();
         
         // sync articles from wp
         foreach (var post in allPosts)
@@ -92,6 +95,8 @@ public class WordpressManagerAloBacSi : DomainService
             {
                 //Always save the log
                 await auditingScope.SaveAsync();
+                Console.WriteLine($"UserName : {index}/{total}");
+                index++;
             }
         }
     }
