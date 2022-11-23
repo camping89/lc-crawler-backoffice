@@ -123,7 +123,7 @@ public class WordpressManagerLongChau : DomainService
         }
         
         // update re-sync status
-        //await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
         
         // get all posts
         var client   = await _wordpressManagerBase.InitClient(_dataSource);

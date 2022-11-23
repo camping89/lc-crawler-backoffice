@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
+using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Medias;
@@ -178,5 +180,77 @@ public class WordpressManagerAladin : DomainService
                         .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
+    }
+    
+    public async Task UpdateExternalIdAsync()
+    {
+        // get data source
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        if (_dataSource == null || !_dataSource.ShouldReSyncArticle)
+        {
+            return;
+        }
+
+        // get all posts
+        var client   = await _wordpressManagerBase.InitClient(_dataSource);
+        var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
+
+        var index = 1;
+        var total = allPosts.Count();
+
+        foreach (var post in allPosts)
+        {
+            try
+            {
+                var article = await _articleAladinRepository.FirstOrDefaultAsync(_ => _.Title.Equals(HttpUtility.HtmlDecode(post.Title.Rendered)));
+                if (article is not null)
+                {
+                    article.ExternalId = post.Id;
+                    await _articleAladinRepository.UpdateAsync(article, true);
+                }
+                else
+                {
+                    Console.WriteLine($"Not found: {post.Title.Rendered}/{post.Link}");
+                }
+                
+                Console.WriteLine($"Processing: {index}/{total}");
+                index++;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.WriteLine($"Fail: {post.Title.Rendered}/{post.Link}");
+            }
+        }
+    }
+    
+    public async Task RemoveExternalIdAsync()
+    {
+        var articleIds = (await _articleAladinRepository.GetQueryableAsync())
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt != null)
+                        .Select(x=>x.Id).ToList();
+        
+        var number = 1;
+        var total  = articleIds.Count();
+        foreach (var articleId in articleIds)
+        {
+            try
+            {
+                var article = await _articleAladinRepository.GetAsync(articleId);
+                if (article is not null)
+                {
+                    article.ExternalId = null;
+                    article.LastSyncedAt = null;
+                    await _articleAladinRepository.UpdateAsync(article, true);
+                }
+                
+                Console.WriteLine($"Article -> {number}/{total}");
+                number++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
     }
 }

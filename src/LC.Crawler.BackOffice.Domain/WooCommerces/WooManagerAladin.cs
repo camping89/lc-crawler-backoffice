@@ -381,4 +381,37 @@ public class WooManagerAladin : DomainService
         // Change status
         await _wooManangerBase.DoChangeStatusWooAsync(_dataSource, notFoundProducts);
     }
+
+    public async Task RemoveExternalIdAsync()
+    {
+        var productIds = (await _productRepository.GetQueryableAsync())
+                        .Where(x => x.DataSourceId == _dataSource.Id
+                                 && x.Name         != null
+                                 && x.Code         != null
+                                 && x.ExternalId   != null
+                              )
+                        .ToList().Select(x => x.Id).ToList();
+        // sync product to wp
+        var number = 1;
+        var total  = productIds.Count();
+        foreach (var productId in productIds)
+        {
+            try
+            {
+                var product = await _productRepository.GetAsync(productId);
+                if (product is not null)
+                {
+                    product.ExternalId = null;
+                    await _productRepository.UpdateAsync(product, true);
+                }
+                
+                Console.WriteLine($"Product -> {number}/{total}");
+                number++;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+    }
 }
