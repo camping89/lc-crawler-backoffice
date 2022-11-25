@@ -73,6 +73,8 @@ namespace LC.Crawler.BackOffice.DataSources
                     break;
 
             }
+            
+            await _dataSourceRepository.UpdateAsync(dataSource, true);
         }
     }
 }
