@@ -12,6 +12,7 @@ using Volo.Abp.Domain.Services;
 using HtmlAgilityPack;
 using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Extensions;
+using LC.Crawler.BackOffice.Logs;
 using Svg;
 using Volo.Abp.Auditing;
 using WordPressPCL;
@@ -25,10 +26,12 @@ namespace LC.Crawler.BackOffice.Wordpress;
 public class WordpressManagerBase : DomainService
 {
     private readonly IAuditingManager _auditingManager;
+    private readonly RayGunExceptionReport _rayGunExceptionReport;
 
-    public WordpressManagerBase(IAuditingManager auditingManager)
+    public WordpressManagerBase(IAuditingManager auditingManager, RayGunExceptionReport rayGunExceptionReport)
     {
         _auditingManager = auditingManager;
+        _rayGunExceptionReport = rayGunExceptionReport;
     }
 
     public async Task DoUpdatePosts(DataSource dataSource)
@@ -59,7 +62,7 @@ public class WordpressManagerBase : DomainService
             index++;
         }
     }
-    
+
     public async Task DoUpdatePostTags(List<Tag> wpTags, List<string> tags, Post post, WordPressClient client)
     {
         if (tags.IsNotNullOrEmpty())
@@ -90,7 +93,7 @@ public class WordpressManagerBase : DomainService
                     post.Tags.AddRange(tagIds);
                 }
             }
-            
+
             await client.Posts.UpdateAsync(post);
         }
     }
@@ -112,11 +115,11 @@ public class WordpressManagerBase : DomainService
                 },
                 Page = pageIndex,
                 PerPage = 100
-            },true);
+            }, true);
 
             posts.AddRange(resultPosts);
             Console.WriteLine($"Page {pageIndex}");
-            
+
             if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
             {
                 break;
@@ -125,7 +128,7 @@ public class WordpressManagerBase : DomainService
             pageIndex++;
         }
 
-        foreach (var g in posts.GroupBy(x=>x.Title.Rendered))
+        foreach (var g in posts.GroupBy(x => x.Title.Rendered))
         {
             var count = g.Count();
             if (count > 1)
@@ -138,10 +141,12 @@ public class WordpressManagerBase : DomainService
             }
         }
     }
-    public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, List<Tag> wooTags)
+
+    public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav,
+        List<Tag> wooTags)
     {
         var client = await InitClient(dataSource);
-        
+
         var featureMedia = await PostMediaAsync(dataSource, articleNav.Media);
         var contentMedias = await PostMediasAsync(dataSource, articleNav);
 
@@ -185,7 +190,8 @@ public class WordpressManagerBase : DomainService
             {
                 foreach (var tag in article.Tags)
                 {
-                    var wpTag = wpTags.FirstOrDefault(_ => _.Name.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
+                    var wpTag = wpTags.FirstOrDefault(_ =>
+                        _.Name.Equals(tag, StringComparison.InvariantCultureIgnoreCase));
                     if (wpTag is null)
                     {
                         wpTag = await client.Tags.CreateAsync(new WordpresTag { Name = tag });
@@ -219,15 +225,16 @@ public class WordpressManagerBase : DomainService
                 foreach (var category in articleNav.Categories)
                 {
                     category.Name = category.Name.Replace("&", "&amp;");
-                    
+
                     var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
 
-                    var categoriesTerms = category.Name.Split("->").Select(x=>x.Trim()).ToList();
+                    var categoriesTerms = category.Name.Split("->").Select(x => x.Trim()).ToList();
 
                     var encodeName = categoriesTerms.LastOrDefault()?.Replace("&", "&amp;").Trim();
 
                     var wpCategory = wooCategories.FirstOrDefault(x =>
-                        encodeName != null && x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
+                        encodeName != null && x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) &&
+                        x.Parent == 0);
                     if (encodeName is not null)
                     {
                         if (categoriesTerms.Count > 1)
@@ -261,6 +268,7 @@ public class WordpressManagerBase : DomainService
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, articleNav.Article, homeUrl, "PostCategories");
+            _rayGunExceptionReport.LogException(ex, $"Article Url: {articleNav.Article.Url}_Add Post categories");
         }
         finally
         {
@@ -272,7 +280,7 @@ public class WordpressManagerBase : DomainService
     private string ReplaceVideos(string contentHtml)
     {
         if (!contentHtml.IsNotNullOrEmpty()) return string.Empty;
-        
+
         var htmlDoc = new HtmlDocument();
         htmlDoc.LoadHtml(contentHtml);
         var divVideos = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class,'VCSortableInPreviewMode')]");
@@ -324,7 +332,8 @@ public class WordpressManagerBase : DomainService
             if (articleNav.Medias != null)
             {
                 var mediaItems = new List<MediaItem>();
-                foreach (var media in articleNav.Medias.Where(media => string.IsNullOrEmpty(media.ExternalUrl) && media.Url.IsNotNullOrEmpty()))
+                foreach (var media in articleNav.Medias.Where(media =>
+                             string.IsNullOrEmpty(media.ExternalUrl) && media.Url.IsNotNullOrEmpty()))
                 {
                     var mediaResult = await PostMediaAsync(dataSource, media);
                     if (mediaResult is null) continue;
@@ -345,19 +354,19 @@ public class WordpressManagerBase : DomainService
 
         foreach (var cateStr in categories)
         {
-            if (AbpStringExtensions.IsNullOrEmpty(cateStr))
+            try
             {
-                continue;
-            }
+                if (AbpStringExtensions.IsNullOrEmpty(cateStr))
+                {
+                    continue;
+                }
 
-            var categoriesTerms = cateStr.Split("->").ToList();
-            var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
-            var wooRootCategory =
-                wooCategories.FirstOrDefault(x =>
-                    x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
-            if (wooRootCategory == null)
-            {
-                try
+                var categoriesTerms = cateStr.Split("->").ToList();
+                var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
+                var wooRootCategory =
+                    wooCategories.FirstOrDefault(x =>
+                        x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
+                if (wooRootCategory == null)
                 {
                     var cateNew = new WordpresCategory
                     {
@@ -366,18 +375,11 @@ public class WordpressManagerBase : DomainService
                     wooRootCategory = await client.Categories.CreateAsync(cateNew);
                     wooCategories.Add(wooRootCategory);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
 
-            if (categoriesTerms.Count > 1 && wooRootCategory != null)
-            {
-                var cateParent = wooRootCategory;
-                for (var i = 1; i < categoriesTerms.Count; i++)
+                if (categoriesTerms.Count > 1 && wooRootCategory != null)
                 {
-                    try
+                    var cateParent = wooRootCategory;
+                    for (var i = 1; i < categoriesTerms.Count; i++)
                     {
                         var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
                         var wooSubCategory = wooCategories.FirstOrDefault(x =>
@@ -401,16 +403,16 @@ public class WordpressManagerBase : DomainService
                             cateParent = wooSubCategory;
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
                 }
+            }
+            catch (Exception e)
+            {
+                _rayGunExceptionReport.LogException(e, $"Category Name: {cateStr}_Sync Category");
             }
         }
     }
 
-    public async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
+    private async Task<MediaItem> PostMediaAsync(DataSource dataSource, Media media)
     {
         MediaItem mediaResult = null;
         using var auditingScope = _auditingManager.BeginScope();
@@ -456,11 +458,11 @@ public class WordpressManagerBase : DomainService
 
             media.ExternalId = mediaResult.Id.ToString();
             media.ExternalUrl = mediaResult.SourceUrl;
-
         }
         catch (Exception e)
         {
             LogImageException(_auditingManager.Current.Log, e, media?.Url, "PostImage");
+            _rayGunExceptionReport.LogException(e, $"Media Url: {media?.Url}_Post Media");
             Console.WriteLine(e);
         }
         finally
@@ -494,7 +496,7 @@ public class WordpressManagerBase : DomainService
         {
             currentLog.Comments.Add($"Id: {article.Id}, DataSourceId {article.DataSourceId}");
         }
-        
+
         currentLog.Comments.Add(ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Entity", entity);
         currentLog.ExtraProperties.Add("C_Message", ex.Message);
@@ -502,7 +504,7 @@ public class WordpressManagerBase : DomainService
         currentLog.ExtraProperties.Add("C_Source", ex.Source);
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
-    
+
     public void LogImageException(AuditLogInfo currentLog, Exception ex, string imageUrl,
         string entity = "Article Image")
     {
@@ -513,7 +515,7 @@ public class WordpressManagerBase : DomainService
         {
             currentLog.Exceptions.Add(ex.InnerException);
         }
-        
+
         currentLog.Comments.Add(ex.StackTrace);
         currentLog.ExtraProperties.Add("C_Entity", entity);
         currentLog.ExtraProperties.Add("C_Message", ex.Message);
@@ -538,68 +540,73 @@ public class WordpressManagerBase : DomainService
 
     public async Task<List<Post>> GetAllPosts(DataSource dataSource, WordPressClient client = null)
     {
-        if (client is null)
+        try
         {
-            client = await InitClient(dataSource);
-        }
-        
-        var posts = new List<Post>();
-        var pageIndex = 1;
-            
-        while (true)
-        {
-            var wpPosts = new List<Post>();
-            try
+            client ??= await InitClient(dataSource);
+
+            var posts = new List<Post>();
+            var pageIndex = 1;
+
+            while (true)
             {
-                var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+                var wpPosts = new List<Post>();
+                try
                 {
-                    Statuses = new List<Status>()
+                    var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
                     {
-                        Status.Pending,
-                        Status.Publish
-                    },
-                    Page    = pageIndex,
-                    PerPage = 100,
-                
-                },true);
-                
-                wpPosts.AddRange(resultPosts);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
+                        Statuses = new List<Status>()
+                        {
+                            Status.Pending,
+                            Status.Publish
+                        },
+                        Page = pageIndex,
+                        PerPage = 100,
+                    }, true);
+
+                    wpPosts.AddRange(resultPosts);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
+                posts.AddRange(wpPosts);
+                Console.WriteLine($"Page {pageIndex}");
+
+                if (wpPosts.IsNullOrEmpty() || wpPosts.Count() < 100)
+                {
+                    break;
+                }
+
+                pageIndex++;
             }
 
-            posts.AddRange(wpPosts);
-            Console.WriteLine($"Page {pageIndex}");
-                
-            if (wpPosts.IsNullOrEmpty() || wpPosts.Count() < 100)
-            {
-                break;
-            }
-
-            pageIndex++;
+            return posts;
         }
-
-        return posts;
+        catch (Exception e)
+        {
+            _rayGunExceptionReport.LogException(e, "Get All Posts");
+            throw;
+        }
     }
-    
-    public async Task UpdatePostDetails(DataSource dataSource,Post post, Article article, List<Media> medias, WordPressClient client)
+
+    public async Task UpdatePostDetails(DataSource dataSource, Post post, Article article, List<Media> medias,
+        WordPressClient client)
     {
-        post.Title.Raw   = article.Title;
+        post.Title.Raw = article.Title;
         post.Excerpt.Raw = article.Excerpt;
-        
+
         foreach (var media in medias)
         {
             await PostMediaAsync(dataSource, media);
-            
         }
+
         if (medias.IsNotNullOrEmpty())
         {
-            article.Content  = ReplaceImageUrls(article.Content, medias);
-            article.Content  = ReplaceVideos(article.Content);
+            article.Content = ReplaceImageUrls(article.Content, medias);
+            article.Content = ReplaceVideos(article.Content);
         }
-        
+
         post.Content.Raw = article.Content;
 
         await client.Posts.UpdateAsync(post);

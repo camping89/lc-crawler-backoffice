@@ -8,6 +8,7 @@ using LC.Crawler.BackOffice.Core;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
+using LC.Crawler.BackOffice.Logs;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.Products;
@@ -32,15 +33,17 @@ namespace LC.Crawler.BackOffice.WooCommerces;
 public class WooManangerBase : DomainService
 {
     private readonly IAuditingManager _auditingManager;
+    private readonly RayGunExceptionReport _rayGunExceptionReport;
 
-    public WooManangerBase(IAuditingManager auditingManager)
+    public WooManangerBase(IAuditingManager auditingManager, RayGunExceptionReport rayGunExceptionReport)
     {
         _auditingManager = auditingManager;
+        _rayGunExceptionReport = rayGunExceptionReport;
     }
 
-    public async Task<List<ProductImage>> PostMediasAsync(DataSource dataSource, List<Media> medias)
+    private async Task<List<ProductImage>> PostMediasAsync(DataSource dataSource, List<Media> medias)
     {
-        if (medias == null)
+        if (medias is null)
         {
             return null;
         }
@@ -79,7 +82,9 @@ public class WooManangerBase : DomainService
             }
             else
             {
-                if (!fileExtension.Equals(FileExtendHelper.PngExtend, StringComparison.InvariantCultureIgnoreCase) && !fileExtension.Equals(FileExtendHelper.JpgExtend, StringComparison.InvariantCultureIgnoreCase))
+                if (!fileExtension.Equals(FileExtendHelper.PngExtend,
+                        StringComparison.InvariantCultureIgnoreCase) &&
+                    !fileExtension.Equals(FileExtendHelper.JpgExtend, StringComparison.InvariantCultureIgnoreCase))
                     fileExtension = FileExtendHelper.PngExtend;
                 var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
                 if (fileBytes is null) continue;
@@ -109,139 +114,176 @@ public class WooManangerBase : DomainService
 
     public async Task<List<WooProductCategory>> GetWooCategories(DataSource dataSource)
     {
-        var wcObject = await InitWCObject(dataSource);
-
-        //Category
-        var wooCategories = new List<WooProductCategory>();
-        var pageIndex = 1;
-        while (true)
+        try
         {
-            var wooCategoriesResult = await wcObject.Category.GetAll(new Dictionary<string, string>()
-            {
-                { "page", pageIndex.ToString() },
-                { "per_page", "100" },
-            });
+            var wcObject = InitWCObject(dataSource);
 
-            if (wooCategoriesResult.IsNullOrEmpty())
+            //Category
+            var wooCategories = new List<WooProductCategory>();
+            var pageIndex = 1;
+            while (true)
             {
-                break;
+                var wooCategoriesResult = await wcObject.Category.GetAll(new Dictionary<string, string>()
+                {
+                    { "page", pageIndex.ToString() },
+                    { "per_page", "100" },
+                });
+
+                if (wooCategoriesResult.IsNullOrEmpty())
+                {
+                    break;
+                }
+
+                wooCategories.AddRange(wooCategoriesResult);
+
+                pageIndex++;
             }
 
-            wooCategories.AddRange(wooCategoriesResult);
-
-            pageIndex++;
+            return wooCategories;
         }
-
-        return wooCategories;
+        catch (Exception e)
+        {
+            _rayGunExceptionReport.LogException(e, "Get Product Categories");
+            throw;
+        }
     }
 
     public async Task<List<ProductTag>> GetWooProductTagsAsync(DataSource dataSource)
     {
-        var wcObject = await InitWCObject(dataSource);
-        //Category
-        var wooTags = new List<ProductTag>();
-        var pageIndex = 1;
-        while (true)
+        try
         {
-            var wooTagsResult = await wcObject.Tag.GetAll(new Dictionary<string, string>()
+            var wcObject = InitWCObject(dataSource);
+            //Category
+            var wooTags = new List<ProductTag>();
+            var pageIndex = 1;
+            while (true)
             {
-                { "page", pageIndex.ToString() },
-                { "per_page", "100" },
-            });
+                var wooTagsResult = await wcObject.Tag.GetAll(new Dictionary<string, string>()
+                {
+                    { "page", pageIndex.ToString() },
+                    { "per_page", "100" },
+                });
 
-            if (wooTagsResult.IsNullOrEmpty())
-            {
-                break;
+                if (wooTagsResult.IsNullOrEmpty())
+                {
+                    break;
+                }
+
+                wooTags.AddRange(wooTagsResult);
+
+                pageIndex++;
             }
 
-            wooTags.AddRange(wooTagsResult);
-
-            pageIndex++;
+            return wooTags;
         }
-
-        return wooTags;
+        catch (Exception e)
+        {
+            _rayGunExceptionReport.LogException(e, "Get Product Tags");
+            throw;
+        }
     }
 
     public async Task SyncProductTagsAsync(DataSource dataSource, List<string> tags)
     {
-        var wooTags = await GetWooProductTagsAsync(dataSource);
-        var productTagNeedCreate = tags.Where(x => !wooTags.Any(t => t.name.Equals(x, StringComparison.InvariantCultureIgnoreCase))).ToList();
-        if (productTagNeedCreate.IsNotNullOrEmpty())
+        try
         {
-            var wcObject = await InitWCObject(dataSource);
-            foreach (var tag in productTagNeedCreate)
+            var wooTags = await GetWooProductTagsAsync(dataSource);
+            var productTagNeedCreate =
+                tags.Where(x => !wooTags.Any(t => t.name.Equals(x, StringComparison.InvariantCultureIgnoreCase)))
+                    .ToList();
+            if (productTagNeedCreate.IsNotNullOrEmpty())
             {
-                await wcObject.Tag.Add(new ProductTag()
+                var wcObject = InitWCObject(dataSource);
+                foreach (var tag in productTagNeedCreate)
                 {
-                    name = tag
-                });
+                    await wcObject.Tag.Add(new ProductTag()
+                    {
+                        name = tag
+                    });
+                }
             }
+        }
+        catch (Exception e)
+        {
+            _rayGunExceptionReport.LogException(e, "Sync Product Tags");
+            throw;
         }
     }
 
     public async Task SyncCategoriesAsync(DataSource dataSource, List<Category> categories, string display = "products")
     {
-        var wcObject = await InitWCObject(dataSource);
-
-        var categoryNames = categories.Select(x => x.Name).Distinct().ToList();
-        var wooCategories = await GetWooCategories(dataSource);
-        foreach (var cateStr in categoryNames)
+        try
         {
-            if (string.IsNullOrEmpty(cateStr))
-            {
-                continue;
-            }
+            var wcObject = InitWCObject(dataSource);
 
-            var categoriesTerms = cateStr.Split("->").Select(x => x.Trim()).ToList();
-
-            var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
-            var wooRootCategory =
-                wooCategories.FirstOrDefault(x => x.name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == 0);
-            if (wooRootCategory == null)
+            var categoryNames = categories.Select(x => x.Name).Distinct().ToList();
+            var wooCategories = await GetWooCategories(dataSource);
+            foreach (var cateStr in categoryNames)
             {
-                var cateNew = new WooProductCategory
+                if (string.IsNullOrEmpty(cateStr))
                 {
-                    name = cateName,
-                    display = display
-                };
-                wooRootCategory = await wcObject.Category.Add(cateNew);
-                wooCategories.Add(wooRootCategory);
-            }
+                    continue;
+                }
 
-            if (categoriesTerms.Count > 1 && wooRootCategory != null)
-            {
-                var cateParent = wooRootCategory;
-                for (var i = 1; i < categoriesTerms.Count; i++)
+                var categoriesTerms = cateStr.Split("->").Select(x => x.Trim()).ToList();
+
+                var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
+                var wooRootCategory =
+                    wooCategories.FirstOrDefault(x =>
+                        x.name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == 0);
+                if (wooRootCategory == null)
                 {
-                    var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
-
-                    var wooSubCategory = wooCategories.FirstOrDefault(x =>
-                        x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == cateParent.id);
-
-                    if (wooSubCategory == null)
+                    var cateNew = new WooProductCategory
                     {
-                        var cateNew = new WooProductCategory
+                        name = cateName,
+                        display = display
+                    };
+                    wooRootCategory = await wcObject.Category.Add(cateNew);
+                    wooCategories.Add(wooRootCategory);
+                }
+
+                if (categoriesTerms.Count > 1 && wooRootCategory != null)
+                {
+                    var cateParent = wooRootCategory;
+                    for (var i = 1; i < categoriesTerms.Count; i++)
+                    {
+                        var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
+
+                        var wooSubCategory = wooCategories.FirstOrDefault(x =>
+                            x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) &&
+                            x.parent == cateParent.id);
+
+                        if (wooSubCategory == null)
                         {
-                            name = subCateName,
-                            parent = cateParent.id,
-                            display = display
-                        };
+                            var cateNew = new WooProductCategory
+                            {
+                                name = subCateName,
+                                parent = cateParent.id,
+                                display = display
+                            };
 
-                        cateNew = await wcObject.Category.Add(cateNew);
-                        wooCategories.Add(cateNew);
+                            cateNew = await wcObject.Category.Add(cateNew);
+                            wooCategories.Add(cateNew);
 
-                        cateParent = cateNew;
-                    }
-                    else
-                    {
-                        cateParent = wooSubCategory;
+                            cateParent = cateNew;
+                        }
+                        else
+                        {
+                            cateParent = wooSubCategory;
+                        }
                     }
                 }
             }
         }
+        catch (Exception e)
+        {
+            _rayGunExceptionReport.LogException(e, "Sync Product Categories");
+            throw;
+        }
     }
 
-    public async Task PostProductReviews(WCObject wcObject, string productCode, List<ProductComment> productComments, List<ProductReview> productReviews)
+    public async Task PostProductReviews(WCObject wcObject, string productCode, List<ProductComment> productComments,
+        List<ProductReview> productReviews)
     {
         try
         {
@@ -293,6 +335,7 @@ public class WooManangerBase : DomainService
         catch (Exception e)
         {
             Logger.LogException(e);
+            _rayGunExceptionReport.LogException(e, $"Product Code: {productCode}_Post Product Reviews");
         }
     }
 
@@ -370,7 +413,8 @@ public class WooManangerBase : DomainService
             {
                 foreach (var tag in tags)
                 {
-                    var productTag = productTags.FirstOrDefault(x => x.name.Contains(tag, StringComparison.InvariantCultureIgnoreCase));
+                    var productTag = productTags.FirstOrDefault(x =>
+                        x.name.Contains(tag, StringComparison.InvariantCultureIgnoreCase));
                     if (productTag is null)
                     {
                         productTag = new ProductTag() { name = tag };
@@ -379,7 +423,8 @@ public class WooManangerBase : DomainService
 
                     if (productTag.id > 0)
                     {
-                        wooProduct.tags.Add(new ProductTagLine() { id = productTag.id, name = productTag.name, slug = productTag.slug });
+                        wooProduct.tags.Add(new ProductTagLine()
+                            { id = productTag.id, name = productTag.name, slug = productTag.slug });
                     }
                 }
             }
@@ -387,6 +432,7 @@ public class WooManangerBase : DomainService
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductTags");
+            _rayGunExceptionReport.LogException(ex, "Add Product Tags");
         }
         finally
         {
@@ -395,7 +441,8 @@ public class WooManangerBase : DomainService
         }
     }
 
-    private async Task AddProductAttributes(ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
+    private async Task AddProductAttributes(ProductWithNavigationProperties productNav, WooProduct wooProduct,
+        string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
 
@@ -408,13 +455,15 @@ public class WooManangerBase : DomainService
             {
                 foreach (var attribute in attributes)
                 {
-                    wooProduct.attributes.Add(new ProductAttributeLine() { name = attribute.Key, visible = true, options = new List<string>() { attribute.Value } });
+                    wooProduct.attributes.Add(new ProductAttributeLine()
+                        { name = attribute.Key, visible = true, options = new List<string>() { attribute.Value } });
                 }
             }
         }
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductAttributes");
+            _rayGunExceptionReport.LogException(ex, "Add Product Attributes");
         }
         finally
         {
@@ -423,7 +472,8 @@ public class WooManangerBase : DomainService
         }
     }
 
-    private async Task AddProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
+    private async Task AddProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav,
+        WooProduct wooProduct, string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
 
@@ -470,6 +520,7 @@ public class WooManangerBase : DomainService
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductVariants");
+            _rayGunExceptionReport.LogException(ex, "Add Product Variants");
         }
         finally
         {
@@ -479,7 +530,8 @@ public class WooManangerBase : DomainService
     }
 
 
-    private async Task UpdateProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav, WooProduct wooProduct, string homeUrl)
+    private async Task UpdateProductVariants(WCObject wcObject, ProductWithNavigationProperties productNav,
+        WooProduct wooProduct, string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
 
@@ -515,7 +567,8 @@ public class WooManangerBase : DomainService
                         checkVariant.price = variant.RetailPrice;
                         checkVariant.regular_price = variant.RetailPrice;
                         checkVariant.sale_price = variant.DiscountedPrice;
-                        await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant, wooProduct.id.To<int>());
+                        await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant,
+                            wooProduct.id.To<int>());
                     }
                     else
                     {
@@ -538,6 +591,7 @@ public class WooManangerBase : DomainService
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductVariants");
+            _rayGunExceptionReport.LogException(ex, "Update Product Variants");
         }
         finally
         {
@@ -573,6 +627,7 @@ public class WooManangerBase : DomainService
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductMedias");
+            _rayGunExceptionReport.LogException(ex, $"Product Url: {product.Url}_Add Product Medias");
         }
         finally
         {
@@ -605,18 +660,21 @@ public class WooManangerBase : DomainService
                     //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
                     var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
 
-                    var wooCategory = wooCategories.FirstOrDefault(x => encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
+                    var wooCategory = wooCategories.FirstOrDefault(x =>
+                        encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
                     if (encodeName != null)
                     {
                         category.Name = category.Name.Replace("&", "&amp;").Trim();
-                        var wooCategoriesFilter = wooCategories.Where(x => x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                        var wooCategoriesFilter = wooCategories.Where(x =>
+                            x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase)).ToList();
                         foreach (var wooCate in wooCategoriesFilter)
                         {
                             var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
                             if (parentCate != null && category.Name.Contains(parentCate.name))
                             {
                                 var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
-                                if ((rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                                if ((rootParent != null && category.Name.Contains(rootParent.name)) ||
+                                    parentCate.parent == 0)
                                 {
                                     wooCategory = wooCate;
                                 }
@@ -626,7 +684,8 @@ public class WooManangerBase : DomainService
 
                     if (wooCategory != null)
                     {
-                        wooProduct.categories.Add(new ProductCategoryLine() { id = wooCategory.id, name = wooCategory.name, slug = wooCategory.slug });
+                        wooProduct.categories.Add(new ProductCategoryLine()
+                            { id = wooCategory.id, name = wooCategory.name, slug = wooCategory.slug });
                     }
                 }
             }
@@ -634,6 +693,7 @@ public class WooManangerBase : DomainService
         catch (Exception ex)
         {
             LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductCategories");
+            _rayGunExceptionReport.LogException(ex, $"Product Url: {product.Url}Add Product Categories");
         }
         finally
         {
@@ -667,7 +727,7 @@ public class WooManangerBase : DomainService
 
     public async Task DeleteDuplicateWooProduct(DataSource dataSource)
     {
-        var wc = await InitWCObject(dataSource);
+        var wc = InitWCObject(dataSource);
 
         var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
         var pageIndex = 1;
@@ -702,7 +762,7 @@ public class WooManangerBase : DomainService
         // Update the products are not found in the latest crawl
         if (products.IsNotNullOrEmpty())
         {
-            var wc = await InitWCObject(dataSource);
+            var wc = InitWCObject(dataSource);
 
             foreach (var product in products)
             {
@@ -718,12 +778,14 @@ public class WooManangerBase : DomainService
                         checkProduct.status = "pending";
                         await wc.Product.Update(checkProduct.id.To<int>(), checkProduct);
 
-                        Console.WriteLine($"Update product status: {checkProduct.name} - {checkProduct.sku} - {checkProduct.status}");
+                        Console.WriteLine(
+                            $"Update product status: {checkProduct.name} - {checkProduct.sku} - {checkProduct.status}");
                     }
                 }
                 catch (Exception ex)
                 {
                     LogException(_auditingManager.Current.Log, ex, product, dataSource.Url, "DoChangeStatusWooAsync");
+                    _rayGunExceptionReport.LogException(ex, $"Product Url: {product.Url}Change Product Status");
                 }
                 finally
                 {
@@ -782,7 +844,8 @@ public class WooManangerBase : DomainService
                     checkVariant.price = variant.RetailPrice;
                     checkVariant.regular_price = variant.RetailPrice;
                     checkVariant.sale_price = variant.DiscountedPrice;
-                    await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant, checkProduct.id.To<int>());
+                    await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant,
+                        checkProduct.id.To<int>());
                 }
                 else
                 {
@@ -819,29 +882,40 @@ public class WooManangerBase : DomainService
         Console.WriteLine($"Update product: {checkProduct.name}");
     }
 
-    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject, string search = null)
+    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject,
+        string search = null)
     {
-        var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
-        var pageIndex = 1;
-
-        while (true)
+        try
         {
-            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>() { { "page", pageIndex.ToString() }, { "per_page", "100" }, { "search", search }, });
-            if (checkProduct.IsNullOrEmpty()) break;
+            var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
+            var pageIndex = 1;
 
-            checkProducts.AddRange(checkProduct);
-            Console.WriteLine($"Fetching Product: page {pageIndex}");
-            pageIndex++;
+            while (true)
+            {
+                var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
+                    { { "page", pageIndex.ToString() }, { "per_page", "100" }, { "search", search }, });
+                if (checkProduct.IsNullOrEmpty()) break;
+
+                checkProducts.AddRange(checkProduct);
+                Console.WriteLine($"Fetching Product: page {pageIndex}");
+                pageIndex++;
+            }
+
+            Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
+
+            return checkProducts;
         }
-
-        Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
-
-        return checkProducts;
+        catch (Exception e)
+        {
+            _rayGunExceptionReport.LogException(e, "Get All Products");
+            throw;
+        }
     }
 
-    public async Task<WCObject> InitWCObject(DataSource dataSource)
+    public WCObject InitWCObject(DataSource dataSource)
     {
-        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
+        var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey,
+            dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
 
         return wcObject;

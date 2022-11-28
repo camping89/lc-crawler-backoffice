@@ -7,6 +7,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
+using LC.Crawler.BackOffice.Logs;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductComments;
@@ -29,6 +30,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IMediaSieuThiSongKhoeRepository _mediaSieuThiSongKhoeRepository;
     private readonly WooManangerBase _wooManangerBase;
+    private readonly RayGunExceptionReport _rayGunExceptionReport;
     private readonly IAuditingManager _auditingManager;
     
     private readonly DataSourceManager _dataSourceManager;
@@ -49,7 +51,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         IAuditingManager auditingManager,
         IProductReviewSieuThiSongKhoeRepository productReviewSieuThiSongKhoeRepository,
         IProductCommentSieuThiSongKhoeRepository productCommentSieuThiSongKhoeRepository,
-        DataSourceManager dataSourceManager)
+        DataSourceManager dataSourceManager, RayGunExceptionReport rayGunExceptionReport)
     {
         _productRepository = productRepository;
         _dataSourceRepository = dataSourceRepository;
@@ -60,6 +62,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         _productReviewSieuThiSongKhoeRepository = productReviewSieuThiSongKhoeRepository;
         _productCommentSieuThiSongKhoeRepository = productCommentSieuThiSongKhoeRepository;
         _dataSourceManager = dataSourceManager;
+        _rayGunExceptionReport = rayGunExceptionReport;
     }
 
     public async Task DoSyncUpdateProduct()
@@ -71,7 +74,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
 
         // get rest api, wc object
-        var wc = await _wooManangerBase.InitWCObject(_dataSource);
+        var wc = _wooManangerBase.InitWCObject(_dataSource);
 
         var categories = (await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom)).ToList();
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
@@ -178,7 +181,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
             }
 
             // get rest api, wc object
-            var wc       = await _wooManangerBase.InitWCObject(_dataSource);
+            var wc       = _wooManangerBase.InitWCObject(_dataSource);
             
             var reviews  = await _productReviewSieuThiSongKhoeRepository.GetListAsync(x => !x.IsSynced);
             var comments = await _productCommentSieuThiSongKhoeRepository.GetListAsync(x => !x.IsSynced);
@@ -224,6 +227,25 @@ public class WooManagerSieuThiSongKhoe : DomainService
         }
     }
     
+    public async Task DoSyncTagAsync()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        var tags = (await _productRepository.GetQueryableAsync())
+            .Where(x => x.Tags.Any())
+            .ToList().Select(x => x.Tags);
+
+        var tagList = new List<string>();
+        tagList.AddRange(tags.SelectMany(x => x));
+        tagList = tagList.Distinct().ToList();
+
+        await _wooManangerBase.SyncProductTagsAsync(_dataSource, tagList);
+    }
+    
     public async Task DoSyncCategoriesAsync()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
@@ -249,7 +271,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.InProgress);
 
         // get rest api, wc object
-        var wc = await _wooManangerBase.InitWCObject(_dataSource);
+        var wc = _wooManangerBase.InitWCObject(_dataSource);
 
         // get woo categories, product tags
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
@@ -291,6 +313,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
                     ex,
                     productNav.Product,
                     PageDataSourceConsts.SieuThiSongKhoeUrl);
+                _rayGunExceptionReport.LogException(ex, $"Product Url: {productNav.Product.Url}_Sync Products");
             }
             finally
             {
@@ -316,7 +339,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
         
         // get rest api, wc object
-        var wcObject = await _wooManangerBase.InitWCObject(_dataSource);
+        var wcObject = _wooManangerBase.InitWCObject(_dataSource);
 
         // get all products
         var checkProducts = await _wooManangerBase.GetAllProducts(wcObject);
@@ -341,6 +364,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
                 //Add exceptions
                 _wooManangerBase.LogException(_auditingManager.Current.Log, ex, new Products.Product(),
                                               PageDataSourceConsts.SieuThiSongKhoeUrl, "DoReSyncProductToWooAsync");
+                _rayGunExceptionReport.LogException(ex, $"Woo Product Id: {checkProduct.id}Resync Product");
             }
             finally
             {

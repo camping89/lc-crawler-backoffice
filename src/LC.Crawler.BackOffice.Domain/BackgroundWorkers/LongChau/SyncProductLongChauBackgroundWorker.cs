@@ -33,6 +33,7 @@ public class SyncProductLongChauBackgroundWorker : HangfireBackgroundWorkerBase
     public override async Task DoWorkAsync()
     {
         await _wooManagerLongChau.DoSyncCategoriesAsync();
+        await _wooManagerLongChau.DoSyncTagAsync();
         await _wooManagerLongChau.DoSyncProductToWooAsync();
         await _wooManagerLongChau.DoSyncReviews();
     }

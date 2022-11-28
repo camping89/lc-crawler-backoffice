@@ -6,6 +6,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
+using LC.Crawler.BackOffice.Logs;
 using LC.Crawler.BackOffice.Medias;
 using Volo.Abp.Auditing;
 using Volo.Abp.Data;
@@ -23,6 +24,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
     private readonly IDataSourceRepository             _dataSourceRepository;
     private          DataSource                        _dataSource;
     private readonly WordpressManagerBase              _wordpressManagerBase;
+    private readonly RayGunExceptionReport _rayGunExceptionReport;
     private readonly IAuditingManager                  _auditingManager;
     private readonly DataSourceManager _dataSourceManager;
 
@@ -32,7 +34,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                                           IDataSourceRepository             dataSourceRepository,
                                           WordpressManagerBase              wordpressManagerBase,
                                           IAuditingManager                  auditingManager,
-                                          DataSourceManager dataSourceManager)
+                                          DataSourceManager dataSourceManager, RayGunExceptionReport rayGunExceptionReport)
     {
         _categorySucKhoeDoiSongRepository = categorySucKhoeDoiSongRepository;
         _articleSucKhoeDoiSongRepository  = articleSucKhoeDoiSongRepository;
@@ -41,6 +43,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         _wordpressManagerBase             = wordpressManagerBase;
         _auditingManager                  = auditingManager;
         _dataSourceManager = dataSourceManager;
+        _rayGunExceptionReport = rayGunExceptionReport;
     }
 
     public async Task DoSyncPostAsync()
@@ -103,6 +106,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             {
                 //Add exceptions
                 _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SucKhoeDoiSongUrl, "DoSyncPostAsync");
+                _rayGunExceptionReport.LogException(ex, $"Article Url: {articleNav.Article.Url}_Sync Article");
             }
             finally
             {
@@ -158,6 +162,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             {
                 //Add exceptions
                 _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, null, PageDataSourceConsts.SucKhoeDoiSongUrl, "DoReSyncPostAsync");
+                _rayGunExceptionReport.LogException(ex, $"Wordpress Article Id: {post.Id}_Resync Article");
             }
             finally
             {

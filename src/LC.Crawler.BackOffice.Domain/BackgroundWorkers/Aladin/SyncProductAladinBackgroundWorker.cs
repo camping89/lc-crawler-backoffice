@@ -43,8 +43,8 @@ public class SyncProductAladinBackgroundWorker : HangfireBackgroundWorkerBase
     public override async Task DoWorkAsync()
     {
         await _wooManagerAladin.DoSyncCategoriesAsync();
+        await _wooManagerAladin.DoSyncTagAsync();
         await _wooManagerAladin.DoSyncProductToWooAsync();
-
         await _wooManagerAladin.DoSyncReviews();
     }
 
