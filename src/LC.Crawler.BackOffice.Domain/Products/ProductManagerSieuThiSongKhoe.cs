@@ -56,6 +56,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             return;
         }
         var categories = await _categorySieuThiSongKhoeRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
+        var medias = await _mediaSieuThiSongKhoeRepository.GetListAsync();
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             try
@@ -183,18 +184,22 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                     
                     //ProductDescription
                     var mediaUrls = rawProduct.Description.GetImageUrls();
+                    var productMedias = medias.Where(_ => mediaUrls.Any(x => StringHtmlHelper.CompareUrls(_.Url, x))).ToList();
                     if (mediaUrls.Any())
                     {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var newMedias = mediaUrls.Where(_ => !medias.Any(x => StringHtmlHelper.CompareUrls(_, x.Url))).Select(url => new Media()
                         {
                             Url         = url,
                             IsDowloaded = false
                         }).ToList();
-                        await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
 
-                        productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+                        if(newMedias.IsNotNullOrEmpty()) await _mediaSieuThiSongKhoeRepository.InsertManyAsync(newMedias, true);
+                        
+                        productMedias.AddRange(newMedias);
 
-                        foreach (var media in medias)
+                        productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, productMedias);
+
+                        foreach (var media in newMedias)
                         {
                             productExist.Medias.Add(new ProductMedia(productExist.Id, media.Id));
                         }
@@ -239,10 +244,12 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                     product.AddCategory(category.Id);
                 }
 
+                // Images
+                var newProductMedias = new List<Media>();
                 if (rawProduct.ImageUrls != null)
                 {
-                    var medias = await CreateMediasAsync(rawProduct.ImageUrls);
-                    foreach (var media in medias)
+                    newProductMedias = await CreateMediasAsync(rawProduct.ImageUrls);
+                    foreach (var media in newProductMedias)
                     {
                         product.AddMedia(media.Id);
                     }
@@ -254,16 +261,20 @@ public class ProductManagerSieuThiSongKhoe : DomainService
 
                     if (mediaUrls.Any())
                     {
-                        var medias = mediaUrls.Select(url => new Media()
-                        {
-                            Url = url,
-                            IsDowloaded = false
-                        }).ToList();
-                        await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias, true);
+                        var newMedias = mediaUrls
+                            .Where(_ => !newProductMedias.Any(x => StringHtmlHelper.CompareUrls(_, x.Url))).Select(url => new Media()
+                            {
+                                Url = url,
+                                IsDowloaded = false
+                            }).ToList();
+                        
+                        if(newMedias.IsNotNullOrEmpty()) await _mediaSieuThiSongKhoeRepository.InsertManyAsync(newMedias, true);
 
-                        product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+                        newProductMedias.AddRange(newProductMedias);
+
+                        product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, newProductMedias);
                             
-                        foreach (var media in medias)
+                        foreach (var media in newProductMedias)
                         {
                             product.AddMedia(media.Id);
                         }
@@ -353,7 +364,10 @@ public class ProductManagerSieuThiSongKhoe : DomainService
             IsDowloaded = false
         }).ToList();
 
-        await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias,true);
+        if (medias.IsNotNullOrEmpty())
+        {
+            await _mediaSieuThiSongKhoeRepository.InsertManyAsync(medias,true);
+        }
         return medias;
     }
     

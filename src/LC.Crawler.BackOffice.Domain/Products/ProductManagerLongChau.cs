@@ -62,6 +62,7 @@ public class ProductManagerLongChau : DomainService
         }
 
         var categories = await _categoryLongChauRepository.GetListAsync(_ => _.CategoryType == CategoryType.Ecom);
+        var medias = await _mediaLongChauRepository.GetListAsync();
         foreach (var rawProducts in ecommercePayload.Products.GroupBy(_ => _.Url))
         {
             try
@@ -189,18 +190,22 @@ public class ProductManagerLongChau : DomainService
                     
                     //ProductDescription
                     var mediaUrls = rawProduct.Description.GetImageUrls();
+                    var productMedias = medias.Where(_ => mediaUrls.Any(x => StringHtmlHelper.CompareUrls(_.Url, x))).ToList();
                     if (mediaUrls.Any())
                     {
-                        var medias = mediaUrls.Select(url => new Media()
+                        var newMedias = mediaUrls.Where(_ => !medias.Any(x => StringHtmlHelper.CompareUrls(_, x.Url))).Select(url => new Media()
                         {
                             Url         = url,
                             IsDowloaded = false
                         }).ToList();
-                        await _mediaLongChauRepository.InsertManyAsync(medias, true);
 
-                        productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
+                        if(newMedias.IsNotNullOrEmpty()) await _mediaLongChauRepository.InsertManyAsync(newMedias, true);
+                        
+                        productMedias.AddRange(newMedias);
 
-                        foreach (var media in medias)
+                        productExist.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, productMedias);
+
+                        foreach (var media in newMedias)
                         {
                             productExist.Medias.Add(new ProductMedia(productExist.Id, media.Id));
                         }
@@ -246,31 +251,37 @@ public class ProductManagerLongChau : DomainService
                     product.AddCategory(category.Id);
                 }
 
+                // Images
+                var newProductMedias = new List<Media>();
                 if (rawProduct.ImageUrls != null)
                 {
-                    var medias = await CreateMediasAsync(rawProduct.ImageUrls);
-                    foreach (var media in medias)
+                    newProductMedias = await CreateMediasAsync(rawProduct.ImageUrls);
+                    foreach (var media in newProductMedias)
                     {
                         product.AddMedia(media.Id);
                     }
                 }
-
+                
                 if (!string.IsNullOrEmpty(rawProduct.Description))
                 {
                     var mediaUrls = rawProduct.Description.GetImageUrls();
 
                     if (mediaUrls.Any())
                     {
-                        var medias = mediaUrls.Select(url => new Media()
-                        {
-                            Url = url,
-                            IsDowloaded = false
-                        }).ToList();
-                        await _mediaLongChauRepository.InsertManyAsync(medias, true);
+                        var newMedias = mediaUrls
+                            .Where(_ => !newProductMedias.Any(x => StringHtmlHelper.CompareUrls(_, x.Url))).Select(url => new Media()
+                            {
+                                Url = url,
+                                IsDowloaded = false
+                            }).ToList();
+                        
+                        if(newMedias.IsNotNullOrEmpty()) await _mediaLongChauRepository.InsertManyAsync(newMedias, true);
+                        
+                        newProductMedias.AddRange(newProductMedias);
 
-                        product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, medias);
-
-                        foreach (var media in medias)
+                        product.Description = StringHtmlHelper.SetContentMediaIds(rawProduct.Description, newProductMedias);
+                            
+                        foreach (var media in newProductMedias)
                         {
                             product.AddMedia(media.Id);
                         }
@@ -361,7 +372,7 @@ public class ProductManagerLongChau : DomainService
             IsDowloaded = false
         }).ToList();
 
-        if (medias.Any())
+        if (medias.IsNotNullOrEmpty())
         {
             await _mediaLongChauRepository.InsertManyAsync(medias, true);
         }

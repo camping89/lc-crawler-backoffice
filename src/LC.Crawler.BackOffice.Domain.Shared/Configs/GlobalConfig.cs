@@ -12,8 +12,8 @@ public class GlobalConfig
         public const int CrawlerAccountPerProxy  = 10;
         public const int SyncTimeOutInHours      = 24;
 
-        public const int SyncTimeHours = 0;
-        public const int ReSyncTimeHours = 0;
+        public const int SyncTimeHours = 17;
+        public const int ReSyncTimeHours = 17;
     }
 }
 

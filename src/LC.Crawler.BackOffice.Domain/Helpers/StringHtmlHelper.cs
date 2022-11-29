@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using HtmlAgilityPack;
 using LC.Crawler.BackOffice.Medias;
@@ -58,5 +59,22 @@ public static class StringHtmlHelper
     
         var newHtml = htmlDoc.DocumentNode.WriteTo();
         return newHtml;
+    }
+
+    public static bool CompareUrls(string firstUrl, string secondUrl)
+    {
+        try
+        {
+            var uri1 = new Uri(firstUrl);
+            var uri2 = new Uri(secondUrl);
+
+            return Uri.Compare(uri1, uri2, UriComponents.Host | UriComponents.PathAndQuery, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) is 0;
+        }
+        catch (Exception e)
+        {
+            // ignored
+        }
+
+        return firstUrl.Equals(secondUrl, StringComparison.InvariantCultureIgnoreCase);
     }
 }
