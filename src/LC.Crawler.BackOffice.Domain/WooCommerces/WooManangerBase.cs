@@ -819,7 +819,7 @@ public class WooManangerBase : DomainService
         Console.WriteLine($"Update product: {checkProduct.name}");
     }
 
-    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject, string search = null)
+    public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject, string search = "")
     {
         var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>();
         var pageIndex = 1;
