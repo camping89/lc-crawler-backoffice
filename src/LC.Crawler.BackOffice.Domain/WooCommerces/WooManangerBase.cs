@@ -336,10 +336,10 @@ public class WooManangerBase : DomainService
         };
 
         // add categories
-        await AddProductCategories(productNav, wooCategories, product, wooProduct, dataSource.Url);
+        await AddProductCategories(productNav, wooCategories, wooProduct, dataSource.Url);
 
         // add medias
-        await AddProductMedias(dataSource, productNav, product, wooProduct, dataSource.Url);
+        await AddProductMedias(dataSource, productNav, wooProduct);
 
         // add variants
         await AddProductVariants(wcObject, productNav, wooProduct, dataSource.Url);
@@ -548,14 +548,12 @@ public class WooManangerBase : DomainService
 
     private async Task AddProductMedias(DataSource dataSource,
         ProductWithNavigationProperties productNav,
-        Product product,
-        WooProduct wooProduct,
-        string homeUrl)
+        WooProduct wooProduct)
     {
         using var auditingScope = _auditingManager.BeginScope();
         try
         {
-            if (product.Medias != null)
+            if (productNav.Medias != null)
             {
                 var medias = productNav.Medias;
 
@@ -567,12 +565,12 @@ public class WooManangerBase : DomainService
                     if (mediaResults.IsNotNullOrEmpty()) wooProduct.images.AddRange(mediaResults);
                 }
 
-                wooProduct.description = StringHtmlHelper.ReplaceImageUrls(product.Description, medias);
+                wooProduct.description = StringHtmlHelper.ReplaceImageUrls(productNav.Product.Description, medias);
             }
         }
         catch (Exception ex)
         {
-            LogException(_auditingManager.Current.Log, ex, productNav.Product, homeUrl, "ProductMedias");
+            LogException(_auditingManager.Current.Log, ex, productNav.Product, dataSource.Url, "ProductMedias");
         }
         finally
         {
@@ -583,14 +581,13 @@ public class WooManangerBase : DomainService
 
     private async Task AddProductCategories(ProductWithNavigationProperties productNav,
         List<WooProductCategory> wooCategories,
-        Product product,
         WooProduct wooProduct,
         string homeUrl)
     {
         using var auditingScope = _auditingManager.BeginScope();
         try
         {
-            if (product.Categories != null)
+            if (productNav.Categories != null)
             {
                 foreach (var category in productNav.Categories)
                 {
@@ -744,7 +741,8 @@ public class WooManangerBase : DomainService
     /// <param name="checkProduct"></param>
     /// <param name="productNav"></param>
     /// <param name="wcObject"></param>
-    public async Task DoReSyncProductToWooAsync(WooCommerceNET.WooCommerce.v3.Product checkProduct,
+    public async Task DoReSyncProductToWooAsync(DataSource dataSource,
+        WooCommerceNET.WooCommerce.v3.Product checkProduct,
         ProductWithNavigationProperties productNav,
         WCObject wcObject)
     {
@@ -802,16 +800,8 @@ public class WooManangerBase : DomainService
             }
         }
 
-        // update content
-        var medias = productNav.Medias;
-        if (medias != null)
-        {
-            checkProduct.description = StringHtmlHelper.ReplaceImageUrls(product.Description, medias);
-        }
-        else
-        {
-            checkProduct.description = product.Description;
-        }
+        // update media + content
+        await AddProductMedias(dataSource, productNav, checkProduct);
 
         // save product
         await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);

@@ -340,7 +340,7 @@ public class WooManagerAladin : DomainService
                 }
 
                 var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
-                await _wooManangerBase.DoReSyncProductToWooAsync(checkProduct, productNav, wcObject);
+                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject);
             }
             catch (Exception ex)
             {
