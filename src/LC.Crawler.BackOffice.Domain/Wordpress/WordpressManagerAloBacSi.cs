@@ -126,10 +126,10 @@ public class WordpressManagerAloBacSi : DomainService
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleAloBacSiRepository.GetWithNavigationPropertiesAsync(articleId);
-            
+
             try
             {
+                var articleNav = await _articleAloBacSiRepository.GetWithNavigationPropertiesAsync(articleId);
                 var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
@@ -152,8 +152,7 @@ public class WordpressManagerAloBacSi : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, 
-                                                   articleNav.Article, PageDataSourceConsts.AloBacSiUrl, "DoSyncPostAsync");
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.AloBacSiUrl, "DoSyncPostAsync");
             }
             finally
             {

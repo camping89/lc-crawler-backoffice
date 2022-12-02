@@ -80,12 +80,12 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleSongKhoeMedplusRepository.GetWithNavigationPropertiesAsync(articleId);
-            
-            if(articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
             
             try
             {
+                var articleNav = await _articleSongKhoeMedplusRepository.GetWithNavigationPropertiesAsync(articleId);
+                if (articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
+                
                 var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
@@ -108,7 +108,7 @@ public class WordpressManagerSongKhoeMedplus : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SongKhoeMedplusUrl, "DoSyncPostAsync");
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.SongKhoeMedplusUrl, "DoSyncPostAsync");
             }
             finally
             {

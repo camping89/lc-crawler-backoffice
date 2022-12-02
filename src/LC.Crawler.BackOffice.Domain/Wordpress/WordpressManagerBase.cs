@@ -198,7 +198,7 @@ public class WordpressManagerBase : DomainService
         }
         catch (Exception ex)
         {
-            LogException(_auditingManager.Current.Log, ex, article, homeUrl, "PostTags");
+            LogException(_auditingManager.Current.Log, ex, $"{article.Id}", homeUrl, "PostTags");
         }
         finally
         {
@@ -260,7 +260,7 @@ public class WordpressManagerBase : DomainService
         }
         catch (Exception ex)
         {
-            LogException(_auditingManager.Current.Log, ex, articleNav.Article, homeUrl, "PostCategories");
+            LogException(_auditingManager.Current.Log, ex, $"{articleNav.Article.Id}", homeUrl, "PostCategories");
         }
         finally
         {
@@ -479,7 +479,7 @@ public class WordpressManagerBase : DomainService
         return Task.FromResult(client);
     }
 
-    public void LogException(AuditLogInfo currentLog, Exception ex, Article article, string url,
+    public void LogException(AuditLogInfo currentLog, Exception ex, string articleId, string url,
         string entity = "Article")
     {
         //Add exceptions
@@ -490,12 +490,8 @@ public class WordpressManagerBase : DomainService
             currentLog.Exceptions.Add(ex.InnerException);
         }
 
-        if (article is not null)
-        {
-            currentLog.Comments.Add($"Id: {article.Id}, DataSourceId {article.DataSourceId}");
-        }
-        
         currentLog.Comments.Add(ex.StackTrace);
+        currentLog.Comments.Add($"Id: {articleId}");
         currentLog.ExtraProperties.Add("C_Entity", entity);
         currentLog.ExtraProperties.Add("C_Message", ex.Message);
         currentLog.ExtraProperties.Add("C_StackTrace", ex.StackTrace);

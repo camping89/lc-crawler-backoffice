@@ -71,11 +71,11 @@ public class WordpressManagerBlogSucKhoe : DomainService
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleBlogSucKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
-
+            
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                var articleNav = await _articleBlogSucKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
+                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
                     var article = await _articleBlogSucKhoeRepository.GetAsync(articleId);
@@ -98,7 +98,7 @@ public class WordpressManagerBlogSucKhoe : DomainService
             {
                 //Add exceptions
                 _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, 
-                                                   articleNav.Article, PageDataSourceConsts.BlogSucKhoeUrl, "DoSyncPostAsync");
+                                                   $"{articleId}", PageDataSourceConsts.BlogSucKhoeUrl, "DoSyncPostAsync");
             }
             finally
             {

@@ -76,11 +76,11 @@ public class WordpressManagerLongChau : DomainService
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
-            
+
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                var articleNav = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
+                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null)
                 {
                     var article = await _articleLongChauRepository.GetAsync(articleId);
@@ -103,7 +103,7 @@ public class WordpressManagerLongChau : DomainService
             {
                 //Add exceptions
                 _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, 
-                                                   articleNav.Article, PageDataSourceConsts.LongChauUrl, "DoSyncPostAsync");
+                                                   $"{articleId}", PageDataSourceConsts.LongChauUrl, "DoSyncPostAsync");
             }
             finally
             {
@@ -244,7 +244,7 @@ public class WordpressManagerLongChau : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.LongChauUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.LongChauUrl);
             }
             finally
             {

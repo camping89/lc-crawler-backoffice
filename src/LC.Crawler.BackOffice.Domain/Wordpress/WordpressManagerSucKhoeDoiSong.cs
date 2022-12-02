@@ -79,12 +79,12 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(articleId);
-            
-            if(articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
             
             try
             {
+                var articleNav = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(articleId);
+                if (articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
+                
                 var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null) 
                 {
@@ -107,7 +107,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, articleNav.Article, PageDataSourceConsts.SucKhoeDoiSongUrl, "DoSyncPostAsync");
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.SucKhoeDoiSongUrl, "DoSyncPostAsync");
             }
             finally
             {
@@ -221,5 +221,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
 
             index++;
         }
+        
+        Console.WriteLine($"Finish Check {articleErrors.Count()}/{total}");
     }
 }

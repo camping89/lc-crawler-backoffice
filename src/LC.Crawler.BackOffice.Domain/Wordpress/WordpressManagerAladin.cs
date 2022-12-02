@@ -77,11 +77,11 @@ public class WordpressManagerAladin : DomainService
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleAladinRepository.GetWithNavigationPropertiesAsync(articleId);
             
             try
             {
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                var articleNav = await _articleAladinRepository.GetWithNavigationPropertiesAsync(articleId);
+                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
                 if (post is not null)
                 {
                     var article = await _articleAladinRepository.GetAsync(articleId);
@@ -104,7 +104,7 @@ public class WordpressManagerAladin : DomainService
             {
                 //Add exceptions
                 _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, 
-                                                   articleNav.Article, PageDataSourceConsts.AladinUrl, "DoSyncPostAsync");
+                                                   $"{articleId}", PageDataSourceConsts.AladinUrl, "DoSyncPostAsync");
             }
             finally
             {
