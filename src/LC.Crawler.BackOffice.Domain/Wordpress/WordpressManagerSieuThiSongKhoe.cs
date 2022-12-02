@@ -56,8 +56,11 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
 
         
         // get article ids
+        var limitDate = new DateTime(2018, 01, 01); 
         var articleIds = (await _articleSieuThiSongKhoeRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt == null)
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null 
+                                                                     && x.LastSyncedAt == null 
+                                                                     && x.CreatedAt >= limitDate)
                         .Select(x=>x.Id).ToList();
         
         // get all tags

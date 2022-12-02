@@ -66,8 +66,11 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         var categoryIds = categories.Select(_ => _.Id).ToList();
         
         // get article ids
+        var limitDate = new DateTime(2018, 01, 01); 
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt == null)
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null 
+                                                                     && x.LastSyncedAt == null 
+                                                                     && x.CreatedAt >= limitDate)
                         .Select(x=>x.Id).ToList();
 
         // get all tags

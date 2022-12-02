@@ -62,8 +62,11 @@ public class WordpressManagerLongChau : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
         
         // get article ids
+        var limitDate = new DateTime(2018, 01, 01); 
         var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.LastSyncedAt == null)
+                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null 
+                                                                     && x.LastSyncedAt == null
+                                                                     && x.CreatedAt >= limitDate)
                         .Select(x=>x.Id).ToList();
 
         // get all tags
