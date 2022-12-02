@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -183,5 +184,38 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                 .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
+    }
+    
+    public async Task CheckContentFail() {
+        // get article ids
+        var articleIds = (await _articleSucKhoeDoiSongRepository.GetQueryableAsync())
+                        .Where(x => x.Content != null)
+                        .Select(x=> new
+                         {
+                             Id         = x.Id,
+                             CreateTime = x.CreationTime
+                         }).ToList().OrderByDescending(_ => _.CreateTime).Select(_ => _.Id).ToList();
+        
+        var index         = 1;
+        var total         = articleIds.Count();
+        var articleErrors = new List<string>();
+        
+        // sync articles to wp
+        foreach (var articleId in articleIds)
+        {
+            Console.WriteLine($"Processing {index}/{total}");
+            
+            try
+            {
+                var articleNav = await _articleSucKhoeDoiSongRepository.GetAsync(articleId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                articleErrors.Add($"{articleId}");
+            }
+
+            index++;
+        }
     }
 }

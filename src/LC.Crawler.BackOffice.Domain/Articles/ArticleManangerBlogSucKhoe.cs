@@ -10,6 +10,7 @@ using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -38,12 +39,19 @@ public class ArticleManangerBlogSucKhoe : DomainService
             return;
         }
 
-        var categories = await _categoryBlogSucKhoeRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
+        var categories   = await _categoryBlogSucKhoeRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
+        var articleGroup = articles.GroupBy(_ => _.Url).ToList();
+        var index        = 1;
+        var total        = articleGroup.Count();
+
+        Console.WriteLine($"Start import");
         
-        foreach (var rawArticles in articles.GroupBy(_ => _.Url))
+        foreach (var rawArticles in articleGroup)
         {
             try
             {
+                Console.WriteLine($"Processing {index}/{total}");
+                
                 var article = rawArticles.First();
                 if (article.Content is null)
                 {
@@ -115,6 +123,8 @@ public class ArticleManangerBlogSucKhoe : DomainService
                     }
 
                     await _articleBlogSucKhoeRepository.InsertAsync(articleEntity);
+                    
+                    await CheckFormatEntity(articleEntity);
                 }
                 else
                 {
@@ -128,6 +138,30 @@ public class ArticleManangerBlogSucKhoe : DomainService
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+
+            index++;
+        }
+        
+        Console.WriteLine($"Finish import");
+    }
+    
+    /// <summary>
+    /// Remove the entity in case having format exception (unicode types ...)
+    /// </summary>
+    /// <param name="articleEntity"></param>
+    private async Task CheckFormatEntity(Article articleEntity)
+    {
+        try
+        {
+            var checkArticle = await _articleBlogSucKhoeRepository.GetAsync(articleEntity.Id);
+        }
+        catch (Exception e)
+        {
+            if (e.GetType() == typeof(FormatException))
+            {
+                Logger.LogException(e);
+                await _articleBlogSucKhoeRepository.DeleteAsync(articleEntity.Id);
             }
         }
     }

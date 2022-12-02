@@ -16,6 +16,7 @@ using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.TrackingDataSources;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -351,6 +352,8 @@ public class ProductManagerAladin : DomainService
 
 
                 await _productAladinRepository.InsertAsync(product, true);
+                
+                await CheckFormatEntity(product);
 
                 #endregion
                 
@@ -358,6 +361,26 @@ public class ProductManagerAladin : DomainService
             catch (Exception e)
             {
                 Console.WriteLine(e);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Remove the entity in case having format exception (unicode types ...)
+    /// </summary>
+    /// <param name="product"></param>
+    private async Task CheckFormatEntity(Product product)
+    {
+        try
+        {
+            var checkProduct = await _productAladinRepository.GetAsync(product.Id);
+        }
+        catch (Exception e)
+        {
+            if (e.GetType() == typeof(FormatException))
+            {
+                Logger.LogException(e);
+                await _productAladinRepository.DeleteAsync(product.Id);
             }
         }
     }

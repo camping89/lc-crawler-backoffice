@@ -16,6 +16,7 @@ using LC.Crawler.BackOffice.ProductComments;
 using LC.Crawler.BackOffice.ProductReviews;
 using LC.Crawler.BackOffice.ProductVariants;
 using LC.Crawler.BackOffice.TrackingDataSources;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -346,6 +347,8 @@ public class ProductManagerSieuThiSongKhoe : DomainService
 
                 await _productSieuThiSongKhoeRepository.InsertAsync(product, true);
                 
+                await CheckFormatEntity(product);
+                
                 #endregion
             }
             catch (Exception e)
@@ -353,6 +356,26 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                 Console.WriteLine(e);
             }
             
+        }
+    }
+    
+    /// <summary>
+    /// Remove the entity in case having format exception (unicode types ...)
+    /// </summary>
+    /// <param name="product"></param>
+    private async Task CheckFormatEntity(Product product)
+    {
+        try
+        {
+            var checkProduct = await _productSieuThiSongKhoeRepository.GetAsync(product.Id);
+        }
+        catch (Exception e)
+        {
+            if (e.GetType() == typeof(FormatException))
+            {
+                Logger.LogException(e);
+                await _productSieuThiSongKhoeRepository.DeleteAsync(product.Id);
+            }
         }
     }
 
