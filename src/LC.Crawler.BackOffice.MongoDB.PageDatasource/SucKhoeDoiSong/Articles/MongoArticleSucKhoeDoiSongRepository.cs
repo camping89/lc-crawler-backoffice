@@ -145,6 +145,12 @@ namespace LC.Crawler.BackOffice.PageDatasource.SucKhoeDoiSong.Articles
             return await query.As<IMongoQueryable<Article>>().LongCountAsync(GetCancellationToken(cancellationToken));
         }
 
+        public async Task DeleteOneById(Guid id, CancellationToken cancellationToken = default)
+        {
+            var dbContext = await GetDbContextAsync(cancellationToken);
+            await dbContext.Articles.DeleteOneAsync(filter: x => x.Id == id, cancellationToken);
+        }
+
         protected virtual IQueryable<Article> ApplyFilter(
             IQueryable<Article> query,
             string filterText,

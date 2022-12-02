@@ -253,4 +253,41 @@ public class WordpressManagerLongChau : DomainService
             }
         }
     }
+    
+    public async Task CheckContentFail() {
+        // get article ids
+        var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
+                        .Where(x => x.Content != null)
+                        .Select(x=> new
+                         {
+                             Id         = x.Id,
+                             CreateTime = x.CreationTime
+                         }).ToList().OrderByDescending(_ => _.CreateTime).Select(_ => _.Id).ToList();
+        
+        var index         = 1;
+        var total         = articleIds.Count();
+        var articleErrors = new List<Guid>();
+        
+        // sync articles to wp
+        foreach (var articleId in articleIds)
+        {
+            Console.WriteLine($"Processing {index}/{total}");
+            
+            try
+            {
+                var articleNav = await _articleLongChauRepository.GetAsync(articleId);
+            }
+            catch (Exception ex)
+            {
+                articleErrors.Add(articleId);
+                await _articleLongChauRepository.DeleteOneById(articleId);
+                Console.WriteLine($"Remove ---------------- {articleId}");
+            }
+
+            index++;
+        }
+        
+        
+        Console.WriteLine($"TOTAL---------------- {articleErrors.Count()}");
+    }
 }

@@ -185,5 +185,11 @@ namespace LC.Crawler.BackOffice.PageDatasource.LongChau.Articles
                     .WhereIf(categoryId != null && categoryId != Guid.Empty, e => e.Categories.Any(x => x.CategoryId == categoryId))
                     .WhereIf(mediaId != null && mediaId != Guid.Empty, e => e.Medias.Any(x => x.MediaId == mediaId));
         }
+        
+        public async Task DeleteOneById(Guid id, CancellationToken cancellationToken = default)
+        {
+            var dbContext = await GetDbContextAsync(cancellationToken);
+            await dbContext.Articles.DeleteOneAsync(filter: x => x.Id == id, cancellationToken);
+        }
     }
 }

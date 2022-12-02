@@ -74,10 +74,16 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+
+        var index = 1;
+        var total = articleIds.Count();
         
+        Console.WriteLine($"Start sync");
         // sync article to wp
         foreach (var articleId in articleIds)
         {
+            Console.WriteLine($"Processing {index}/{total}");
+            
             using var auditingScope = _auditingManager.BeginScope();
             
             try
@@ -114,10 +120,14 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                 //Always save the log
                 await auditingScope.SaveAsync();
             }
+
+            index++;
         }
         
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.Completed);
+        
+        Console.WriteLine($"Finish sync");
     }
     
     public async Task DoReSyncPostAsync()
@@ -202,7 +212,6 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         
         var index         = 1;
         var total         = articleIds.Count();
-        var articleErrors = new List<string>();
         
         // sync articles to wp
         foreach (var articleId in articleIds)
@@ -215,13 +224,11 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                articleErrors.Add($"{articleId}");
+                Console.WriteLine($"Remove ---------------- {articleId}");
+                await _articleSucKhoeDoiSongRepository.DeleteOneById(articleId);
             }
 
             index++;
         }
-        
-        Console.WriteLine($"Finish Check {articleErrors.Count()}/{total}");
     }
 }

@@ -156,7 +156,7 @@ public class MasterService : ITransientDependency
 
     public async Task DoSyncArticles()
     {
-        await _wordpressManagerLongChau.DoSyncPostAsync();
+        await _wordpressManagerLongChau.CheckContentFail();
     }
     
     // public async Task DoSyncSongKhoeMedplusArticles()
