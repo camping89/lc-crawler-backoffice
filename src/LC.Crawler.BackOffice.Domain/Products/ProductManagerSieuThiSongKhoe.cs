@@ -188,7 +188,7 @@ public class ProductManagerSieuThiSongKhoe : DomainService
                     var productMedias = medias.Where(_ => mediaUrls.Any(x => StringHtmlHelper.CompareUrls(_.Url, x))).ToList();
                     if (mediaUrls.Any())
                     {
-                        var newMedias = mediaUrls.Where(_ => !medias.Any(x => StringHtmlHelper.CompareUrls(_, x.Url))).Select(url => new Media()
+                        var newMedias = mediaUrls.Where(_ => !productMedias.Any(x => StringHtmlHelper.CompareUrls(_, x.Url))).Select(url => new Media()
                         {
                             Url         = url,
                             IsDowloaded = false

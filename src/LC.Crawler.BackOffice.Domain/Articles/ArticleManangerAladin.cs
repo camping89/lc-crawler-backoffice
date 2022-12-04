@@ -22,8 +22,10 @@ public class ArticleManangerAladin : DomainService
     private readonly ICategoryAladinRepository _categoryAladinRepository;
     private readonly IMediaAladinRepository _mediaAladinRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
-    
-    public ArticleManangerAladin(IArticleAladinRepository articleAladinRepository, ICategoryAladinRepository categoryAladinRepository, IMediaAladinRepository mediaAladinRepository, IDataSourceRepository dataSourceRepository)
+
+    public ArticleManangerAladin(IArticleAladinRepository articleAladinRepository,
+        ICategoryAladinRepository categoryAladinRepository, IMediaAladinRepository mediaAladinRepository,
+        IDataSourceRepository dataSourceRepository)
     {
         _articleAladinRepository = articleAladinRepository;
         _categoryAladinRepository = categoryAladinRepository;
@@ -39,56 +41,65 @@ public class ArticleManangerAladin : DomainService
             return;
         }
 
-        var categories   = await _categoryAladinRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
+        var categories = await _categoryAladinRepository.GetListAsync(x => x.CategoryType == CategoryType.Article);
         var articleGroup = articles.GroupBy(_ => _.Url).ToList();
-        var index        = 1;
-        var total        = articleGroup.Count();
+        var index = 1;
+        var total = articleGroup.Count();
 
         Console.WriteLine($"Start import");
-        
+
         foreach (var rawArticles in articleGroup)
         {
             try
             {
                 Console.WriteLine($"Processing {index}/{total}");
-                
+
                 var article = rawArticles.First();
                 if (article.Content is null)
                 {
                     continue;
                 }
-                    
-                var articleEntity = await _articleAladinRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+
+                var articleEntity =
+                    await _articleAladinRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
                 if (articleEntity == null)
                 {
                     articleEntity = new Article(GuidGenerator.Create())
                     {
-                        Title        = article.Title,
-                        CreatedAt    = article.CreatedAt,
-                        Excerpt      = article.ShortDescription,
-                        Content      = article.Content,
+                        Title = article.Title,
+                        CreatedAt = article.CreatedAt,
+                        Excerpt = article.ShortDescription,
+                        Content = article.Content,
                         DataSourceId = dataSource.Id,
-                        Tags         = article.Tags,
-                        Url          = article.Url
+                        Tags = article.Tags,
+                        Url = article.Url
                     };
 
                     foreach (var raw in rawArticles)
                     {
-                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        if (!raw.Category.IsNotNullOrEmpty())
+                        {
+                            continue;
+                        }
+
+                        var category = categories.FirstOrDefault(x =>
+                            x.Name.Trim().Replace(" ", string.Empty).Equals(
+                                raw.Category.Trim().Replace(" ", string.Empty),
+                                StringComparison.InvariantCultureIgnoreCase));
                         if (category == null)
                         {
                             category = new Category()
                             {
-                                Name = raw.Category,
+                                Name = raw.Category.Trim(),
                                 CategoryType = CategoryType.Article
                             };
                             await _categoryAladinRepository.InsertAsync(category, true);
                             categories.Add(category);
                         }
-                        
+
                         articleEntity.AddCategory(category.Id);
                     }
-                    
+
                     if (article.FeatureImage.IsNotNullOrEmpty())
                     {
                         var media = new Media()
@@ -108,7 +119,7 @@ public class ArticleManangerAladin : DomainService
                         {
                             var medias = mediaUrls.Select(url => new Media()
                             {
-                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                Url = url.Contains("http") ? url : $"{dataSource.Url}{url}",
                                 IsDowloaded = false
                             }).ToList();
                             await _mediaAladinRepository.InsertManyAsync(medias);
@@ -123,11 +134,37 @@ public class ArticleManangerAladin : DomainService
                     }
 
                     await _articleAladinRepository.InsertAsync(articleEntity);
-                    
+
                     await CheckFormatEntity(articleEntity);
                 }
                 else
                 {
+                    foreach (var raw in rawArticles)
+                    {
+                        if (!raw.Category.IsNotNullOrEmpty())
+                        {
+                            continue;
+                        }
+
+                        articleEntity.RemoveAllCategories();
+                        var category = categories.FirstOrDefault(x =>
+                            x.Name.Trim().Replace(" ", string.Empty).Equals(
+                                raw.Category.Trim().Replace(" ", string.Empty),
+                                StringComparison.InvariantCultureIgnoreCase));
+                        if (category == null)
+                        {
+                            category = new Category()
+                            {
+                                Name = raw.Category.Trim(),
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categoryAladinRepository.InsertAsync(category, true);
+                            categories.Add(category);
+                        }
+
+                        articleEntity.AddCategory(category.Id);
+                    }
+
                     if (string.IsNullOrEmpty(articleEntity.Url))
                     {
                         articleEntity.Url = article.Url;
@@ -142,10 +179,10 @@ public class ArticleManangerAladin : DomainService
 
             index++;
         }
-        
+
         Console.WriteLine($"Finish import");
     }
-    
+
     /// <summary>
     /// Remove the entity in case having format exception (unicode types ...)
     /// </summary>
@@ -165,11 +202,12 @@ public class ArticleManangerAladin : DomainService
             }
         }
     }
-    
+
     public async Task<List<KeyValuePair<string, int>>> CountArticleByCategory()
     {
         var articles = await _articleAladinRepository.GetListAsync();
         var categories = await _categoryAladinRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
-        return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name,
+            articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
     }
 }

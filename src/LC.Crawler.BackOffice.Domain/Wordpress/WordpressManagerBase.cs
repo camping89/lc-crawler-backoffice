@@ -238,7 +238,7 @@ public class WordpressManagerBase : DomainService
                             foreach (var wpCate in wpCategoriesFilter)
                             {
                                 var parentCate = wooCategories.FirstOrDefault(x => x.Id == wpCate.Parent);
-                                if (parentCate != null && category.Name.Contains(parentCate.Name))
+                                if (parentCate != null && category.Name.Contains(parentCate.Name, StringComparison.InvariantCultureIgnoreCase))
                                 {
                                     var rootParent = wooCategories.FirstOrDefault(x => x.Id == parentCate.Parent);
                                     if ((rootParent != null && category.Name.Contains(rootParent.Name)) ||

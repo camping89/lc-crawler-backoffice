@@ -610,7 +610,7 @@ public class WooManangerBase : DomainService
                         foreach (var wooCate in wooCategoriesFilter)
                         {
                             var parentCate = wooCategories.FirstOrDefault(x => x.id == wooCate.parent);
-                            if (parentCate != null && category.Name.Contains(parentCate.name))
+                            if (parentCate != null && category.Name.Contains(parentCate.name, StringComparison.InvariantCultureIgnoreCase))
                             {
                                 var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
                                 if ((rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)

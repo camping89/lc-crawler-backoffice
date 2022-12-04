@@ -22,8 +22,10 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
     private readonly ICategorySucKhoeDoiSongRepository _categorySucKhoeDoiSongRepository;
     private readonly IMediaSucKhoeDoiSongRepository _mediaSucKhoeDoiSongRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
-    
-    public ArticleManangerSucKhoeDoiSong(IArticleSucKhoeDoiSongRepository articleSucKhoeDoiSongRepository, ICategorySucKhoeDoiSongRepository categorySucKhoeDoiSongRepository, IMediaSucKhoeDoiSongRepository mediaSucKhoeDoiSongRepository, IDataSourceRepository dataSourceRepository)
+
+    public ArticleManangerSucKhoeDoiSong(IArticleSucKhoeDoiSongRepository articleSucKhoeDoiSongRepository,
+        ICategorySucKhoeDoiSongRepository categorySucKhoeDoiSongRepository,
+        IMediaSucKhoeDoiSongRepository mediaSucKhoeDoiSongRepository, IDataSourceRepository dataSourceRepository)
     {
         _articleSucKhoeDoiSongRepository = articleSucKhoeDoiSongRepository;
         _categorySucKhoeDoiSongRepository = categorySucKhoeDoiSongRepository;
@@ -33,58 +35,64 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
 
     public async Task ProcessingDataAsync(List<ArticlePayload> articles)
     {
-        var dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
+        var dataSource =
+            await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
         if (dataSource == null)
         {
             return;
         }
 
-        var categories   = await _categorySucKhoeDoiSongRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
+        var categories =
+            await _categorySucKhoeDoiSongRepository.GetListAsync(x => x.CategoryType == CategoryType.Article);
         var articleGroup = articles.GroupBy(_ => _.Url).ToList();
-        var index        = 1;
-        var total        = articleGroup.Count();
-        
+        var index = 1;
+        var total = articleGroup.Count();
+
         Console.WriteLine($"Start import");
-        
+
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
             try
             {
                 Console.WriteLine($"Processing {index}/{total}");
-                
+
                 var article = rawArticles.First();
                 if (article.Content is null)
                 {
                     continue;
                 }
-                
-                var articleEntity = await _articleSucKhoeDoiSongRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+
+                var articleEntity =
+                    await _articleSucKhoeDoiSongRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
                 if (articleEntity == null)
                 {
                     articleEntity = new Article(GuidGenerator.Create())
                     {
-                        Title        = article.Title,
-                        CreatedAt    = article.CreatedAt,
-                        Excerpt      = article.ShortDescription,
-                        Content      = article.Content,
+                        Title = article.Title,
+                        CreatedAt = article.CreatedAt,
+                        Excerpt = article.ShortDescription,
+                        Content = article.Content,
                         DataSourceId = dataSource.Id,
-                        Tags         = article.Tags,
-                        Url          = article.Url
+                        Tags = article.Tags,
+                        Url = article.Url
                     };
                     foreach (var raw in rawArticles)
                     {
-                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        var category = categories.FirstOrDefault(x =>
+                            x.Name.Trim().Replace(" ", string.Empty).Equals(
+                                raw.Category.Trim().Replace(" ", string.Empty),
+                                StringComparison.InvariantCultureIgnoreCase));
                         if (category == null)
                         {
                             category = new Category()
                             {
-                                Name = raw.Category,
+                                Name = raw.Category.Trim(),
                                 CategoryType = CategoryType.Article
                             };
                             await _categorySucKhoeDoiSongRepository.InsertAsync(category, true);
                             categories.Add(category);
                         }
-                        
+
                         articleEntity.AddCategory(category.Id);
                     }
 
@@ -107,7 +115,7 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
                         {
                             var medias = mediaUrls.Select(url => new Media()
                             {
-                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                Url = url.Contains("http") ? url : $"{dataSource.Url}{url}",
                                 IsDowloaded = false
                             }).ToList();
                             await _mediaSucKhoeDoiSongRepository.InsertManyAsync(medias);
@@ -122,11 +130,37 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
                     }
 
                     await _articleSucKhoeDoiSongRepository.InsertAsync(articleEntity);
-                    
+
                     await CheckFormatEntity(articleEntity);
                 }
                 else
                 {
+                    foreach (var raw in rawArticles)
+                    {
+                        if (!raw.Category.IsNotNullOrEmpty())
+                        {
+                            continue;
+                        }
+
+                        articleEntity.RemoveAllCategories();
+                        var category = categories.FirstOrDefault(x =>
+                            x.Name.Trim().Replace(" ", string.Empty).Equals(
+                                raw.Category.Trim().Replace(" ", string.Empty),
+                                StringComparison.InvariantCultureIgnoreCase));
+                        if (category == null)
+                        {
+                            category = new Category()
+                            {
+                                Name = raw.Category.Trim(),
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categorySucKhoeDoiSongRepository.InsertAsync(category, true);
+                            categories.Add(category);
+                        }
+
+                        articleEntity.AddCategory(category.Id);
+                    }
+
                     if (string.IsNullOrEmpty(articleEntity.Url))
                     {
                         articleEntity.Url = article.Url;
@@ -141,10 +175,10 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
 
             index++;
         }
-        
+
         Console.WriteLine($"Finish import");
     }
-    
+
     /// <summary>
     /// Remove the entity in case having format exception (unicode types ...)
     /// </summary>
@@ -164,11 +198,13 @@ public class ArticleManangerSucKhoeDoiSong : DomainService
             }
         }
     }
-    
+
     public async Task<List<KeyValuePair<string, int>>> CountArticleByCategory()
     {
         var articles = await _articleSucKhoeDoiSongRepository.GetListAsync();
-        var categories = await _categorySucKhoeDoiSongRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
-        return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+        var categories =
+            await _categorySucKhoeDoiSongRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
+        return categories.Select(category => new KeyValuePair<string, int>(category.Name,
+            articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
     }
 }

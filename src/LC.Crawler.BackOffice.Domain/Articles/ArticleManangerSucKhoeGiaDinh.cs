@@ -57,7 +57,6 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                 {
                     continue;
                 }
-                
                 var articleEntity = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
                 if (articleEntity == null)
                 {
@@ -71,20 +70,24 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                         Tags         = article.Tags,
                         Url          = article.Url
                     };
+                    
                     foreach (var raw in rawArticles)
                     {
-                        var category = categories.FirstOrDefault(x => x.Name == raw.Category);
+                        if (!raw.Category.IsNotNullOrEmpty())
+                        {
+                            continue;
+                        }
+                                                var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
                         if (category == null)
                         {
                             category = new Category()
                             {
-                                Name = raw.Category,
+                                Name = raw.Category.Trim(),
                                 CategoryType = CategoryType.Article
                             };
                             await _categorySucKhoeGiaDinhRepository.InsertAsync(category, true);
                             categories.Add(category);
                         }
-                        
                         articleEntity.AddCategory(category.Id);
                     }
 
@@ -127,6 +130,28 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                 }
                 else
                 {
+                    foreach (var raw in rawArticles)
+                    {
+                        if (!raw.Category.IsNotNullOrEmpty())
+                        {
+                            continue;
+                        }
+
+                        articleEntity.RemoveAllCategories();
+                                                var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
+                        if (category == null)
+                        {
+                            category = new Category()
+                            {
+                                Name = raw.Category.Trim(),
+                                CategoryType = CategoryType.Article
+                            };
+                            await _categorySucKhoeGiaDinhRepository.InsertAsync(category, true);
+                            categories.Add(category);
+                        }
+                        articleEntity.AddCategory(category.Id);
+                    }
+                    
                     if (string.IsNullOrEmpty(articleEntity.Url))
                     {
                         articleEntity.Url = article.Url;
