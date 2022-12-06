@@ -138,12 +138,9 @@ public class WordpressManagerBase : DomainService
             }
         }
     }
-    public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, List<Tag> wooTags)
+    public async Task<Post> DoSyncPostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, List<Tag> wooTags, MediaItem featureMedia)
     {
         var client = await InitClient(dataSource);
-        
-        var featureMedia = await PostMediaAsync(dataSource, articleNav.Media);
-        var contentMedias = await PostMediasAsync(dataSource, articleNav);
 
         var article = articleNav.Article;
         article.Content = ReplaceImageUrls(article.Content, articleNav.Medias);
@@ -224,7 +221,7 @@ public class WordpressManagerBase : DomainService
 
                     var categoriesTerms = category.Name.Split("->").Select(x=>x.Trim()).ToList();
 
-                    var encodeName = categoriesTerms.LastOrDefault()?.Replace("&", "&amp;").Trim();
+                    var encodeName = categoriesTerms.LastOrDefault()?.Trim();
 
                     var wpCategory = wooCategories.FirstOrDefault(x =>
                         encodeName != null && x.Name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
@@ -316,7 +313,7 @@ public class WordpressManagerBase : DomainService
         return newHtml;
     }
 
-    private async Task<List<MediaItem>> PostMediasAsync(DataSource dataSource,
+    public async Task<List<MediaItem>> PostMediasAsync(DataSource dataSource,
         ArticleWithNavigationProperties articleNav)
     {
         if (articleNav is { Medias: { } })
@@ -350,8 +347,9 @@ public class WordpressManagerBase : DomainService
                 continue;
             }
 
-            var categoriesTerms = cateStr.Split("->").ToList();
-            var cateName = categoriesTerms.FirstOrDefault()?.Trim().Replace("&", "&amp;");
+            var handleCateStr = cateStr.Replace("&", "&amp;").Trim();
+            var categoriesTerms = handleCateStr.Split("->").ToList();
+            var cateName = categoriesTerms.FirstOrDefault()?.Trim();
             var wooRootCategory =
                 wooCategories.FirstOrDefault(x =>
                     x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
@@ -379,7 +377,7 @@ public class WordpressManagerBase : DomainService
                 {
                     try
                     {
-                        var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
+                        var subCateName = categoriesTerms[i].Trim();
                         var wooSubCategory = wooCategories.FirstOrDefault(x =>
                             x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) &&
                             x.Parent == cateParent.Id);
@@ -518,10 +516,14 @@ public class WordpressManagerBase : DomainService
         currentLog.ExtraProperties.Add("C_ExToString", ex.ToString());
     }
 
-    public async Task DoUpdatePostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, Post post)
+    public async Task DoUpdatePostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, Post post, MediaItem featureMedia)
     {
         var client = await InitClient(dataSource);
         post.Content.Raw = ReplaceImageUrls(articleNav.Article.Content, articleNav.Medias);
+        if (featureMedia is not null)
+        {
+            post.FeaturedMedia = featureMedia.Id;
+        }
         await AddPostCategories(articleNav, client, post, dataSource.Url);
         await client.Posts.UpdateAsync(post);
     }
@@ -585,11 +587,6 @@ public class WordpressManagerBase : DomainService
         post.Title.Raw   = article.Title;
         post.Excerpt.Raw = article.Excerpt;
         
-        foreach (var media in medias)
-        {
-            await PostMediaAsync(dataSource, media);
-            
-        }
         if (medias.IsNotNullOrEmpty())
         {
             article.Content  = ReplaceImageUrls(article.Content, medias);

@@ -23,29 +23,29 @@ namespace LC.Crawler.BackOffice.Wordpress;
 
 public class WordpressManagerLongChau : DomainService
 {
-    private readonly IArticleLongChauRepository  _articleLongChauRepository;
-    private readonly IMediaLongChauRepository    _mediaLongChauRepository;
+    private readonly IArticleLongChauRepository _articleLongChauRepository;
+    private readonly IMediaLongChauRepository _mediaLongChauRepository;
     private readonly ICategoryLongChauRepository _categoryLongChauRepository;
-    private readonly IDataSourceRepository       _dataSourceRepository;
-    private          DataSource                  _dataSource;
-    private readonly WordpressManagerBase        _wordpressManagerBase;
-    private readonly IAuditingManager            _auditingManager;
+    private readonly IDataSourceRepository _dataSourceRepository;
+    private DataSource _dataSource;
+    private readonly WordpressManagerBase _wordpressManagerBase;
+    private readonly IAuditingManager _auditingManager;
     private readonly DataSourceManager _dataSourceManager;
-    
-    public WordpressManagerLongChau(IArticleLongChauRepository  articleLongChauRepository, 
-                                    IMediaLongChauRepository    mediaLongChauRepository, 
-                                    IDataSourceRepository       dataSourceRepository, 
-                                    ICategoryLongChauRepository categoryLongChauRepository,
-                                    WordpressManagerBase        wordpressManagerBase,
-                                    IAuditingManager            auditingManager,
-                                    DataSourceManager dataSourceManager)
+
+    public WordpressManagerLongChau(IArticleLongChauRepository articleLongChauRepository,
+        IMediaLongChauRepository mediaLongChauRepository,
+        IDataSourceRepository dataSourceRepository,
+        ICategoryLongChauRepository categoryLongChauRepository,
+        WordpressManagerBase wordpressManagerBase,
+        IAuditingManager auditingManager,
+        DataSourceManager dataSourceManager)
     {
-        _articleLongChauRepository  = articleLongChauRepository;
-        _mediaLongChauRepository    = mediaLongChauRepository;
-        _dataSourceRepository       = dataSourceRepository;
+        _articleLongChauRepository = articleLongChauRepository;
+        _mediaLongChauRepository = mediaLongChauRepository;
+        _dataSourceRepository = dataSourceRepository;
         _categoryLongChauRepository = categoryLongChauRepository;
-        _wordpressManagerBase       = wordpressManagerBase;
-        _auditingManager            = auditingManager;
+        _wordpressManagerBase = wordpressManagerBase;
+        _auditingManager = auditingManager;
         _dataSourceManager = dataSourceManager;
     }
 
@@ -53,25 +53,28 @@ public class WordpressManagerLongChau : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
+        if (_dataSource == null)
         {
             return;
         }
-        
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
-        
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle,
+            PageSyncStatus.InProgress);
+
         // get article ids
-        var limitDate = new DateTime(2018, 01, 01); 
+        var limitDate = new DateTime(2018, 01, 01);
         var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null 
-                                                                     && x.LastSyncedAt == null
-                                                                     && x.CreatedAt >= limitDate)
-                        .Select(x=>x.Id).ToList();
+            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null
+                                                         && x.LastSyncedAt == null
+                                                         && x.CreatedAt >= limitDate)
+            .Select(x => x.Id).ToList();
 
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
-        
+
+        var count = 0;
+        var total = articleIds.Count;
         // sync articles to wp
         foreach (var articleId in articleIds)
         {
@@ -79,31 +82,38 @@ public class WordpressManagerLongChau : DomainService
 
             try
             {
+                count++;
+                Console.WriteLine($"Progressing: {count}/{total}");
                 var articleNav = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
-                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+
+                var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
+                await _wordpressManagerBase.PostMediasAsync(_dataSource, articleNav);
+                
+                if (articleNav.Media is not null)
+                {
+                    await _mediaLongChauRepository.UpdateAsync(articleNav.Media, true);
+                }
+
+                if (articleNav.Medias.IsNotNullOrEmpty())
+                {
+                    await _mediaLongChauRepository.UpdateManyAsync(articleNav.Medias, true);
+                }
+
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags, featureMedia);
                 if (post is not null)
                 {
                     var article = await _articleLongChauRepository.GetAsync(articleId);
-                    article.ExternalId   = post.Id.To<int>();
+                    article.ExternalId = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleLongChauRepository.UpdateAsync(article, true);
-                
-                    if (articleNav.Media is not null) 
-                    {
-                        await _mediaLongChauRepository.UpdateAsync(articleNav.Media, true);
-                    }
-
-                    if (articleNav.Medias.IsNotNullOrEmpty())
-                    {
-                        await _mediaLongChauRepository.UpdateManyAsync(articleNav.Medias, true);
-                    }
                 }
             }
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, 
-                                                   $"{articleId}", PageDataSourceConsts.LongChauUrl, "DoSyncPostAsync");
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex,
+                    $"{articleId}", PageDataSourceConsts.LongChauUrl, "DoSyncPostAsync");
+                Console.WriteLine($"Error ArticleId: {articleId}");
             }
             finally
             {
@@ -111,11 +121,12 @@ public class WordpressManagerLongChau : DomainService
                 await auditingScope.SaveAsync();
             }
         }
-        
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.Completed);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle,
+            PageSyncStatus.Completed);
     }
-    
+
     public async Task DoReSyncPostAsync()
     {
         // get data source
@@ -124,40 +135,47 @@ public class WordpressManagerLongChau : DomainService
         {
             return;
         }
-        
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.InProgress);
-        
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle,
+            PageSyncStatus.InProgress);
+
         // get all posts
-        var client   = await _wordpressManagerBase.InitClient(_dataSource);
+        var client = await _wordpressManagerBase.InitClient(_dataSource);
         var allPosts = await _wordpressManagerBase.GetAllPosts(_dataSource, client);
 
         // sync articles from wp
         foreach (var post in allPosts)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            
+
             try
             {
-                var article = await _articleLongChauRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>()) 
-                           ?? await _articleLongChauRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
+                var article =
+                    await _articleLongChauRepository.FirstOrDefaultAsync(x => x.ExternalId == post.Id.To<int>())
+                    ?? await _articleLongChauRepository.FirstOrDefaultAsync(x => x.Title.Equals(post.Title.Rendered));
                 if (article is not null)
                 {
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
-                    var medias   = await _mediaLongChauRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
-                    await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
-                    
+                    var medias = await _mediaLongChauRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
+                    foreach (var media in medias)
+                    {
+                        await _wordpressManagerBase.PostMediaAsync(_dataSource, media);
+                    }
                     await _mediaLongChauRepository.UpdateManyAsync(medias);
                     
-                    article.LastSyncedAt =   DateTime.UtcNow;
-                    article.ExternalId   ??= post.Id.To<int>();
+                    await _wordpressManagerBase.UpdatePostDetails(_dataSource, post, article, medias, client);
+                    
+                    article.LastSyncedAt = DateTime.UtcNow;
+                    article.ExternalId ??= post.Id.To<int>();
                     await _articleLongChauRepository.UpdateAsync(article, true);
-                }   
+                }
             }
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, null, PageDataSourceConsts.LongChauUrl, "DoReSyncPostAsync");
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, null,
+                    PageDataSourceConsts.LongChauUrl, "DoReSyncPostAsync");
             }
             finally
             {
@@ -165,9 +183,10 @@ public class WordpressManagerLongChau : DomainService
                 await auditingScope.SaveAsync();
             }
         }
-        
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle, PageSyncStatus.Completed);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncArticle,
+            PageSyncStatus.Completed);
     }
 
     public async Task DoSyncCategoriesAsync()
@@ -179,7 +198,7 @@ public class WordpressManagerLongChau : DomainService
         }
 
         var categories = (await _categoryLongChauRepository.GetListAsync(x => x.CategoryType == CategoryType.Article))
-                        .Select(x => x.Name).Distinct().ToList();
+            .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
     }
@@ -191,14 +210,19 @@ public class WordpressManagerLongChau : DomainService
         {
             return;
         }
-        
+
         var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
             .Where(x => x.DataSourceId == _dataSource.Id)
-            .Select(x=>x.Id).ToList();
-        
+            .Select(x => x.Id).ToList();
+
+        var categories = await _categoryLongChauRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
+
+        var handleCategories = categories
+            .Where(_ => _.Name.IsNotNullOrEmpty() && _.Name.Contains("->") && _.Name.Split("->").LastOrDefault().Contains('&')).ToList();
+
         var client = new WordPressClient($"{_dataSource.PostToSite}/wp-json/");
         client.Auth.UseBasicAuth(_dataSource.Configuration.Username, _dataSource.Configuration.Password);
-        
+
         var posts = new List<Post>();
         var pageIndex = 1;
         while (true)
@@ -208,15 +232,16 @@ public class WordpressManagerLongChau : DomainService
             {
                 Statuses = new List<Status>()
                 {
-                    Status.Pending
+                    Status.Pending,
+                    Status.Publish
                 },
                 Page = pageIndex,
                 PerPage = 100
-            },true);
+            }, true);
 
             posts.AddRange(resultPosts);
             Console.WriteLine($"Page {pageIndex}");
-            
+
             if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
             {
                 break;
@@ -226,25 +251,28 @@ public class WordpressManagerLongChau : DomainService
         }
 
 
-
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
-           
+            var articleNav = await _articleLongChauRepository.GetWithNavigationPropertiesAsync(articleId);
+            
+            if(!articleNav.Categories.Any(_ => _.Id.IsIn(handleCategories.Select(x => x.Id).ToList())))
+                    continue;
+
             var wpPost = posts.FirstOrDefault(_ =>
                 _.Title.Rendered.Equals(articleNav.Article.Title, StringComparison.InvariantCultureIgnoreCase));
-            if(wpPost is null)
+            if (wpPost is null)
                 continue;
-            
+
             try
             {
-                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, wpPost);
+                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, wpPost, null);
             }
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.LongChauUrl);
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}",
+                    PageDataSourceConsts.LongChauUrl);
             }
             finally
             {
@@ -253,26 +281,27 @@ public class WordpressManagerLongChau : DomainService
             }
         }
     }
-    
-    public async Task CheckContentFail() {
+
+    public async Task CheckContentFail()
+    {
         // get article ids
         var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
-                        .Where(x => x.Content != null)
-                        .Select(x=> new
-                         {
-                             Id         = x.Id,
-                             CreateTime = x.CreationTime
-                         }).ToList().OrderByDescending(_ => _.CreateTime).Select(_ => _.Id).ToList();
-        
-        var index         = 1;
-        var total         = articleIds.Count();
+            .Where(x => x.Content != null)
+            .Select(x => new
+            {
+                Id = x.Id,
+                CreateTime = x.CreationTime
+            }).ToList().OrderByDescending(_ => _.CreateTime).Select(_ => _.Id).ToList();
+
+        var index = 1;
+        var total = articleIds.Count();
         var articleErrors = new List<Guid>();
-        
+
         // sync articles to wp
         foreach (var articleId in articleIds)
         {
             Console.WriteLine($"Processing {index}/{total}");
-            
+
             try
             {
                 var articleNav = await _articleLongChauRepository.GetAsync(articleId);
@@ -286,8 +315,8 @@ public class WordpressManagerLongChau : DomainService
 
             index++;
         }
-        
-        
+
+
         Console.WriteLine($"TOTAL---------------- {articleErrors.Count()}");
     }
 }

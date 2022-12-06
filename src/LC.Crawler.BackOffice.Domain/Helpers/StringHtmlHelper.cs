@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HtmlAgilityPack;
+using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
 
 namespace LC.Crawler.BackOffice.Helpers;
@@ -27,13 +28,16 @@ public static class StringHtmlHelper
             }
             else
             {
-                var src = node.Attributes[@"src"].Value;
-                var media = medias.FirstOrDefault(x => x.Url.Contains(src));
-            
-                if (media != null)
+                var src = node.Attributes[@"src"]?.Value;
+                if (src.IsNotNullOrEmpty())
                 {
-                    node.Attributes.Add("@media-id", $"media/{media.Id}");
-                    node.SetAttributeValue("src", string.Empty);
+                    var media = medias.FirstOrDefault(x => x.Url.Contains(src));
+            
+                    if (media != null)
+                    {
+                        node.Attributes.Add("@media-id", $"media/{media.Id}");
+                        node.SetAttributeValue("src", string.Empty);
+                    }
                 }
             }
         }

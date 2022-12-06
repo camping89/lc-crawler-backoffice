@@ -48,7 +48,7 @@ public class WordpressManagerBlogSucKhoe : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.BlogSucKhoeUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
+        if (_dataSource == null)
         {
             return;
         }
@@ -67,6 +67,8 @@ public class WordpressManagerBlogSucKhoe : DomainService
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
 
+        var count = 0;
+        var total = articleIds.Count;
         // sync articles to wp
         foreach (var articleId in articleIds)
         {
@@ -74,24 +76,30 @@ public class WordpressManagerBlogSucKhoe : DomainService
             
             try
             {
+                count++;
+                Console.WriteLine($"Progressing: {count}/{total}");
                 var articleNav = await _articleBlogSucKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
-                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                
+                var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
+                await _wordpressManagerBase.PostMediasAsync(_dataSource, articleNav);
+                
+                if (articleNav.Media is not null)
+                {
+                    await _mediaBlogSucKhoeRepository.UpdateAsync(articleNav.Media, true);
+                }
+
+                if (articleNav.Medias.IsNotNullOrEmpty())
+                {
+                    await _mediaBlogSucKhoeRepository.UpdateManyAsync(articleNav.Medias, true);
+                }
+
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags, featureMedia);
                 if (post is not null) 
                 {
                     var article = await _articleBlogSucKhoeRepository.GetAsync(articleId);
                     article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleBlogSucKhoeRepository.UpdateAsync(article, true);
-
-                    if (articleNav.Media is not null) 
-                    {
-                        await _mediaBlogSucKhoeRepository.UpdateAsync(articleNav.Media, true);
-                    }
-
-                    if (articleNav.Medias.IsNotNullOrEmpty())
-                    {
-                        await _mediaBlogSucKhoeRepository.UpdateManyAsync(articleNav.Medias, true);
-                    }
                 }
             }
             catch (Exception ex)
@@ -140,11 +148,14 @@ public class WordpressManagerBlogSucKhoe : DomainService
                 {
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias   = await _mediaBlogSucKhoeRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
+                    foreach (var media in medias)
+                    {
+                        await _wordpressManagerBase.PostMediaAsync(_dataSource, media);
+                    }
+                    await _mediaBlogSucKhoeRepository.UpdateManyAsync(medias);
                     
                     await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
 
-                    await _mediaBlogSucKhoeRepository.UpdateManyAsync(medias);
-                    
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleBlogSucKhoeRepository.UpdateAsync(article, true);

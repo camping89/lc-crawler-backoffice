@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
@@ -12,6 +13,9 @@ using Volo.Abp.Auditing;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using WordPressPCL;
+using WordPressPCL.Models;
+using WordPressPCL.Utility;
 using WooCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -91,23 +95,27 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                 var articleNav = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(articleId);
                 if (articleNav.Categories.Any(_ => !_.Id.IsIn(categoryIds))) continue;
                 
-                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
+                await _wordpressManagerBase.PostMediasAsync(_dataSource, articleNav);
+                
+                if (articleNav.Media is not null)
+                {
+                    await _mediaSucKhoeDoiSongRepository.UpdateAsync(articleNav.Media, true);
+                }
+
+                if (articleNav.Medias.IsNotNullOrEmpty())
+                {
+                    await _mediaSucKhoeDoiSongRepository.UpdateManyAsync(articleNav.Medias, true);
+                }
+
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags, featureMedia);
+                
                 if (post is not null) 
                 {
                     var article = await _articleSucKhoeDoiSongRepository.GetAsync(articleId);
                     article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSucKhoeDoiSongRepository.UpdateAsync(article, true);
-
-                    if (articleNav.Media is not null) 
-                    {
-                        await _mediaSucKhoeDoiSongRepository.UpdateAsync(articleNav.Media, true);
-                    }
-
-                    if (articleNav.Medias.IsNotNullOrEmpty())
-                    {
-                        await _mediaSucKhoeDoiSongRepository.UpdateManyAsync(articleNav.Medias, true);
-                    }
                 }
             }
             catch (Exception ex)
@@ -159,10 +167,13 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                 {
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias   = await _mediaSucKhoeDoiSongRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
+                    foreach (var media in medias)
+                    {
+                        await _wordpressManagerBase.PostMediaAsync(_dataSource, media);
+                    }
+                    await _mediaSucKhoeDoiSongRepository.UpdateManyAsync(medias);
                     
                     await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
-
-                    await _mediaSucKhoeDoiSongRepository.UpdateManyAsync(medias);
 
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
@@ -229,6 +240,76 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             }
 
             index++;
+        }
+    }
+    
+    public async Task DoUpdatePostAsync()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+        
+        var articleIds = (await _articleSucKhoeDoiSongRepository.GetQueryableAsync())
+            .Where(x => x.DataSourceId == _dataSource.Id)
+            .Select(x=>x.Id).ToList();
+        
+        var client = new WordPressClient($"{_dataSource.PostToSite}/wp-json/");
+        client.Auth.UseBasicAuth(_dataSource.Configuration.Username, _dataSource.Configuration.Password);
+        
+        var posts = new List<Post>();
+        var pageIndex = 1;
+        while (true)
+        {
+            //var route = "posts".SetQueryParam("status", "pending").SetQueryParam("per_page", "100").SetQueryParam("page", pageIndex.ToString());
+            var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+            {
+                Statuses = new List<Status>()
+                {
+                    Status.Pending
+                },
+                Page = pageIndex,
+                PerPage = 100
+            },true);
+
+            posts.AddRange(resultPosts);
+            Console.WriteLine($"Page {pageIndex}");
+            
+            if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
+            {
+                break;
+            }
+
+            pageIndex++;
+        }
+
+
+
+        foreach (var articleId in articleIds)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            var       articleNav    = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(articleId);
+           
+            var wpPost = posts.FirstOrDefault(_ =>
+                _.Title.Rendered.Equals(articleNav.Article.Title, StringComparison.InvariantCultureIgnoreCase));
+            if(wpPost is null)
+                continue;
+            
+            try
+            {
+                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, wpPost, null);
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.LongChauUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
         }
     }
 }

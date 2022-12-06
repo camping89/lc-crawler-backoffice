@@ -76,23 +76,27 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
             try
             {
                 var articleNav = await _articleSucKhoeGiaDinhRepository.GetWithNavigationPropertiesAsync(articleId);
-                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+
+                var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
+                await _wordpressManagerBase.PostMediasAsync(_dataSource, articleNav);
+                
+                if (articleNav.Media is not null)
+                {
+                    await _mediaSucKhoeGiaDinhRepository.UpdateAsync(articleNav.Media, true);
+                }
+
+                if (articleNav.Medias.IsNotNullOrEmpty())
+                {
+                    await _mediaSucKhoeGiaDinhRepository.UpdateManyAsync(articleNav.Medias, true);
+                }
+
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags, featureMedia);
                 if (post is not null)
                 {
                     var article = await _articleSucKhoeGiaDinhRepository.GetAsync(articleId);
                     article.ExternalId = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSucKhoeGiaDinhRepository.UpdateAsync(article, true);
-
-                    if (articleNav.Media is not null)
-                    {
-                        await _mediaSucKhoeGiaDinhRepository.UpdateAsync(articleNav.Media, true);
-                    }
-
-                    if (articleNav.Medias.IsNotNullOrEmpty())
-                    {
-                        await _mediaSucKhoeGiaDinhRepository.UpdateManyAsync(articleNav.Medias, true);
-                    }
                 }
             }
             catch (Exception ex)
@@ -140,11 +144,14 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
                 {
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias = await _mediaSucKhoeGiaDinhRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
-
-                    await _wordpressManagerBase.UpdatePostDetails(_dataSource, post, article, medias, client);
-
+                    foreach (var media in medias)
+                    {
+                        await _wordpressManagerBase.PostMediaAsync(_dataSource, media);
+                    }
                     await _mediaSucKhoeGiaDinhRepository.UpdateManyAsync(medias);
-
+                    
+                    await _wordpressManagerBase.UpdatePostDetails(_dataSource, post, article, medias, client);
+                    
                     article.LastSyncedAt = DateTime.UtcNow;
                     article.ExternalId ??= post.Id.To<int>();
                     await _articleSucKhoeGiaDinhRepository.UpdateAsync(article, true);

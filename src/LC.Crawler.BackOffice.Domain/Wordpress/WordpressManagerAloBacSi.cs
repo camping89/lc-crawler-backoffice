@@ -130,23 +130,27 @@ public class WordpressManagerAloBacSi : DomainService
             try
             {
                 var articleNav = await _articleAloBacSiRepository.GetWithNavigationPropertiesAsync(articleId);
-                var post       = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags);
+                
+                var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
+                await _wordpressManagerBase.PostMediasAsync(_dataSource, articleNav);
+                
+                if (articleNav.Media is not null)
+                {
+                    await _mediaAloBacSiRepository.UpdateAsync(articleNav.Media, true);
+                }
+
+                if (articleNav.Medias.IsNotNullOrEmpty())
+                {
+                    await _mediaAloBacSiRepository.UpdateManyAsync(articleNav.Medias, true);
+                }
+
+                var post = await _wordpressManagerBase.DoSyncPostAsync(_dataSource, articleNav, wpTags, featureMedia);
                 if (post is not null) 
                 {
                     var article = await _articleAloBacSiRepository.GetAsync(articleId);
                     article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleAloBacSiRepository.UpdateAsync(article, true);
-                
-                    if (articleNav.Media is not null) 
-                    {
-                        await _mediaAloBacSiRepository.UpdateAsync(articleNav.Media, true);
-                    }
-
-                    if (articleNav.Medias.IsNotNullOrEmpty())
-                    {
-                        await _mediaAloBacSiRepository.UpdateManyAsync(articleNav.Medias, true);
-                    }
                 }
             }
             catch (Exception ex)
@@ -195,11 +199,14 @@ public class WordpressManagerAloBacSi : DomainService
                     var mediaIds = article.Medias?.Select(x => x.MediaId).ToList();
                     var medias   = await _mediaAloBacSiRepository.GetListAsync(_ => mediaIds.Contains(_.Id));
                     
+                    foreach (var media in medias)
+                    {
+                        await _wordpressManagerBase.PostMediaAsync(_dataSource, media);
+                    }
+                    await _mediaAloBacSiRepository.UpdateManyAsync(medias);
+                    
                     await _wordpressManagerBase.UpdatePostDetails(_dataSource,post, article, medias, client);
 
-                    await _mediaAloBacSiRepository.UpdateManyAsync(medias);
-                    await _mediaAloBacSiRepository.UpdateManyAsync(medias);
-                   
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleAloBacSiRepository.UpdateAsync(article, true);
