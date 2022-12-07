@@ -31,6 +31,24 @@ public static class FileExtendHelper
         return null;
     }
     
+    public static async Task<Stream?> DownloadFileStream(string url)
+    {
+        try
+        {
+            HttpClientHandler clientHandler = new HttpClientHandler();
+            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+            clientHandler.UseDefaultCredentials = true;
+
+            using var client = new HttpClient(clientHandler);
+            client.DefaultRequestHeaders.Add("User-Agent", "Other");
+            return await client.GetStreamAsync(url);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+    
     public static async Task<string> DownloadSvgFile(string url)
     {
         try

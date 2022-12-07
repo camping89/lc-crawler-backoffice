@@ -300,7 +300,11 @@ public class WordpressManagerBase : DomainService
         htmlDoc.LoadHtml(contentHtml);
         foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
         {
-            var mediaIdAttributeValue = node.Attributes["@media-id"].Value;
+            var mediaIdAttributeValue = node.Attributes["@media-id"]?.Value;
+            if (!mediaIdAttributeValue.IsNotNullOrEmpty())
+            {
+                continue;
+            }
             var media = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
 
             if (media != null)
@@ -443,13 +447,13 @@ public class WordpressManagerBase : DomainService
             }
             else
             {
-                var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
-                if (fileBytes is null) return null;
-
-                using var stream = new MemoryStream(fileBytes);
+                var stream = await FileExtendHelper.DownloadFileStream(media.Url);
                 var fileName = $"{media.Id}{fileExtension}";
 
-                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                if (stream is not null)
+                {
+                    mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                }
             }
 
             media.ExternalId = mediaResult.Id.ToString();
@@ -530,6 +534,7 @@ public class WordpressManagerBase : DomainService
 
     public async Task<List<Tag>> GetAllTags(DataSource dataSource)
     {
+        Console.WriteLine($"Get Tags");
         var client = await InitClient(dataSource);
         return (await client.Tags.GetAllAsync(useAuth: true)).ToList();
     }
@@ -560,7 +565,6 @@ public class WordpressManagerBase : DomainService
                     PerPage = 100,
                 
                 },true);
-                
                 wpPosts.AddRange(resultPosts);
             }
             catch (Exception e)
