@@ -17,26 +17,33 @@ public static class StringHtmlHelper
         {
             if (node.Attributes.Any(x =>x.Name == "data-src"))
             {
-                var src = node.Attributes[@"data-src"].Value;
-                var media = medias.FirstOrDefault(x => x.Url.Contains(src));
-            
-                if (media != null)
+                var nodeDataAttr = node.Attributes[@"data-src"];
+                if (nodeDataAttr is not null)
                 {
-                    node.Attributes.Add("@media-id", $"media/{media.Id}");
-                    node.SetAttributeValue("src", string.Empty);
-                }
-            }
-            else
-            {
-                var src = node.Attributes[@"src"]?.Value;
-                if (src.IsNotNullOrEmpty())
-                {
+                    var src   = nodeDataAttr.Value;
                     var media = medias.FirstOrDefault(x => x.Url.Contains(src));
             
                     if (media != null)
                     {
                         node.Attributes.Add("@media-id", $"media/{media.Id}");
                         node.SetAttributeValue("src", string.Empty);
+                    }
+                }
+            }
+            else
+            {
+                var nodeSrcAttr = node.Attributes[@"src"];
+                if (nodeSrcAttr is not null)
+                {
+                    var src = nodeSrcAttr?.Value;
+                    if (src.IsNotNullOrEmpty())
+                    {
+                        var media = medias.FirstOrDefault(x => x.Url.Contains(src));
+                        if (media != null)
+                        {
+                            node.Attributes.Add("@media-id", $"media/{media.Id}");
+                            node.SetAttributeValue("src", string.Empty);
+                        }
                     }
                 }
             }
@@ -52,12 +59,15 @@ public static class StringHtmlHelper
         htmlDoc.LoadHtml(contentHtml);
         foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
         {
-            var mediaIdAttributeValue = node.Attributes["@media-id"].Value;
-            var media = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
-    
-            if (media != null)
+            var nodeMediaAttr         = node.Attributes["@media-id"];
+            if (nodeMediaAttr is not null)
             {
-                node.SetAttributeValue("src", media.ExternalUrl);
+                var mediaIdAttributeValue = nodeMediaAttr.Value;
+                var media                 = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
+                if (media != null)
+                {
+                    node.SetAttributeValue("src", media.ExternalUrl);
+                }
             }
         }
     

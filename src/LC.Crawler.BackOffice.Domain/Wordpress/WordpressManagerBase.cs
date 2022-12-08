@@ -456,9 +456,11 @@ public class WordpressManagerBase : DomainService
                 }
             }
 
-            media.ExternalId = mediaResult.Id.ToString();
-            media.ExternalUrl = mediaResult.SourceUrl;
-
+            if (mediaResult is not null)
+            {
+                media.ExternalId  = mediaResult.Id.ToString();
+                media.ExternalUrl = mediaResult.SourceUrl;
+            }
         }
         catch (Exception e)
         {
