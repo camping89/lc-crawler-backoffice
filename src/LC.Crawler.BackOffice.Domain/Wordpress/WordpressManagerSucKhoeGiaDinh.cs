@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -48,7 +50,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeGiaDinhUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
+        if (_dataSource is not { ShouldSyncArticle: true })
         {
             return;
         }
@@ -67,6 +69,9 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
 
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+        
+        var count = 0;
+        var total = articleIds.Count();
 
         // sync article to wp
         foreach (var articleId in articleIds)
@@ -75,6 +80,8 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
             
             try
             {
+                count++;
+                Console.WriteLine($"Progressing: {count}/{total}");
                 var articleNav = await _articleSucKhoeGiaDinhRepository.GetWithNavigationPropertiesAsync(articleId);
 
                 var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
@@ -97,6 +104,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
                     article.ExternalId = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSucKhoeGiaDinhRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article);
                 }
             }
             catch (Exception ex)
@@ -119,7 +127,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeGiaDinhUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSyncArticle)
+        if (_dataSource is not { ShouldReSyncArticle: true })
         {
             return;
         }
@@ -155,6 +163,7 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
                     article.LastSyncedAt = DateTime.UtcNow;
                     article.ExternalId ??= post.Id.To<int>();
                     await _articleSucKhoeGiaDinhRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article, "resync");
                 }
             }
             catch (Exception ex)
@@ -185,5 +194,25 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
             .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
+    }
+    
+    private async Task CheckFormatEntity(Article articleEntity, string type = "sync")
+    {
+        try
+        {
+            var checkArticle = await _articleSucKhoeGiaDinhRepository.GetAsync(articleEntity.Id);
+        }
+        catch (Exception e)
+        {
+            var date = DateTime.UtcNow;
+            var lines = new List<string>()
+            {
+                $"Exception: {e.Message}",
+                $"Article Id: {articleEntity.Id}"
+            };
+            var logFileName = $"C:\\Work\\ErrorLogs\\Sites\\rror-records_{type}_suckhoegiadinh_{date:dd-MM-yyyy_hh-mm}.txt";
+            await File.WriteAllLinesAsync(logFileName, lines);
+            throw;
+        }
     }
 }

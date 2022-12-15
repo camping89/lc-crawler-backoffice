@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using IdentityServer4.Extensions;
@@ -9,6 +10,7 @@ using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
 using LC.Crawler.BackOffice.Medias;
+using Newtonsoft.Json;
 using Volo.Abp.Auditing;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
@@ -52,7 +54,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
+        if (_dataSource is not { ShouldSyncArticle: true })
         {
             return;
         }
@@ -63,10 +65,10 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         // get article ids
         var limitDate = new DateTime(2018, 01, 01); 
         var articleIds = (await _articleSucKhoeDoiSongRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id 
-                                 && x.Content      != null 
-                                 && x.LastSyncedAt == null 
-                                 && x.CreatedAt >= limitDate)
+                        .Where(x => x.DataSourceId == _dataSource.Id
+                                    && x.Content      != null
+                                    && x.LastSyncedAt == null
+                                    && x.CreatedAt >= limitDate)
                         .Select(x=>x.Id).ToList();
         
         // get categories
@@ -116,6 +118,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                     article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSucKhoeDoiSongRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article);
                 }
             }
             catch (Exception ex)
@@ -178,6 +181,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleSucKhoeDoiSongRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article, "resync");
                 }   
             }
             catch (Exception ex)
@@ -310,6 +314,26 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
                 //Always save the log
                 await auditingScope.SaveAsync();
             }
+        }
+    }
+    
+    private async Task CheckFormatEntity(Article articleEntity, string type = "sync")
+    {
+        try
+        {
+            var checkArticle = await _articleSucKhoeDoiSongRepository.GetAsync(articleEntity.Id);
+        }
+        catch (Exception e)
+        {
+            var date = DateTime.UtcNow;
+            var lines = new List<string>()
+            {
+                $"Exception: {e.Message}",
+                $"Article Id: {articleEntity.Id}"
+            };
+            var logFileName = $"C:\\Work\\ErrorLogs\\Sites\\rror-records_{type}_suckhoedoisong_{date:dd-MM-yyyy_hh-mm}.txt";
+            await File.WriteAllLinesAsync(logFileName, lines);
+            throw;
         }
     }
 }

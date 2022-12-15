@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using IdentityServer4.Extensions;
@@ -10,6 +11,7 @@ using Volo.Abp.Domain.Services;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
+using Newtonsoft.Json;
 using Volo.Abp.Auditing;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
@@ -53,7 +55,7 @@ public class WordpressManagerLongChau : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
-        if (_dataSource == null)
+        if (_dataSource is not { ShouldSyncArticle: true })
         {
             return;
         }
@@ -106,6 +108,7 @@ public class WordpressManagerLongChau : DomainService
                     article.ExternalId = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleLongChauRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article);
                 }
             }
             catch (Exception ex)
@@ -131,7 +134,7 @@ public class WordpressManagerLongChau : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSyncArticle)
+        if (_dataSource is not { ShouldReSyncArticle: true })
         {
             return;
         }
@@ -169,6 +172,7 @@ public class WordpressManagerLongChau : DomainService
                     article.LastSyncedAt = DateTime.UtcNow;
                     article.ExternalId ??= post.Id.To<int>();
                     await _articleLongChauRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article, "resync");
                 }
             }
             catch (Exception ex)
@@ -315,8 +319,26 @@ public class WordpressManagerLongChau : DomainService
 
             index++;
         }
-
-
         Console.WriteLine($"TOTAL---------------- {articleErrors.Count()}");
+    }
+    
+    private async Task CheckFormatEntity(Article articleEntity, string type = "sync")
+    {
+        try
+        {
+            var checkArticle = await _articleLongChauRepository.GetAsync(articleEntity.Id);
+        }
+        catch (Exception e)
+        {
+            var date = DateTime.UtcNow;
+            var lines = new List<string>()
+            {
+                $"Exception: {e.Message}",
+                $"Article Id: {articleEntity.Id}"
+            };
+            var logFileName = $"C:\\Work\\ErrorLogs\\Sites\\rror-records_{type}_longchau_{date:dd-MM-yyyy_hh-mm}.txt";
+            await File.WriteAllLinesAsync(logFileName, lines);
+            throw;
+        }
     }
 }

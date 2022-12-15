@@ -43,7 +43,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
         var articleGroup = articles.GroupBy(_ => _.Url).ToList();
         var index        = 1;
         var total        = articleGroup.Count();
-
+        
         Console.WriteLine($"Start import");
         
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
@@ -57,7 +57,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                 {
                     continue;
                 }
-                var articleEntity = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Title.Equals(article.Title));
+                var articleEntity = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Url == rawArticles.Key);
                 if (articleEntity == null)
                 {
                     articleEntity = new Article(GuidGenerator.Create())
@@ -77,7 +77,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                         {
                             continue;
                         }
-                                                var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
+                        var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
                         if (category == null)
                         {
                             category = new Category()
@@ -195,5 +195,45 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
         var articles = await _articleSucKhoeGiaDinhRepository.GetListAsync();
         var categories = await _categorySucKhoeGiaDinhRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
         return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
+    }
+    
+    public async Task<List<string>> GetErrorEncodeData()
+    {
+        var errorIds = new List<string>();
+        var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync()).Select(x=>x.Id).ToList();
+        foreach (var id in articleIds)
+        {
+            try
+            {
+                var article = await _articleSucKhoeGiaDinhRepository.GetAsync(id);
+                if (!article.Medias.IsNotNullOrEmpty())
+                {
+                    continue;
+                }
+                foreach (var mediaId in article.Medias.Select(_ => _.MediaId).ToList())
+                {
+                    try
+                    {
+                        var media = await _mediaSucKhoeGiaDinhRepository.GetAsync(mediaId);
+                    }
+                    catch (Exception e)
+                    {
+                        errorIds.Add($"Message: {e.Message}");
+                        errorIds.Add($"Error In Article Id: {id} ---- Media Id: {mediaId}");
+                        Console.WriteLine($"");
+                        Console.WriteLine(e.Message);
+                        Console.WriteLine($"Media Id: {mediaId}");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                errorIds.Add($"Message: {e.Message}");
+                errorIds.Add($"Article Id: {id}");
+                Console.WriteLine(e.Message);
+                Console.WriteLine($"Article Id: {id}");
+            }
+        }
+        return errorIds;
     }
 }

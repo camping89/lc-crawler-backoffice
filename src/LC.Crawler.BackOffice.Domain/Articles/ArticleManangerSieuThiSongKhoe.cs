@@ -213,4 +213,44 @@ public class ArticleManangerSieuThiSongKhoe : DomainService
         return categories.Select(category => new KeyValuePair<string, int>(category.Name,
             articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
     }
+
+    public async Task<List<string>> GetErrorEncodeData()
+    {
+        var errorIds = new List<string>();
+        var articleIds = (await _articleSieuThiSongKhoeRepository.GetQueryableAsync()).Select(x=>x.Id).ToList();
+        foreach (var id in articleIds)
+        {
+            try
+            {
+                var article = await _articleSieuThiSongKhoeRepository.GetAsync(id);
+                if (!article.Medias.IsNotNullOrEmpty())
+                {
+                    continue;
+                }
+                foreach (var mediaId in article.Medias.Select(_ => _.MediaId).ToList())
+                {
+                    try
+                    {
+                        var media = await _mediaSieuThiSongKhoeRepository.GetAsync(mediaId);
+                    }
+                    catch (Exception e)
+                    {
+                        errorIds.Add($"Message: {e.Message}");
+                        errorIds.Add($"Error In Article Id: {id} ---- Media Id: {mediaId}");
+                        Console.WriteLine($"");
+                        Console.WriteLine(e.Message);
+                        Console.WriteLine($"Media Id: {mediaId}");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                errorIds.Add($"Message: {e.Message}");
+                errorIds.Add($"Article Id: {id}");
+                Console.WriteLine(e.Message);
+                Console.WriteLine($"Article Id: {id}");
+            }
+        }
+        return errorIds;
+    }
 }

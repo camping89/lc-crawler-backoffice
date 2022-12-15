@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Articles;
@@ -45,8 +47,9 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
     public async Task DoSyncPostAsync()
     {
         // get datasource
+        Console.WriteLine($"Start Sync: {PageDataSourceConsts.SieuThiSongKhoeUrl}");
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncArticle)
+        if (_dataSource is not { ShouldReSyncArticle: true })
         {
             return;
         }
@@ -65,14 +68,17 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
         
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
+        var count = 0;
+        var total = articleIds.Count;
         
         // sync articles to wp
         foreach (var articleId in articleIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            
             try
             {
+                count++;
+                Console.WriteLine($"Progressing: {count}/{total}");
                 var articleNav = await _articleSieuThiSongKhoeRepository.GetWithNavigationPropertiesAsync(articleId);
                 
                 var featureMedia = await _wordpressManagerBase.PostMediaAsync(_dataSource, articleNav.Media);
@@ -95,6 +101,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
                     article.ExternalId   = post.Id.To<int>();
                     article.LastSyncedAt = DateTime.UtcNow;
                     await _articleSieuThiSongKhoeRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article);
                 }
             }
             catch (Exception ex)
@@ -102,6 +109,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
                 //Add exceptions
                 _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", 
                                                    PageDataSourceConsts.SieuThiSongKhoeUrl, "DoSyncPostAsync");
+                Console.WriteLine(articleId);
             }
             finally
             {
@@ -119,7 +127,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSyncArticle)
+        if (_dataSource is not { ShouldReSyncArticle: true })
         {
             return;
         }
@@ -156,6 +164,7 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
                     article.LastSyncedAt =   DateTime.UtcNow;
                     article.ExternalId   ??= post.Id.To<int>();
                     await _articleSieuThiSongKhoeRepository.UpdateAsync(article, true);
+                    await CheckFormatEntity(article, "resync");
                 }   
             }
             catch (Exception ex)
@@ -187,5 +196,25 @@ public class WordpressManagerSieuThiSongKhoe : DomainService
                         .Select(x => x.Name).Distinct().ToList();
         // Category
         await _wordpressManagerBase.DoSyncCategoriesAsync(_dataSource, categories);
+    }
+    
+    private async Task CheckFormatEntity(Article articleEntity, string type = "sync")
+    {
+        try
+        {
+            var checkArticle = await _articleSieuThiSongKhoeRepository.GetAsync(articleEntity.Id);
+        }
+        catch (Exception e)
+        {
+            var date = DateTime.UtcNow;
+            var lines = new List<string>()
+            {
+                $"Exception: {e.Message}",
+                $"Article Id: {articleEntity.Id}"
+            };
+            var logFileName = $"C:\\Work\\ErrorLogs\\Sites\\error-records_{type}_sieuthisongkhoe_{date:dd-MM-yyyy_hh-mm}.txt";
+            await File.WriteAllLinesAsync(logFileName, lines);
+            throw;
+        }
     }
 }
