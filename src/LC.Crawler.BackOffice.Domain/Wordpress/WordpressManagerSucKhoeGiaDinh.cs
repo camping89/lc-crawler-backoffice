@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Extensions;
 using LC.Crawler.BackOffice.Articles;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
@@ -13,6 +14,9 @@ using Volo.Abp.Auditing;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using WordPressPCL;
+using WordPressPCL.Models;
+using WordPressPCL.Utility;
 using WooCategory = WordPressPCL.Models.Category;
 
 namespace LC.Crawler.BackOffice.Wordpress;
@@ -50,23 +54,19 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeGiaDinhUrl));
-        if (_dataSource is not { ShouldSyncArticle: true })
-        {
-            return;
-        }
+        // if (_dataSource is not { ShouldSyncArticle: true })
+        // {
+        //     return;
+        // }
 
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
 
         // get article ids
-        var limitDate = new DateTime(2018, 01, 01); 
+        var limitDate = DateTime.UtcNow.AddDays(-45);
         var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id 
-                     && x.Content != null 
-                     && x.LastSyncedAt == null 
-                     && x.CreatedAt >= limitDate)
+            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null).ToList().OrderByDescending(x => x.CreationTime).Take(200)
             .Select(x => x.Id).ToList();
-
         // get all tags
         var wpTags = await _wordpressManagerBase.GetAllTags(_dataSource);
         
@@ -213,6 +213,74 @@ public class WordpressManagerSucKhoeGiaDinh : DomainService
             var logFileName = $"C:\\Work\\ErrorLogs\\Sites\\rror-records_{type}_suckhoegiadinh_{date:dd-MM-yyyy_hh-mm}.txt";
             await File.WriteAllLinesAsync(logFileName, lines);
             throw;
+        }
+    }
+    
+    public async Task DoUpdatePostAsync()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeGiaDinhUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+        
+        var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync())
+            .Where(x => x.DataSourceId == _dataSource.Id)
+            .Select(x=>x.Id).ToList();
+        
+        var client = new WordPressClient($"{_dataSource.PostToSite}/wp-json/");
+        client.Auth.UseBasicAuth(_dataSource.Configuration.Username, _dataSource.Configuration.Password);
+        
+        var posts = new List<Post>();
+        var pageIndex = 1;
+        while (true)
+        {
+            //var route = "posts".SetQueryParam("status", "pending").SetQueryParam("per_page", "100").SetQueryParam("page", pageIndex.ToString());
+            var resultPosts = await client.Posts.QueryAsync(new PostsQueryBuilder()
+            {
+                Statuses = new List<Status>()
+                {
+                    Status.Publish,
+                    Status.Pending
+                },
+                Page = pageIndex,
+                PerPage = 100
+            },true);
+
+            posts.AddRange(resultPosts);
+            Console.WriteLine($"Page {pageIndex}");
+            
+            if (resultPosts.IsNullOrEmpty() || resultPosts.Count() < 100)
+            {
+                break;
+            }
+
+            pageIndex++;
+        }
+
+
+
+        foreach (var post in posts)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+           
+            try
+            { 
+                var article = await _articleSucKhoeGiaDinhRepository.GetAsync(x => x.ExternalId != null && x.ExternalId.Equals(post.Id.ToString()));
+                var       articleNav    = await _articleSucKhoeGiaDinhRepository.GetWithNavigationPropertiesAsync(article.Id);
+
+                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, post, null);
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                //_wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{article.Id}", PageDataSourceConsts.LongChauUrl);
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
         }
     }
 }

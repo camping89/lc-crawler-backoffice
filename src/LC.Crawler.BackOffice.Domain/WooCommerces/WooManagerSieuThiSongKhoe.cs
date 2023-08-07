@@ -7,6 +7,7 @@ using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
 using LC.Crawler.BackOffice.Extensions;
+using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductComments;
@@ -240,13 +241,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncProduct)
-        {
-            return;
-        }
-        
-        // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.InProgress);
+        //
+        // // update re-sync status
+        // await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.InProgress);
 
         // get rest api, wc object
         var wc = await _wooManangerBase.InitWCObject(_dataSource);
@@ -261,10 +258,11 @@ public class WooManagerSieuThiSongKhoe : DomainService
                         && x.Name != null
                         && x.Code != null
                         && x.ExternalId == null
-                        ).Select(x => x.Id).ToList();
+                        ).ToList().OrderByDescending(x=>x.CreationTime).Take(500).Select(x => x.Id).ToList();
 
         // sync product to wp
         var number = 1;
+        Console.WriteLine($"Product total {productIds.Count}");
         foreach (var productId in productIds)
         {
             using var auditingScope = _auditingManager.BeginScope();
@@ -272,15 +270,17 @@ public class WooManagerSieuThiSongKhoe : DomainService
 
             try
             {
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                var contentMedias = await _mediaSieuThiSongKhoeRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
                 var wooProduct =
-                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags);
+                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags, contentMedias);
                 if (wooProduct is { id: > 0 })
                 {
                     productNav.Product.ExternalId = wooProduct.id.To<int>();
                     await _productRepository.UpdateAsync(productNav.Product, true);
                     await _mediaSieuThiSongKhoeRepository.UpdateManyAsync(productNav.Medias);
 
-                    Debug.WriteLine($"Product -> {number}");
+                    Console.WriteLine($"Product -> {number}");
                     number++;
                 }
             }
@@ -307,13 +307,13 @@ public class WooManagerSieuThiSongKhoe : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
-        {
-            return;
-        }
+        // if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
+        // {
+        //     return;
+        // }
         
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
+        //await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
         
         // get rest api, wc object
         var wcObject = await _wooManangerBase.InitWCObject(_dataSource);
@@ -334,7 +334,9 @@ public class WooManagerSieuThiSongKhoe : DomainService
                 }
                 
                 var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
-                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject);
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                var contentMedias = await _mediaSieuThiSongKhoeRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
+                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject,contentMedias);
             }
             catch (Exception ex)
             {

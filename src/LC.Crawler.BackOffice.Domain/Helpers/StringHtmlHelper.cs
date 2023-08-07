@@ -66,13 +66,38 @@ public static class StringHtmlHelper
                 var media                 = medias.FirstOrDefault(x => mediaIdAttributeValue.Contains(x.Id.ToString()));
                 if (media != null)
                 {
-                    node.SetAttributeValue("src", media.ExternalUrl);
+                    node.SetAttributeValue("src", media.ExternalUrl.IsNotNullOrEmpty() ? media.ExternalUrl : media.Url);
                 }
             }
         }
     
         var newHtml = htmlDoc.DocumentNode.WriteTo();
         return newHtml;
+    }
+
+    public static List<Guid> GetContentMediaIds(string contentHtml)
+    {
+        var listMediaIds = new List<Guid>();
+        var htmlDoc = new HtmlDocument();
+        htmlDoc.LoadHtml(contentHtml);
+        foreach (var node in htmlDoc.DocumentNode.Descendants("img"))
+        {
+            var nodeMediaAttr         = node.Attributes["@media-id"];
+            if (nodeMediaAttr is not null)
+            {
+                var mediaIdAttributeValue = nodeMediaAttr.Value;
+                if (mediaIdAttributeValue.IsNotNullOrEmpty())
+                {
+                    if (Guid.TryParse(mediaIdAttributeValue.Replace("media/",string.Empty),out Guid mediaId))
+                    {
+                        listMediaIds.Add(mediaId);
+                    }
+                    
+                }
+            }
+        }
+
+        return listMediaIds;
     }
 
     public static bool CompareUrls(string firstUrl, string secondUrl)

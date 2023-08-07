@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LC.Crawler.BackOffice.Categories;
 using LC.Crawler.BackOffice.DataSources;
 using LC.Crawler.BackOffice.Enums;
+using LC.Crawler.BackOffice.Helpers;
 using LC.Crawler.BackOffice.Medias;
 using LC.Crawler.BackOffice.Payloads;
 using LC.Crawler.BackOffice.ProductComments;
@@ -248,10 +249,7 @@ public class WooManagerAladin : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
-        if (_dataSource == null || !_dataSource.ShouldSyncProduct)
-        {
-            return;
-        }
+        
         
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.InProgress);
@@ -268,7 +266,7 @@ public class WooManagerAladin : DomainService
                         && x.Code != null
                         && x.ExternalId == null
                         )
-            .ToList().Select(x => x.Id).ToList();
+            .ToList().OrderByDescending(x=>x.CreationTime).Take(500).Select(x => x.Id).ToList();
         
         // sync product to wp
         var number = 1;
@@ -279,15 +277,17 @@ public class WooManagerAladin : DomainService
 
             try
             {
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                var contentMedias = await _mediaAladinRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
                 var wooProduct =
-                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags);
+                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags, contentMedias);
                 if (wooProduct is { id: > 0 })
                 {
                     productNav.Product.ExternalId = wooProduct.id.To<int>();
                     await _productRepository.UpdateAsync(productNav.Product, true);
                     await _mediaAladinRepository.UpdateManyAsync(productNav.Medias);
 
-                    Debug.WriteLine($"Product -> {number}");
+                    Debug.WriteLine($"Product {_dataSource.Url} -> {number}");
                     number++;
                 }
             }
@@ -312,11 +312,11 @@ public class WooManagerAladin : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
-        {
-            return;
-        }
-        
+        // if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
+        // {
+        //     return;
+        // }
+        //
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
 
@@ -340,7 +340,11 @@ public class WooManagerAladin : DomainService
                 }
 
                 var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
-                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject);
+               
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                var contentMedias = await _mediaAladinRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
+                
+                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject,contentMedias);
             }
             catch (Exception ex)
             {

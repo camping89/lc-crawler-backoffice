@@ -22,7 +22,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
     private readonly ICategorySucKhoeGiaDinhRepository _categorySucKhoeGiaDinhRepository;
     private readonly IMediaSucKhoeGiaDinhRepository _mediaSucKhoeGiaDinhRepository;
     private readonly IDataSourceRepository _dataSourceRepository;
-    
+
     public ArticleManangerSucKhoeGiaDinh(IArticleSucKhoeGiaDinhRepository articleSucKhoeGiaDinhRepository, ICategorySucKhoeGiaDinhRepository categorySucKhoeGiaDinhRepository, IMediaSucKhoeGiaDinhRepository mediaSucKhoeGiaDinhRepository, IDataSourceRepository dataSourceRepository)
     {
         _articleSucKhoeGiaDinhRepository = articleSucKhoeGiaDinhRepository;
@@ -39,44 +39,46 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
             return;
         }
 
-        var categories   = await _categorySucKhoeGiaDinhRepository.GetListAsync(x=>x.CategoryType == CategoryType.Article);
+        var categories = await _categorySucKhoeGiaDinhRepository.GetListAsync(x => x.CategoryType == CategoryType.Article);
         var articleGroup = articles.GroupBy(_ => _.Url).ToList();
-        var index        = 1;
-        var total        = articleGroup.Count();
-        
+        var index = 1;
+        var total = articleGroup.Count();
+
         Console.WriteLine($"Start import");
-        
+
         foreach (var rawArticles in articles.GroupBy(_ => _.Url))
         {
             try
             {
                 Console.WriteLine($"Processing {index}/{total}");
-                
+
                 var article = rawArticles.First();
                 if (article.Content is null)
                 {
                     continue;
                 }
+
                 var articleEntity = await _articleSucKhoeGiaDinhRepository.FirstOrDefaultAsync(x => x.Url == rawArticles.Key);
                 if (articleEntity == null)
                 {
                     articleEntity = new Article(GuidGenerator.Create())
                     {
-                        Title        = article.Title,
-                        CreatedAt    = article.CreatedAt,
-                        Excerpt      = article.ShortDescription,
-                        Content      = article.Content,
+                        Title = article.Title,
+                        CreatedAt = article.CreatedAt ?? DateTime.Now,
+                        Excerpt = article.ShortDescription,
+                        Content = article.Content,
                         DataSourceId = dataSource.Id,
-                        Tags         = article.Tags,
-                        Url          = article.Url
+                        Tags = article.Tags,
+                        Url = article.Url
                     };
-                    
+
                     foreach (var raw in rawArticles)
                     {
                         if (!raw.Category.IsNotNullOrEmpty())
                         {
                             continue;
                         }
+
                         var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
                         if (category == null)
                         {
@@ -88,6 +90,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                             await _categorySucKhoeGiaDinhRepository.InsertAsync(category, true);
                             categories.Add(category);
                         }
+
                         articleEntity.AddCategory(category.Id);
                     }
 
@@ -110,7 +113,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                         {
                             var medias = mediaUrls.Select(url => new Media()
                             {
-                                Url = url.Contains("http")? url : $"{dataSource.Url}{url}",
+                                Url = url.Contains("http") ? url : $"{dataSource.Url}{url}",
                                 IsDowloaded = false
                             }).ToList();
                             await _mediaSucKhoeGiaDinhRepository.InsertManyAsync(medias);
@@ -125,7 +128,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                     }
 
                     await _articleSucKhoeGiaDinhRepository.InsertAsync(articleEntity);
-                    
+
                     await CheckFormatEntity(articleEntity);
                 }
                 else
@@ -138,7 +141,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                         }
 
                         articleEntity.RemoveAllCategories();
-                                                var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
+                        var category = categories.FirstOrDefault(x => x.Name.Trim().Replace(" ", string.Empty).Equals(raw.Category.Trim().Replace(" ", string.Empty), StringComparison.InvariantCultureIgnoreCase));
                         if (category == null)
                         {
                             category = new Category()
@@ -149,9 +152,10 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                             await _categorySucKhoeGiaDinhRepository.InsertAsync(category, true);
                             categories.Add(category);
                         }
+
                         articleEntity.AddCategory(category.Id);
                     }
-                    
+
                     if (string.IsNullOrEmpty(articleEntity.Url))
                     {
                         articleEntity.Url = article.Url;
@@ -166,10 +170,10 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
 
             index++;
         }
-        
+
         Console.WriteLine($"Finish import");
     }
-    
+
     /// <summary>
     /// Remove the entity in case having format exception (unicode types ...)
     /// </summary>
@@ -189,18 +193,18 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
             }
         }
     }
-    
+
     public async Task<List<KeyValuePair<string, int>>> CountArticleByCategory()
     {
         var articles = await _articleSucKhoeGiaDinhRepository.GetListAsync();
         var categories = await _categorySucKhoeGiaDinhRepository.GetListAsync(_ => _.CategoryType == CategoryType.Article);
         return categories.Select(category => new KeyValuePair<string, int>(category.Name, articles.Count(_ => _.Categories.Select(c => c.CategoryId).Contains(category.Id)))).ToList();
     }
-    
+
     public async Task<List<string>> GetErrorEncodeData()
     {
         var errorIds = new List<string>();
-        var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync()).Select(x=>x.Id).ToList();
+        var articleIds = (await _articleSucKhoeGiaDinhRepository.GetQueryableAsync()).Select(x => x.Id).ToList();
         foreach (var id in articleIds)
         {
             try
@@ -210,6 +214,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                 {
                     continue;
                 }
+
                 foreach (var mediaId in article.Medias.Select(_ => _.MediaId).ToList())
                 {
                     try
@@ -234,6 +239,7 @@ public class ArticleManangerSucKhoeGiaDinh : DomainService
                 Console.WriteLine($"Article Id: {id}");
             }
         }
+
         return errorIds;
     }
 }

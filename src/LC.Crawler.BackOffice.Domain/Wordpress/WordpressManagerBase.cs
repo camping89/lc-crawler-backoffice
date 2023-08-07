@@ -60,6 +60,43 @@ public class WordpressManagerBase : DomainService
         }
     }
     
+    
+    public async Task DoChangeStatusPosts(DataSource dataSource, Status status)
+    {
+        var client = await InitClient(dataSource);
+        var wpPosts = (await client.Posts.GetAllAsync(useAuth: true))
+            .ToList();
+
+        Console.WriteLine($"Total: {wpPosts.Count()}");
+        var index = 1;
+        foreach (var wpPost in wpPosts)
+        {
+            try
+            {
+                if (wpPost.Date > new DateTime(2023,1,1))
+                {
+                    wpPost.Status = status;
+                    await client.Posts.UpdateAsync(wpPost);
+                }
+                else
+                {
+                    await client.Posts.DeleteAsync(wpPost.Id, true);
+                    Console.WriteLine($"Delete post: {wpPost.Id}");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                continue;
+            }
+
+            Console.WriteLine($"Index: {index}");
+            index++;
+        }
+    }
+
+
+    
     public async Task DoUpdatePostTags(List<Tag> wpTags, List<string> tags, Post post, WordPressClient client)
     {
         if (tags.IsNotNullOrEmpty())
@@ -152,7 +189,7 @@ public class WordpressManagerBase : DomainService
             Content = new Content(article.Content),
             Date = article.CreatedAt,
             Excerpt = new Excerpt(article.Excerpt),
-            Status = Status.Pending,
+            Status = Status.Publish,
             LiveblogLikes = article.LikeCount,
             CommentStatus = OpenStatus.Open,
             FeaturedMedia = featureMedia?.Id,
@@ -168,6 +205,7 @@ public class WordpressManagerBase : DomainService
 
 
         var result = await client.Posts.CreateAsync(post);
+        await Task.Delay(TimeSpan.FromSeconds(30));
         return result;
     }
 
@@ -309,7 +347,16 @@ public class WordpressManagerBase : DomainService
 
             if (media != null)
             {
-                node.SetAttributeValue("src", media.ExternalUrl);
+                // if (media.ExternalUrl.IsNotNullOrEmpty())
+                // {
+                //     node.SetAttributeValue("src", media.ExternalUrl);
+                // }
+                // else
+                // {
+                //     node.SetAttributeValue("src", media.Url);
+                // }
+                
+                node.SetAttributeValue("src", media.Url);
             }
         }
 
@@ -341,74 +388,82 @@ public class WordpressManagerBase : DomainService
 
     public async Task DoSyncCategoriesAsync(DataSource dataSource, List<string> categories)
     {
-        var client = await InitClient(dataSource);
-        var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
-
-        foreach (var cateStr in categories)
+        try
         {
-            if (AbpStringExtensions.IsNullOrEmpty(cateStr))
-            {
-                continue;
-            }
+            var client = await InitClient(dataSource);
+            var wooCategories = (await client.Categories.GetAllAsync(useAuth: true)).ToList();
 
-            var handleCateStr = cateStr.Replace("&", "&amp;").Trim();
-            var categoriesTerms = handleCateStr.Split("->").ToList();
-            var cateName = categoriesTerms.FirstOrDefault()?.Trim();
-            var wooRootCategory =
-                wooCategories.FirstOrDefault(x =>
-                    x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
-            if (wooRootCategory == null)
+            foreach (var cateStr in categories)
             {
-                try
+                if (AbpStringExtensions.IsNullOrEmpty(cateStr))
                 {
-                    var cateNew = new WordpresCategory
-                    {
-                        Name = cateName
-                    };
-                    wooRootCategory = await client.Categories.CreateAsync(cateNew);
-                    wooCategories.Add(wooRootCategory);
+                    continue;
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-            }
 
-            if (categoriesTerms.Count > 1 && wooRootCategory != null)
-            {
-                var cateParent = wooRootCategory;
-                for (var i = 1; i < categoriesTerms.Count; i++)
+                var handleCateStr = cateStr.Replace("&", "&amp;").Trim();
+                var categoriesTerms = handleCateStr.Split("->").ToList();
+                var cateName = categoriesTerms.FirstOrDefault()?.Trim();
+                var wooRootCategory =
+                    wooCategories.FirstOrDefault(x =>
+                        x.Name.Equals(cateName, StringComparison.InvariantCultureIgnoreCase) && x.Parent == 0);
+                if (wooRootCategory == null)
                 {
                     try
                     {
-                        var subCateName = categoriesTerms[i].Trim();
-                        var wooSubCategory = wooCategories.FirstOrDefault(x =>
-                            x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) &&
-                            x.Parent == cateParent.Id);
-                        if (wooSubCategory == null)
+                        var cateNew = new WordpresCategory
                         {
-                            var cateNew = new WordpresCategory
-                            {
-                                Name = subCateName,
-                                Parent = cateParent.Id
-                            };
-
-                            cateNew = await client.Categories.CreateAsync(cateNew);
-                            wooCategories.Add(cateNew);
-
-                            cateParent = cateNew;
-                        }
-                        else
-                        {
-                            cateParent = wooSubCategory;
-                        }
+                            Name = cateName
+                        };
+                        wooRootCategory = await client.Categories.CreateAsync(cateNew);
+                        wooCategories.Add(wooRootCategory);
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine(e);
                     }
                 }
+
+                if (categoriesTerms.Count > 1 && wooRootCategory != null)
+                {
+                    var cateParent = wooRootCategory;
+                    for (var i = 1; i < categoriesTerms.Count; i++)
+                    {
+                        try
+                        {
+                            var subCateName = categoriesTerms[i].Trim();
+                            var wooSubCategory = wooCategories.FirstOrDefault(x =>
+                                x.Name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) &&
+                                x.Parent == cateParent.Id);
+                            if (wooSubCategory == null)
+                            {
+                                var cateNew = new WordpresCategory
+                                {
+                                    Name = subCateName,
+                                    Parent = cateParent.Id
+                                };
+
+                                cateNew = await client.Categories.CreateAsync(cateNew);
+                                wooCategories.Add(cateNew);
+
+                                cateParent = cateNew;
+                            }
+                            else
+                            {
+                                cateParent = wooSubCategory;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
+                    }
+                }
             }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
         }
     }
 
@@ -524,6 +579,7 @@ public class WordpressManagerBase : DomainService
 
     public async Task DoUpdatePostAsync(DataSource dataSource, ArticleWithNavigationProperties articleNav, Post post, MediaItem featureMedia)
     {
+        Console.WriteLine($"{dataSource.Url} - {post.Id}");
         var client = await InitClient(dataSource);
         post.Content.Raw = ReplaceImageUrls(articleNav.Article.Content, articleNav.Medias);
         if (featureMedia is not null)

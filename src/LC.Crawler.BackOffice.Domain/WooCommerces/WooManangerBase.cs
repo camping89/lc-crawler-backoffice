@@ -52,55 +52,70 @@ public class WooManangerBase : DomainService
         var mediaItems = new List<MediaItem>();
         foreach (var media in medias.Where(media => !StringExtensions.IsNullOrEmpty(media.Url)))
         {
-            if (media.ExternalId.IsNotNullOrEmpty()) continue;
-            MediaItem mediaResult;
-            //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
-            if (!media.Url.Contains("http"))
+            try
             {
-                media.Url = $"{dataSource.Url}{media.Url}";
+                if (media.ExternalId.IsNotNullOrEmpty())
+                {
+                    productImages.Add(new ProductImage()
+                    {
+                        src = media.ExternalUrl
+                    });
+                    continue;
+                }
+                MediaItem mediaResult;
+                //var stream = await _mediaManagerLongChau.GetFileStream(media.Name);
+                if (!media.Url.Contains("http"))
+                {
+                    media.Url = $"{dataSource.Url}{media.Url}";
+                }
+
+                media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
+                var fileExtension = Path.GetExtension(media.Url);
+                if (!fileExtension.IsNotNullOrEmpty()) continue;
+
+                if (fileExtension.Equals(FileExtendHelper.SvgExtend, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
+                    if (!svgContent.IsNotNullOrEmpty()) continue;
+
+                    var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
+                    var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
+                    var bitmap = svgDoc.Draw();
+                    using var stream = new MemoryStream();
+                    bitmap.Save(stream, ImageFormat.Png);
+                    stream.Position = 0;
+                    mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                }
+                else
+                {
+                    if (!fileExtension.Equals(FileExtendHelper.PngExtend, StringComparison.InvariantCultureIgnoreCase) && !fileExtension.Equals(FileExtendHelper.JpgExtend, StringComparison.InvariantCultureIgnoreCase))
+                        fileExtension = FileExtendHelper.PngExtend;
+                    var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
+                    if (fileBytes is null) continue;
+                    var stream = new MemoryStream(fileBytes);
+                    var fileName = $"{media.Id}{fileExtension}";
+                    mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                }
+
+                media.ExternalId = mediaResult.Id.ToString();
+                media.ExternalUrl = mediaResult.SourceUrl;
+                var productImage = new ProductImage()
+                {
+                    id = mediaResult.Id,
+                    src = media.ExternalUrl
+                };
+                if (mediaResult.SourceUrl.EndsWith(".webp"))
+                {
+                    productImage.src = media.Url;
+                }
+
+                productImages.Add(productImage);
+                mediaItems.Add(mediaResult);
             }
-
-            media.Url = HtmlExtendHelper.RemoveQueryStringByKey(media.Url);
-            var fileExtension = Path.GetExtension(media.Url);
-            if (!fileExtension.IsNotNullOrEmpty()) continue;
-
-            if (fileExtension.Equals(FileExtendHelper.SvgExtend, StringComparison.InvariantCultureIgnoreCase))
+            catch (Exception e)
             {
-                var svgContent = await FileExtendHelper.DownloadSvgFile(media.Url);
-                if (!svgContent.IsNotNullOrEmpty()) continue;
-
-                var fileName = $"{media.Id}{FileExtendHelper.PngExtend}";
-                var svgDoc = SvgDocument.FromSvg<SvgDocument>(svgContent);
-                var bitmap = svgDoc.Draw();
-                using var stream = new MemoryStream();
-                bitmap.Save(stream, ImageFormat.Png);
-                stream.Position = 0;
-                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
+                Console.WriteLine(e);
             }
-            else
-            {
-                if (!fileExtension.Equals(FileExtendHelper.PngExtend, StringComparison.InvariantCultureIgnoreCase) && !fileExtension.Equals(FileExtendHelper.JpgExtend, StringComparison.InvariantCultureIgnoreCase))
-                    fileExtension = FileExtendHelper.PngExtend;
-                var fileBytes = await FileExtendHelper.DownloadFile(media.Url);
-                if (fileBytes is null) continue;
-                var stream = new MemoryStream(fileBytes);
-                var fileName = $"{media.Id}{fileExtension}";
-                mediaResult = await client.Media.CreateAsync(stream, fileName, media.ContentType);
-            }
-
-            media.ExternalId = mediaResult.Id.ToString();
-            media.ExternalUrl = mediaResult.SourceUrl;
-            var productImage = new ProductImage()
-            {
-                src = media.Url
-            };
-            if (mediaResult.SourceUrl.EndsWith(".webp"))
-            {
-                productImage.src = media.Url;
-            }
-
-            productImages.Add(productImage);
-            mediaItems.Add(mediaResult);
         }
 
         //return mediaItems.Select(x => new ProductImage { src = x.SourceUrl }).ToList();
@@ -214,9 +229,13 @@ public class WooManangerBase : DomainService
                 for (var i = 1; i < categoriesTerms.Count; i++)
                 {
                     var subCateName = categoriesTerms[i].Trim().Replace("&", "&amp;");
-
-                    var wooSubCategory = wooCategories.FirstOrDefault(x =>
-                        x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == cateParent.id);
+                    var wooSubCategory = (await wcObject.Category.GetAll(new Dictionary<string, string>()
+                    {
+                        {"search", subCateName},
+                        {"parent", cateParent.id.ToString()},
+                    })).FirstOrDefault();
+                    // var wooSubCategory = wooCategories.FirstOrDefault(x =>
+                    //     x.name.Equals(subCateName, StringComparison.InvariantCultureIgnoreCase) && x.parent == cateParent.id);
 
                     if (wooSubCategory == null)
                     {
@@ -300,7 +319,7 @@ public class WooManangerBase : DomainService
         WCObject wcObject,
         ProductWithNavigationProperties productNav,
         List<WooProductCategory> wooCategories,
-        List<ProductTag> productTags)
+        List<ProductTag> productTags,List<Media> contentMedias)
     {
         var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
         {
@@ -332,14 +351,14 @@ public class WooManangerBase : DomainService
             variations = new List<int>(),
             tags = new List<ProductTagLine>(),
             categories = new List<ProductCategoryLine>(),
-            status = "pending"
+            status = "publish"
         };
 
         // add categories
         await AddProductCategories(productNav, wooCategories, wooProduct, dataSource.Url);
 
         // add medias
-        await AddProductMedias(dataSource, productNav, wooProduct);
+        await AddProductMedias(dataSource, productNav, wooProduct,contentMedias);
 
         // add variants
         await AddProductVariants(wcObject, productNav, wooProduct, dataSource.Url);
@@ -548,7 +567,7 @@ public class WooManangerBase : DomainService
 
     private async Task AddProductMedias(DataSource dataSource,
         ProductWithNavigationProperties productNav,
-        WooProduct wooProduct)
+        WooProduct wooProduct,List<Media> contentMedias)
     {
         using var auditingScope = _auditingManager.BeginScope();
         try
@@ -561,11 +580,17 @@ public class WooManangerBase : DomainService
                 if (medias != null)
                 {
                     wooProduct.images = new List<ProductImage>();
-                    var mediaResults = await PostMediasAsync(dataSource, medias);
+                    var contentMediaIds = contentMedias.Select(x => x.Id).ToList();
+                    var productMedias = medias.Where(x => contentMediaIds.IsNullOrEmpty() || !contentMediaIds.Contains(x.Id)).ToList();
+                    var mediaResults = await PostMediasAsync(dataSource, productMedias);
                     if (mediaResults.IsNotNullOrEmpty()) wooProduct.images.AddRange(mediaResults);
                 }
 
-                wooProduct.description = StringHtmlHelper.ReplaceImageUrls(productNav.Product.Description, medias);
+                if (contentMedias.IsNotNullOrEmpty())
+                {
+                    //await PostMediasAsync(dataSource, contentMedias);
+                    wooProduct.description = StringHtmlHelper.ReplaceImageUrls(productNav.Product.Description, contentMedias);
+                }
             }
         }
         catch (Exception ex)
@@ -579,7 +604,7 @@ public class WooManangerBase : DomainService
         }
     }
 
-    private async Task AddProductCategories(ProductWithNavigationProperties productNav,
+    public async Task AddProductCategories(ProductWithNavigationProperties productNav,
         List<WooProductCategory> wooCategories,
         WooProduct wooProduct,
         string homeUrl)
@@ -596,7 +621,7 @@ public class WooManangerBase : DomainService
                         continue;
                     }
 
-                    var cateTerms = category.Name.Split("->").LastOrDefault();
+                    var cateTerms = category.Name.Split("->").LastOrDefault().Trim();
 
                     //Thuốc -> Vitamin &amp; khoáng chất
                     //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
@@ -727,6 +752,8 @@ public class WooManangerBase : DomainService
                     //Always save the log
                     await auditingScope.SaveAsync();
                 }
+
+                await Task.Delay(TimeSpan.FromSeconds(30));
             }
         }
         else
@@ -744,7 +771,7 @@ public class WooManangerBase : DomainService
     public async Task DoReSyncProductToWooAsync(DataSource dataSource,
         WooCommerceNET.WooCommerce.v3.Product checkProduct,
         ProductWithNavigationProperties productNav,
-        WCObject wcObject)
+        WCObject wcObject,List<Media> contentMedias)
     {
         var product = productNav.Product;
         // update name
@@ -801,12 +828,89 @@ public class WooManangerBase : DomainService
         }
 
         // update media + content
-        await AddProductMedias(dataSource, productNav, checkProduct);
+        await AddProductMedias(dataSource, productNav, checkProduct, contentMedias);
 
         // save product
         await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);
 
-        Console.WriteLine($"Update product: {checkProduct.name}");
+
+        //await Task.Delay(TimeSpan.FromSeconds(30));
+        Console.WriteLine($"Update product: {checkProduct.name} - {checkProduct.id}");
+    }
+    /// <summary>
+    /// Re sync product to woo to update name, price, content
+    /// </summary>
+    /// <param name="checkProduct"></param>
+    /// <param name="productNav"></param>
+    /// <param name="wcObject"></param>
+    public async Task DoUpdateCategoryProductToWooAsync(DataSource dataSource,
+        WooCommerceNET.WooCommerce.v3.Product checkProduct,
+        ProductWithNavigationProperties productNav,
+        WCObject wcObject,List<Media> contentMedias)
+    {
+        var product = productNav.Product;
+        // update name
+        checkProduct.name = product.Name;
+
+        // update variants, price
+        var variants = productNav.Variants;
+        if (variants != null)
+        {
+            decimal? productPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.RetailPrice;
+            decimal? discountedPrice = variants.Count > 1 ? null : variants.FirstOrDefault()?.DiscountedPrice;
+
+            if (productPrice.HasValue && productPrice > 0)
+            {
+                checkProduct.price = productPrice;
+                checkProduct.regular_price = productPrice;
+            }
+
+            if (discountedPrice.HasValue && discountedPrice > 0)
+            {
+                checkProduct.sale_price = discountedPrice;
+            }
+        }
+
+        if (variants is { Count: > 1 })
+        {
+            var wooProductVariants = await wcObject.Product.Variations.GetAll(checkProduct.id);
+            foreach (var variant in variants)
+            {
+                var checkVariant = wooProductVariants.FirstOrDefault(x => x.sku == variant.SKU);
+                if (checkVariant != null)
+                {
+                    checkVariant.price = variant.RetailPrice;
+                    checkVariant.regular_price = variant.RetailPrice;
+                    checkVariant.sale_price = variant.DiscountedPrice;
+                    await wcObject.Product.Variations.Update(checkVariant.id.To<int>(), checkVariant, checkProduct.id.To<int>());
+                }
+                else
+                {
+                    var wooVariantResult = await wcObject.Product.Variations.Add(new Variation()
+                        {
+                            sku = variant.SKU,
+                            price = variant.RetailPrice,
+                            regular_price = variant.RetailPrice,
+                            sale_price = variant.DiscountedPrice
+                        },
+                        0);
+                    if (wooVariantResult.id is > 0)
+                    {
+                        checkProduct.variations.Add(wooVariantResult.id.To<int>());
+                    }
+                }
+            }
+        }
+
+        // update media + content
+        await AddProductMedias(dataSource, productNav, checkProduct, contentMedias);
+
+        // save product
+        await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);
+
+
+        //await Task.Delay(TimeSpan.FromSeconds(30));
+        Console.WriteLine($"Update product: {checkProduct.name} - {checkProduct.id}");
     }
 
     public async Task<List<WooCommerceNET.WooCommerce.v3.Product>> GetAllProducts(WCObject wcObject, string search = "")
@@ -816,7 +920,13 @@ public class WooManangerBase : DomainService
 
         while (true)
         {
-            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>() { { "page", pageIndex.ToString() }, { "per_page", "100" }, { "search", search }, });
+            var checkProduct = await wcObject.Product.GetAll(new Dictionary<string, string>()
+            {
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+                { "search", search },
+                { "status", "publish" },
+            });
             if (checkProduct.IsNullOrEmpty()) break;
 
             checkProducts.AddRange(checkProduct);
@@ -829,11 +939,97 @@ public class WooManangerBase : DomainService
         return checkProducts;
     }
 
+    public async Task ChangeStatus(DataSource dataSource)
+    {
+        var wc = await InitWCObject(dataSource);
+
+        var products = new List<WooCommerceNET.WooCommerce.v3.Product>();
+        var pageIndex = 1;
+        while (true)
+        {
+            var checkProduct = await wc.Product.GetAll(new Dictionary<string, string>()
+            {
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+            });
+            if (checkProduct.IsNullOrEmpty()) break;
+
+            products.AddRange(checkProduct);
+            pageIndex++;
+        }
+
+        foreach (var product in products)
+        {
+
+            try
+            {
+                if (product.date_created > new DateTime(2023,1,1))
+                {
+                    if (product.status == "pending")
+                    {
+                        product.status = "publish";
+                        await wc.Product.Update(product.id.To<int>(), product);
+
+                        Console.WriteLine($"Update product status {dataSource.Url}: {product.name} - {product.sku} - {product.status}");
+                    }
+                }
+                else
+                {
+                    // await wc.Product.Delete(product.id.To<int>(), true);
+                    // Console.WriteLine($"Delete product: {product.id}");
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+    }
+
     public async Task<WCObject> InitWCObject(DataSource dataSource)
     {
         var rest = new RestAPI($"{dataSource.PostToSite}/wp-json/wc/v3/", dataSource.Configuration.ApiKey, dataSource.Configuration.ApiSecret);
         var wcObject = new WCObject(rest);
 
         return wcObject;
+    }
+
+    public async Task DeleteProductNotImages(DataSource dataSource)
+    {
+        var wcObject = await InitWCObject(dataSource);
+        var pageIndex = 1;
+
+        while (true)
+        {
+            try
+            {
+                var checkProducts = await wcObject.Product.GetAll(new Dictionary<string, string>()
+                {
+                    { "page", pageIndex.ToString() },
+                    { "per_page", "1" },
+                    { "search", "" },
+                    { "status", "publish" },
+                });
+                if (checkProducts.IsNullOrEmpty()) break;
+
+                foreach (var checkProduct in checkProducts)
+                {
+                    if (checkProduct.images.IsNullOrEmpty())
+                    {
+                        await wcObject.Product.Delete(checkProduct.id.To<int>());
+                        Console.WriteLine($"Deleted Product:  {checkProduct.id}");
+                    }
+                }
+                Console.WriteLine($"Fetching Product: page {pageIndex}");
+                pageIndex++;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
     }
 }

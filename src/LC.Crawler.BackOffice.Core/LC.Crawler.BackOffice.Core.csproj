@@ -9,7 +9,7 @@
     <ItemGroup>
       <PackageReference Include="Fizzler.Systems.HtmlAgilityPack" Version="1.2.1" />
       <PackageReference Include="WooCommerceNET" Version="0.8.4" />
-      <PackageReference Include="WordPressPCL" Version="2.0.0" />
+      <PackageReference Include="WordPressPCL" Version="2.0.1" />
     </ItemGroup>
 
 </Project>

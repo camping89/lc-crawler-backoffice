@@ -54,22 +54,19 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
-        if (_dataSource is not { ShouldSyncArticle: true })
-        {
-            return;
-        }
+        // if (_dataSource is not { ShouldSyncArticle: true })
+        // {
+        //     return;
+        // }
         
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
         
         // get article ids
-        var limitDate = new DateTime(2018, 01, 01); 
+        var limitDate = DateTime.UtcNow.AddDays(-45);
         var articleIds = (await _articleSucKhoeDoiSongRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id
-                                    && x.Content      != null
-                                    && x.LastSyncedAt == null
-                                    && x.CreatedAt >= limitDate)
-                        .Select(x=>x.Id).ToList();
+            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null).ToList().OrderByDescending(x => x.CreationTime).Take(200)
+            .Select(x => x.Id).ToList();
         
         // get categories
         //TODO Remove after clean data
@@ -271,6 +268,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
             {
                 Statuses = new List<Status>()
                 {
+                    Status.Publish,
                     Status.Pending
                 },
                 Page = pageIndex,
@@ -290,24 +288,21 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
 
 
 
-        foreach (var articleId in articleIds)
+        foreach (var post in posts)
         {
             using var auditingScope = _auditingManager.BeginScope();
-            var       articleNav    = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(articleId);
            
-            var wpPost = posts.FirstOrDefault(_ =>
-                _.Title.Rendered.Equals(articleNav.Article.Title, StringComparison.InvariantCultureIgnoreCase));
-            if(wpPost is null)
-                continue;
-            
             try
-            {
-                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, wpPost, null);
+            { 
+                var article = await _articleSucKhoeDoiSongRepository.GetAsync(x => x.ExternalId != null && x.ExternalId.Equals(post.Id.ToString()));
+                var       articleNav    = await _articleSucKhoeDoiSongRepository.GetWithNavigationPropertiesAsync(article.Id);
+
+                await _wordpressManagerBase.DoUpdatePostAsync(_dataSource, articleNav, post, null);
             }
             catch (Exception ex)
             {
                 //Add exceptions
-                _wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{articleId}", PageDataSourceConsts.LongChauUrl);
+                //_wordpressManagerBase.LogException(_auditingManager.Current.Log, ex, $"{article.Id}", PageDataSourceConsts.LongChauUrl);
             }
             finally
             {

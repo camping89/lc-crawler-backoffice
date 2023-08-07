@@ -265,7 +265,7 @@ public class WooManagerLongChau : DomainService
                                                                                    && x.Name != null
                                                                                    && x.Code != null
                                                                                    && x.ExternalId == null
-                                                                                   ).Select(x=>x.Id).ToList();
+                                                                                   ).ToList().OrderByDescending(x=>x.CreationTime).Take(500).Select(x=>x.Id).ToList();
 
         // sync product to wp
         var number = 1;
@@ -276,7 +276,10 @@ public class WooManagerLongChau : DomainService
             
             try
             {
-                var wooProduct = await  _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories,productTags);
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                var contentMedias = await _mediaLongChauRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
+                var wooProduct =
+                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags, contentMedias);
                 if (wooProduct is { id: > 0 })
                 {
                     productNav.Product.ExternalId = wooProduct.id.To<int>();
@@ -307,11 +310,11 @@ public class WooManagerLongChau : DomainService
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
-        if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
-        {
-            return;
-        }
-        
+        // if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
+        // {
+        //     return;
+        // }
+        //
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
         
@@ -337,7 +340,12 @@ public class WooManagerLongChau : DomainService
                 }
                 
                 var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
-                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject);
+                
+               
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                var contentMedias = await _mediaLongChauRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
+
+                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject,contentMedias);
             }
             catch (Exception ex)
             {
@@ -354,6 +362,71 @@ public class WooManagerLongChau : DomainService
         
         // update re-sync status
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.Completed);
+    }
+
+    public async Task UpdateCategoriesProduct()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.LongChauUrl));
+        // if (_dataSource == null || !_dataSource.ShouldReSyncProduct)
+        // {
+        //     return;
+        // }
+        //
+        // update re-sync status
+        //await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
+        
+        // get rest api, wc object
+        var wcObject = await _wooManangerBase.InitWCObject(_dataSource);
+
+        // get all products
+        var checkProducts = new List<WooCommerceNET.WooCommerce.v3.Product>()
+        {
+            await wcObject.Product.Get(707254)
+        };
+
+        var products = (await _productRepository.GetListAsync(x => x.ExternalId.HasValue)).OrderByDescending(x=>x.CreationTime);
+        // get woo categories, product tags, product ids
+        var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
+        
+        Console.WriteLine($"Fetch Product Done: {checkProducts.Count}");
+
+        // Update wo products
+        foreach (var product in products)
+        {
+            using var auditingScope = _auditingManager.BeginScope();
+            
+            try
+            {
+                var checkProduct = await wcObject.Product.Get(product.ExternalId.Value);
+                if (checkProduct is null)
+                {
+                    continue;
+                }
+                
+                var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
+                
+               
+                var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
+                await _mediaLongChauRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
+
+                await _wooManangerBase.AddProductCategories(productNav, wooCategories, checkProduct, _dataSource.PostToSite);
+                // save product
+                await wcObject.Product.Update(checkProduct.id.To<int>(), checkProduct);
+                Console.WriteLine($"Update product: {checkProduct.id}");
+
+            }
+            catch (Exception ex)
+            {
+                //Add exceptions
+                _wooManangerBase.LogException(_auditingManager.Current.Log, ex, new Product(),
+                    PageDataSourceConsts.LongChauUrl, "DoReSyncProductToWooAsync");
+            }
+            finally
+            {
+                //Always save the log
+                await auditingScope.SaveAsync();
+            }
+        }
     }
 
     /// <summary>

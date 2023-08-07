@@ -100,14 +100,14 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
                 {
                     await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.LongChau,
                         eventData.EcommercePayloads);
-                    await _wooManagerLongChau.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
+                    //await _wooManagerLongChau.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
                     await _productManagerLongChau.ProcessingDataAsync(eventData.EcommercePayloads);
                 }
 
                 if (url.Contains(PageDataSourceConsts.AladinUrl))
                 {
                     await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.Aladin, eventData.EcommercePayloads);
-                    await _wooManagerAladin.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
+                    //await _wooManagerAladin.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
                     await _productManagerAladin.ProcessingDataAsync(eventData.EcommercePayloads);
                 }
 
@@ -115,7 +115,7 @@ public class CrawlerDataReceiveConsumer : IDistributedEventHandler<CrawlResultEt
                 {
                     await _crawlerDataManager.SaveCrawlerDataEcomAsync(PageDataSource.SieuThiSongKhoe,
                         eventData.EcommercePayloads);
-                    await _wooManagerSieuThiSongKhoe.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
+                    //await _wooManagerSieuThiSongKhoe.DoChangeStatusWooAsync(eventData.EcommercePayloads.Products);
                     await _productManagerSieuThiSongKhoe.ProcessingDataAsync(eventData.EcommercePayloads);
                 }
                 

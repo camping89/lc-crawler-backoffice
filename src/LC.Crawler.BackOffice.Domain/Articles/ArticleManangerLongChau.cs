@@ -68,7 +68,7 @@ public class ArticleManangerLongChau : DomainService
                     articleEntity = new Article(GuidGenerator.Create())
                     {
                         Title = article.Title,
-                        CreatedAt = article.CreatedAt,
+                        CreatedAt =  article.CreatedAt ?? DateTime.Now,
                         Excerpt = article.ShortDescription,
                         Content = article.Content,
                         DataSourceId = dataSource.Id,

@@ -14,7 +14,7 @@ namespace LC.Crawler.BackOffice.DataSources
     public static class PageDataSourceConsts
     {
         
-        public const string LongChauUrl = "nhathuoclongchau.com";
+        public const string LongChauUrl = "nhathuoclongchau.com.vn";
         public const string AladinUrl = "aladin.com.vn";
         public const string SieuThiSongKhoeUrl = "sieuthisongkhoe.com";
         public const string SucKhoeDoiSongUrl = "suckhoedoisong.vn";
