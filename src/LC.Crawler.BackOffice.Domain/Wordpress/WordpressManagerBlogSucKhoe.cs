@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -64,14 +64,14 @@ public class WordpressManagerBlogSucKhoe : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
         
         // get article ids
-        var limitDate = DateTime.UtcNow.AddDays(-45);
+        var limitDate = DateTime.UtcNow.AddDays(-200);
         var categories = await _categoryBlogSucKhoeRepository.GetListAsync();
         var articleIds = new List<Guid>();
         var articles = (await _articleBlogSucKhoeRepository.GetQueryableAsync())
             .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.ExternalId == null).ToList();
         foreach (var category in categories)
         {
-            var articleIdsByCate = articles.Where(x=>x.Categories.Any(y=>y.CategoryId == category.Id)).OrderByDescending(x => x.CreationTime).Take(10)
+            var articleIdsByCate = articles.Where(x=>x.Categories.Any(y=>y.CategoryId == category.Id) && x.CreatedAt >= limitDate).OrderByDescending(x => x.CreationTime)
                 .Select(x => x.Id).ToList();
             articleIds.AddRange(articleIdsByCate);
         }

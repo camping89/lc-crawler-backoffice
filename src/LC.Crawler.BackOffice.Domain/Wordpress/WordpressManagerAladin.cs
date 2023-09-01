@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -62,9 +62,9 @@ public class WordpressManagerAladin : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
 
         // get article ids
-        var limitDate = DateTime.UtcNow.AddDays(-45);
+        var limitDate = DateTime.UtcNow.AddDays(-200);
         var articleIds = (await _articleAladinRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null).ToList().OrderByDescending(x => x.CreationTime).Take(200)
+            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
             .Select(x => x.Id).ToList();
 
         // get all tags

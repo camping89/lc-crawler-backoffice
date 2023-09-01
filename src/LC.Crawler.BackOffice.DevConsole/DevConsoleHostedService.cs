@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp;
@@ -29,11 +29,14 @@ public class DevConsoleHostedService : IHostedService
         //await _masterService.DoResyncAladinProduct();
 
         //await _masterService.DoSyncProductToWooAsync();
-        // _masterService.CleanPostDuplicate();
+        //await _masterService.CleanPostDuplicate();
         //await _masterService.DoSyncProductToWooAsync();
 
         //await _imageService.UpdateUrl();
         await _masterService.SyncAllPosts();
+        //await _masterService.DeletePost();
+
+        //await _masterService.ProcessAloBacSiDataAsync();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

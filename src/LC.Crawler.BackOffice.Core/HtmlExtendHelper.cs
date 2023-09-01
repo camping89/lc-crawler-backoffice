@@ -7,6 +7,10 @@ public static class HtmlExtendHelper
 {
     public static List<string> GetImageUrls(this string contentHtml)
     {
+        if (string.IsNullOrEmpty(contentHtml))
+        {
+            return new List<string>();
+        }
         var htmlDocument =new HtmlAgilityPack.HtmlDocument();
         htmlDocument.LoadHtml(contentHtml);
         var urls = htmlDocument.DocumentNode.Descendants("img")

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -68,6 +68,7 @@ public class MasterService : ITransientDependency
     private readonly IProductSieuThiSongKhoeRepository _productSieuThiSongKhoeRepository;
     private readonly IArticleSieuThiSongKhoeRepository _articleSieuThiSongKhoeRepository;
     private readonly IMediaSieuThiSongKhoeRepository _mediaSieuThiSongKhoeRepository;
+    private readonly IArticleBlogSucKhoeRepository _articleBlogSucKhoeRepository;
     public MasterService(ProductManagerLongChau productManagerLongChau, WooManagerLongChau wooManagerLongChau, MediaManagerLongChau mediaManagerLongChau, WordpressManagerSieuThiSongKhoe wordpressManagerSieuThiSongKhoe, ArticleManangerLongChau articleManangerLongChau,
         WordpressManagerLongChau wordpressManagerLongChau,
         WooManagerAladin wooManagerAladin,
@@ -87,7 +88,7 @@ public class MasterService : ITransientDependency
         WordpressManagerAladin wordpressManagerAladin,
         WordpressManagerSongKhoeMedplus wordpressManagerSongKhoeMedplus,
         WordpressManagerSucKhoeGiaDinh wordpressManagerSucKhoeGiaDinh,
-        WordpressManagerBlogSucKhoe wordpressManagerBlogSucKhoe)
+        WordpressManagerBlogSucKhoe wordpressManagerBlogSucKhoe, IArticleBlogSucKhoeRepository articleBlogSucKhoeRepository)
     {
         _productManagerLongChau = productManagerLongChau;
         _wooManagerLongChau = wooManagerLongChau;
@@ -112,6 +113,8 @@ public class MasterService : ITransientDependency
         _articleManangerSieuThiSongKhoe = articleManangerSieuThiSongKhoe;
         _articleManangerSucKhoeDoiSong = articleManangerSucKhoeDoiSong;
         _articleManangerSucKhoeGiaDinh = articleManangerSucKhoeGiaDinh;
+        this._articleManangerAloBacSi = articleManangerAloBacSi;
+        this._articleManangerAloBacSi = articleManangerAloBacSi;
         _articleManangerAloBacSi = articleManangerAloBacSi;
         _articleManangerBlogSucKhoe = articleManangerBlogSucKhoe;
         _productLongChauRepository = productLongChauRepository;
@@ -123,6 +126,7 @@ public class MasterService : ITransientDependency
         _wordpressManagerSongKhoeMedplus = wordpressManagerSongKhoeMedplus;
         _wordpressManagerSucKhoeGiaDinh = wordpressManagerSucKhoeGiaDinh;
         _wordpressManagerBlogSucKhoe = wordpressManagerBlogSucKhoe;
+        _articleBlogSucKhoeRepository = articleBlogSucKhoeRepository;
         Logger = NullLogger<MasterService>.Instance;
     }
 
@@ -134,6 +138,16 @@ public class MasterService : ITransientDependency
          if (crawlResultEtos != null)
          {
              await _productManagerLongChau.ProcessingDataAsync(crawlResultEtos);
+         }
+    }
+    public async Task ProcessAloBacSiDataAsync()
+    {
+         using StreamReader file = File.OpenText(@"D:\\Article_11-08-2023.json");
+         JsonSerializer serializer = new JsonSerializer();
+         var crawlResultEtos = (CrawlArticlePayload)serializer.Deserialize(file, typeof(CrawlArticlePayload));
+         if (crawlResultEtos != null)
+         {
+             await _articleManangerAloBacSi.ProcessingDataAsync(crawlResultEtos.ArticlesPayload);
          }
     }
 
@@ -169,7 +183,7 @@ public class MasterService : ITransientDependency
     {
         // await _wooManagerLongChau.DoSyncCategoriesAsync();
         await _wooManagerAladin.DoSyncProductToWooAsync();
-        
+        await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
         
         // await _wooManagerAladin.DoSyncProductToWooAsync();
        // await _wooManagerSieuThiSongKhoe.DoSyncUpdateProduct();
@@ -317,6 +331,11 @@ public class MasterService : ITransientDependency
         }
     }
 
+    public async Task DeletePost()
+    {
+        var blogs = await _articleBlogSucKhoeRepository.GetListAsync(x => x.CreatedAt <= new DateTime(2023, 1, 1));
+        await _articleBlogSucKhoeRepository.DeleteManyAsync(blogs);
+    }
     public async Task CleanPostDuplicate()
     {
         while (true)
@@ -478,54 +497,64 @@ public class MasterService : ITransientDependency
     public async Task SyncAllPosts()
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
-
-        var dataSources = await _dataSourceRepository.GetListAsync();
+        Console.WriteLine("Nhap ten site");
+        var site = Console.ReadLine();
+        var dataSources = await _dataSourceRepository.GetListAsync(x=> site == null || x.Url.Contains(site));
+        if (dataSources.Count == 0)
+        {
+            Console.WriteLine("Khong tim ra");
+            return;
+        }
+        else
+        {
+            Console.WriteLine($"Co {dataSources.Count} sites");
+        }
         foreach (var dataSource in dataSources)
         {
             try
             {
-                // if (dataSource.Url.Contains("aladin"))
-                // {
-                //     Console.WriteLine($"Sync article {dataSource.Url}");
-                //     await _wordpressManagerAladin.DoSyncCategoriesAsync();
-                //     await _wordpressManagerAladin.DoSyncPostAsync();
-                // }
-                // if (dataSource.Url.Contains("alobacsi"))
-                // {
-                //     Console.WriteLine($"Sync article {dataSource.Url}");
-                //     await _wordpressManagerAloBacSi.DoSyncCategoriesAsync();
-                //     await _wordpressManagerAloBacSi.DoSyncPostAsync();
-                // }
+                if (dataSource.Url.Contains("aladin"))
+                {
+                    Console.WriteLine($"Sync article {dataSource.Url}");
+                    await _wordpressManagerAladin.DoSyncCategoriesAsync();
+                    await _wordpressManagerAladin.DoSyncPostAsync();
+                }
+                if (dataSource.Url.Contains("alobacsi"))
+                {
+                    Console.WriteLine($"Sync article {dataSource.Url}");
+                    await _wordpressManagerAloBacSi.DoSyncCategoriesAsync();
+                    await _wordpressManagerAloBacSi.DoSyncPostAsync();
+                }
                 // if (dataSource.Url.Contains("nhathuoclongchau"))
                 // {
                 //     Console.WriteLine($"Sync article {dataSource.Url}");
                 //     await _wordpressManagerLongChau.DoSyncCategoriesAsync();
                 //     await _wordpressManagerLongChau.DoSyncPostAsync();
                 // }
-                // if (dataSource.Url.Contains("sieuthisongkhoe"))
-                // {
-                //     Console.WriteLine($"Sync article {dataSource.Url}");
-                //     await _wordpressManagerSieuThiSongKhoe.DoSyncCategoriesAsync();
-                //     await _wordpressManagerSieuThiSongKhoe.DoSyncPostAsync();
-                // }
-                // if (dataSource.Url.Contains("songkhoe.medplus"))
-                // {
-                //     Console.WriteLine($"Sync article {dataSource.Url}");
-                //     await _wordpressManagerSongKhoeMedplus.DoSyncCategoriesAsync();
-                //     await _wordpressManagerSongKhoeMedplus.DoSyncPostAsync();
-                // }
+                if (dataSource.Url.Contains("sieuthisongkhoe"))
+                {
+                    Console.WriteLine($"Sync article {dataSource.Url}");
+                    await _wordpressManagerSieuThiSongKhoe.DoSyncCategoriesAsync();
+                    await _wordpressManagerSieuThiSongKhoe.DoSyncPostAsync();
+                }
+                if (dataSource.Url.Contains("songkhoe.medplus"))
+                {
+                    Console.WriteLine($"Sync article {dataSource.Url}");
+                    await _wordpressManagerSongKhoeMedplus.DoSyncCategoriesAsync();
+                    await _wordpressManagerSongKhoeMedplus.DoSyncPostAsync();
+                }
                 // if (dataSource.Url.Contains("suckhoedoisong"))
                 // {
                 //     Console.WriteLine($"Sync article {dataSource.Url}");
                 //     await _wordpressManagerSucKhoeDoiSong.DoSyncCategoriesAsync();
                 //     await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
                 // }
-                // if (dataSource.Url.Contains("suckhoegiadinh"))
-                // {
-                //     Console.WriteLine($"Sync article {dataSource.Url}");
-                //     await _wordpressManagerSucKhoeGiaDinh.DoSyncCategoriesAsync();
-                //     await _wordpressManagerSucKhoeGiaDinh.DoSyncPostAsync();
-                // }
+                if (dataSource.Url.Contains("suckhoegiadinh"))
+                {
+                    Console.WriteLine($"Sync article {dataSource.Url}");
+                    await _wordpressManagerSucKhoeGiaDinh.DoSyncCategoriesAsync();
+                    await _wordpressManagerSucKhoeGiaDinh.DoSyncPostAsync();
+                }
                 if (dataSource.Url.Contains("blogsuckhoe"))
                 {
                     Console.WriteLine($"Sync article {dataSource.Url}");
