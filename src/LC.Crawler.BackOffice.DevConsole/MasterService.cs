@@ -190,6 +190,17 @@ public class MasterService : ITransientDependency
        // await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
     }
 
+    public async Task DoResetProductsAsync()
+    {
+        // await _wooManagerLongChau.DoSyncCategoriesAsync();
+        await _wooManagerAladin.DoSyncResetProduct();
+        await _wooManagerSieuThiSongKhoe.DoSyncResetProduct();
+        
+        // await _wooManagerAladin.DoSyncProductToWooAsync();
+       // await _wooManagerSieuThiSongKhoe.DoSyncUpdateProduct();
+       // await _wooManagerSieuThiSongKhoe.DoSyncProductToWooAsync();
+    }
+
     public async Task DoSyncArticleToWooAsync()
     {
         //var suckhoeArticle = await _articleSucKhoeDoiSongRepository.GetAsync(x => x.Title == "Lợi ích không ngờ của hành tây với sức khỏe");
@@ -497,9 +508,9 @@ public class MasterService : ITransientDependency
     public async Task SyncAllPosts()
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
-        Console.WriteLine("Nhap ten site");
-        var site = Console.ReadLine();
-        var dataSources = await _dataSourceRepository.GetListAsync(x=> site == null || x.Url.Contains(site));
+        // Console.WriteLine("Nhap ten site");
+        // var site = Console.ReadLine();
+        var dataSources = await _dataSourceRepository.GetListAsync(x=> x.IsActive);
         if (dataSources.Count == 0)
         {
             Console.WriteLine("Khong tim ra");
@@ -543,12 +554,12 @@ public class MasterService : ITransientDependency
                     await _wordpressManagerSongKhoeMedplus.DoSyncCategoriesAsync();
                     await _wordpressManagerSongKhoeMedplus.DoSyncPostAsync();
                 }
-                // if (dataSource.Url.Contains("suckhoedoisong"))
-                // {
-                //     Console.WriteLine($"Sync article {dataSource.Url}");
-                //     await _wordpressManagerSucKhoeDoiSong.DoSyncCategoriesAsync();
-                //     await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
-                // }
+                if (dataSource.Url.Contains("suckhoedoisong"))
+                {
+                    Console.WriteLine($"Sync article {dataSource.Url}");
+                    await _wordpressManagerSucKhoeDoiSong.DoSyncCategoriesAsync();
+                    await _wordpressManagerSucKhoeDoiSong.DoSyncPostAsync();
+                }
                 if (dataSource.Url.Contains("suckhoegiadinh"))
                 {
                     Console.WriteLine($"Sync article {dataSource.Url}");

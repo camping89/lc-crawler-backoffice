@@ -167,6 +167,64 @@ public class WooManagerSieuThiSongKhoe : DomainService
             index++;
         }
     }
+    
+    public async Task DoSyncResetProduct()
+    {
+        _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.SieuThiSongKhoeUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        // get rest api, wc object
+        var wc = await _wooManangerBase.InitWCObject(_dataSource);
+
+        var index = 1;
+        var products = new List<Product>();
+        var pageIndex = 1;
+        while (true)
+        {
+            var result = await wc.Product.GetAll(new Dictionary<string, string>()
+            {
+                
+                //{ "category", "15" },
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+            });
+
+            if (result.IsNullOrEmpty())
+            {
+                break;
+            }
+
+            products.AddRange(result);
+            Console.WriteLine($"Page : {pageIndex} ");
+            pageIndex++;
+        }
+
+        var externalIds = products.Select(x => x.id.To<int>()).ToList();
+        var productIds = (await _productRepository.GetQueryableAsync()).ToList().Where(x=>x.ExternalId != null && externalIds.Contains(x.ExternalId.Value) == false).Select(x => x.Id);
+        Console.WriteLine($"Total: {productIds.Count()}");
+        foreach (var productId in productIds)
+        {
+            try
+            {
+                var product = await _productRepository.FirstOrDefaultAsync(x => x.Id == productId);
+                if (product != null)
+                {
+                    product.ExternalId = null;
+                    await _productRepository.UpdateAsync(product, true);
+                }
+
+                Console.WriteLine($"Product: {index}");
+                index++;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
 
     public async Task DoSyncReviews()
     {
@@ -258,7 +316,7 @@ public class WooManagerSieuThiSongKhoe : DomainService
                         && x.Name != null
                         && x.Code != null
                         && x.ExternalId == null
-                        ).ToList().OrderByDescending(x=>x.CreationTime).Take(500).Select(x => x.Id).ToList();
+                        ).ToList().OrderByDescending(x=>x.CreationTime).Select(x => x.Id).ToList();
 
         // sync product to wp
         var number = 1;

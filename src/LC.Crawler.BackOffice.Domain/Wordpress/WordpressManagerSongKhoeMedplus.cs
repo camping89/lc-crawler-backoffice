@@ -49,7 +49,7 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         _dataSourceManager = dataSourceManager;
     }
 
-    public async Task DoSyncPostAsync()
+    public async Task DoSyncPostAsync(int songay = 3)
     {
         // get datasource
         Console.WriteLine($"Start Sync: {PageDataSourceConsts.SongKhoeMedplusUrl}");
@@ -73,9 +73,9 @@ public class WordpressManagerSongKhoeMedplus : DomainService
         var categoryIds = categories.Select(_ => _.Id).ToList();
         
         // get article ids
-        var limitDate = DateTime.UtcNow.AddDays(-200);
+        var limitDate = DateTime.UtcNow.AddDays(-songay);
         var articleIds = (await _articleSongKhoeMedplusRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
+            .Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null  && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
             .Select(x => x.Id).ToList();
 
         // get all tags

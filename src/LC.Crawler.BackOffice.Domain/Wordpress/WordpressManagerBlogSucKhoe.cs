@@ -51,7 +51,7 @@ public class WordpressManagerBlogSucKhoe : DomainService
         _dataSourceManager = dataSourceManager;
     }
 
-    public async Task DoSyncPostAsync()
+    public async Task DoSyncPostAsync(int songay = 3)
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.BlogSucKhoeUrl));
@@ -64,7 +64,7 @@ public class WordpressManagerBlogSucKhoe : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
         
         // get article ids
-        var limitDate = DateTime.UtcNow.AddDays(-200);
+        var limitDate = DateTime.UtcNow.AddDays(-songay);
         var categories = await _categoryBlogSucKhoeRepository.GetListAsync();
         var articleIds = new List<Guid>();
         var articles = (await _articleBlogSucKhoeRepository.GetQueryableAsync())

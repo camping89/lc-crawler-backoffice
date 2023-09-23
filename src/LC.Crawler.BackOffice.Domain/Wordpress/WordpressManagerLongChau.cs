@@ -67,7 +67,7 @@ public class WordpressManagerLongChau : DomainService
         // get article ids
         var limitDate = DateTime.UtcNow.AddDays(-45);
         var articleIds = (await _articleLongChauRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null).ToList().OrderByDescending(x => x.CreationTime).Take(200)
+            .Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null  && x.Content != null).ToList().OrderByDescending(x => x.CreationTime).Take(200)
             .Select(x => x.Id).ToList();
 
         // get all tags

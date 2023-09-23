@@ -103,7 +103,7 @@ public class WordpressManagerAloBacSi : DomainService
         }
     }
 
-    public async Task DoSyncPostAsync()
+    public async Task DoSyncPostAsync(int songay = 3)
     {
         // get datasource
         Console.WriteLine($"Start Sync: {PageDataSourceConsts.AloBacSiUrl}");
@@ -117,9 +117,9 @@ public class WordpressManagerAloBacSi : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
         
         // get article ids
-        var limitDate = DateTime.UtcNow.AddDays(-200);
+        var limitDate = DateTime.UtcNow.AddDays(-songay);
         var articleIds = (await _articleAloBacSiRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
+            .Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null  && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
             .Select(x => x.Id).ToList();
 
 

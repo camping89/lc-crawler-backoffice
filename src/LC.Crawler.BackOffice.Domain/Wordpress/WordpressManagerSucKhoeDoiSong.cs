@@ -50,7 +50,7 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         _dataSourceManager = dataSourceManager;
     }
 
-    public async Task DoSyncPostAsync()
+    public async Task DoSyncPostAsync(int songay = 3)
     {
         // get datasource
         _dataSource = await _dataSourceRepository.FirstOrDefaultAsync(x => x.Url.Contains(PageDataSourceConsts.SucKhoeDoiSongUrl));
@@ -63,9 +63,9 @@ public class WordpressManagerSucKhoeDoiSong : DomainService
         await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncArticle, PageSyncStatus.InProgress);
         
         // get article ids
-        var limitDate = DateTime.UtcNow.AddDays(-200);
+        var limitDate = DateTime.UtcNow.AddDays(-songay);
         var articleIds = (await _articleSucKhoeDoiSongRepository.GetQueryableAsync())
-            .Where(x => x.DataSourceId == _dataSource.Id && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
+            .Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId == null  && x.Content != null && x.CreatedAt > limitDate).ToList().OrderByDescending(x => x.CreationTime)
             .Select(x => x.Id).ToList();
 
         

@@ -30,10 +30,10 @@ public class WooManagerAladin : DomainService
     private readonly IMediaAladinRepository _mediaAladinRepository;
     private readonly WooManangerBase _wooManangerBase;
     private readonly IAuditingManager _auditingManager;
-    
+
     private readonly IProductReviewAladinRepository _productReviewAladinRepository;
     private readonly IProductCommentAladinRepository _productCommentAladinRepository;
-    
+
     private readonly DataSourceManager _dataSourceManager;
 
     private string BASEURL = string.Empty;
@@ -59,7 +59,7 @@ public class WooManagerAladin : DomainService
         _productCommentAladinRepository = productCommentAladinRepository;
         _dataSourceManager = dataSourceManager;
     }
-    
+
     public async Task DoSyncUpdateProduct()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
@@ -69,17 +69,19 @@ public class WooManagerAladin : DomainService
         }
 
         // get rest api, wc object
-        var wc      = await _wooManangerBase.InitWCObject(_dataSource);
-        
-        var categories    = ( await _categoryAladinRepository.GetListAsync(x => x.CategoryType == CategoryType.Ecom)).ToList();
+        var wc = await _wooManangerBase.InitWCObject(_dataSource);
+
+        var categories =
+            (await _categoryAladinRepository.GetListAsync(x => x.CategoryType == CategoryType.Ecom)).ToList();
         var wooCategories = await _wooManangerBase.GetWooCategories(_dataSource);
         //var productTags = await _wooManangerBase.GetWooProductTagsAsync(_dataSource);
         foreach (var categoryItem in categories)
         {
             //TODO remove condition ExternalId for updating product
-            var productIds = (await _productRepository.GetQueryableAsync()).Where(x => x.DataSourceId == _dataSource.Id && x.ExternalId != null
-                && x.Categories.Any(x=>x.CategoryId == categoryItem.Id))
-            .Select(x=>x.Id).ToList();
+            var productIds = (await _productRepository.GetQueryableAsync()).Where(x =>
+                    x.DataSourceId == _dataSource.Id && x.ExternalId != null
+                                                     && x.Categories.Any(x => x.CategoryId == categoryItem.Id))
+                .Select(x => x.Id).ToList();
             foreach (var productId in productIds)
             {
                 using var auditingScope = _auditingManager.BeginScope();
@@ -95,17 +97,17 @@ public class WooManagerAladin : DomainService
                     var category = productNav.Categories.FirstOrDefault();
                     if (category != null)
                     {
-                        
                         var cateTerms = category.Name.Split("->").LastOrDefault();
                         //Thuốc -> Vitamin &amp; khoáng chất
                         //Thực phẩm chức năng -> Vitamin &amp; khoáng chất
                         var encodeName = cateTerms?.Replace("&", "&amp;").Trim();
-                        
+
                         if (category.Name.Contains("->"))
                         {
                             var wooCategory = wooCategories.FirstOrDefault(x =>
-                                encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase));
-                            if (encodeName != null )
+                                encodeName != null && x.name.Equals(encodeName,
+                                    StringComparison.InvariantCultureIgnoreCase));
+                            if (encodeName != null)
                             {
                                 category.Name = category.Name.Replace("&", "&amp;").Trim();
                                 var wooCategoriesFilter = wooCategories.Where(x =>
@@ -116,7 +118,8 @@ public class WooManagerAladin : DomainService
                                     if (parentCate != null && category.Name.Contains(parentCate.name))
                                     {
                                         var rootParent = wooCategories.FirstOrDefault(x => x.id == parentCate.parent);
-                                        if ( (rootParent != null && category.Name.Contains(rootParent.name)) || parentCate.parent == 0)
+                                        if ((rootParent != null && category.Name.Contains(rootParent.name)) ||
+                                            parentCate.parent == 0)
                                         {
                                             wooCategory = wooCate;
                                             checkProduct.categories = new List<ProductCategoryLine>()
@@ -137,7 +140,9 @@ public class WooManagerAladin : DomainService
                         else
                         {
                             var wooCategory = wooCategories.FirstOrDefault(x =>
-                                encodeName != null && x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) && x.parent == 0);
+                                encodeName != null &&
+                                x.name.Equals(encodeName, StringComparison.InvariantCultureIgnoreCase) &&
+                                x.parent == 0);
                             if (wooCategory is not null)
                             {
                                 checkProduct.categories = new List<ProductCategoryLine>()
@@ -157,7 +162,7 @@ public class WooManagerAladin : DomainService
             }
         }
     }
-    
+
     public async Task DoSyncTagAsync()
     {
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
@@ -167,13 +172,13 @@ public class WooManagerAladin : DomainService
         }
 
         var tags = (await _productRepository.GetQueryableAsync())
-                  .Where(x => x.Tags.Any())
-                  .ToList().Select(x => x.Tags);
-        
+            .Where(x => x.Tags.Any())
+            .ToList().Select(x => x.Tags);
+
         var tagList = new List<string>();
         tagList.AddRange(tags.SelectMany(x => x));
         tagList = tagList.Distinct().ToList();
-        
+
         await _wooManangerBase.SyncProductTagsAsync(_dataSource, tagList);
     }
 
@@ -201,30 +206,31 @@ public class WooManagerAladin : DomainService
 
             // get rest api, wc object
             var wc = await _wooManangerBase.InitWCObject(_dataSource);
-        
+
             var reviews = await _productReviewAladinRepository.GetListAsync(x => !x.IsSynced);
             var comments = await _productCommentAladinRepository.GetListAsync(x => !x.IsSynced);
-            
+
             if (reviews.IsNullOrEmpty() && comments.IsNullOrEmpty()) return;
-            
+
             var products = (await _productRepository.GetQueryableAsync())
                 .Where(x => x.DataSourceId == _dataSource.Id
                             && x.ExternalId != null
                 )
                 .ToList().ToList();
-            
+
             foreach (var product in products)
             {
                 var productReviews = reviews.Where(x => x.ProductId == product.Id).ToList();
                 var productComments = comments.Where(x => x.ProductId == product.Id).ToList();
-                
-                if(productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
-                
+
+                if (productReviews.IsNullOrEmpty() && productComments.IsNullOrEmpty()) continue;
+
                 await _wooManangerBase.PostProductReviews(wc, product.Code, productComments, productReviews);
                 foreach (var productReview in productReviews)
                 {
                     productReview.IsSynced = true;
                 }
+
                 foreach (var productComment in productComments)
                 {
                     productComment.IsSynced = true;
@@ -234,6 +240,7 @@ public class WooManagerAladin : DomainService
                 {
                     await _productReviewAladinRepository.UpdateManyAsync(productReviews);
                 }
+
                 if (productComments.Any())
                 {
                     await _productCommentAladinRepository.UpdateManyAsync(productComments);
@@ -245,15 +252,76 @@ public class WooManagerAladin : DomainService
             Logger.LogException(e);
         }
     }
+
+    public async Task DoSyncResetProduct()
+    {
+        _dataSource =
+            await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
+        if (_dataSource == null)
+        {
+            return;
+        }
+
+        // get rest api, wc object
+        var wc = await _wooManangerBase.InitWCObject(_dataSource);
+
+        var index = 1;
+        var products = new List<Product>();
+        var pageIndex = 1;
+        while (true)
+        {
+            var result = await wc.Product.GetAll(new Dictionary<string, string>()
+            {
+                //{ "category", "15" },
+                { "page", pageIndex.ToString() },
+                { "per_page", "100" },
+            });
+
+            if (result.IsNullOrEmpty())
+            {
+                break;
+            }
+
+            products.AddRange(result);
+            Console.WriteLine($"Page : {pageIndex} ");
+            pageIndex++;
+        }
+
+        var externalIds = products.Select(x => x.id.To<int>()).ToList();
+        var productIds = (await _productRepository.GetQueryableAsync()).ToList()
+            .Where(x => x.ExternalId != null && externalIds.Contains(x.ExternalId.Value) == false).Select(x => x.Id);
+        Console.WriteLine($"Total: {productIds.Count()}");
+        foreach (var productId in productIds)
+        {
+            try
+            {
+                var product = await _productRepository.FirstOrDefaultAsync(x => x.Id == productId);
+                if (product != null)
+                {
+                    product.ExternalId = null;
+                    await _productRepository.UpdateAsync(product, true);
+                }
+
+                Console.WriteLine($"Product: {index}");
+                index++;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
+
     public async Task DoSyncProductToWooAsync()
     {
         // get data source
         _dataSource = await _dataSourceRepository.GetAsync(x => x.Url.Contains(PageDataSourceConsts.AladinUrl));
-        
-        
+
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.InProgress);
-        
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct,
+            PageSyncStatus.InProgress);
+
         // get rest api, wc object
         var wc = await _wooManangerBase.InitWCObject(_dataSource);
 
@@ -265,9 +333,9 @@ public class WooManagerAladin : DomainService
                         && x.Name != null
                         && x.Code != null
                         && x.ExternalId == null
-                        )
-            .ToList().OrderByDescending(x=>x.CreationTime).Take(500).Select(x => x.Id).ToList();
-        
+            )
+            .ToList().OrderByDescending(x => x.CreationTime).Select(x => x.Id).ToList();
+
         // sync product to wp
         var number = 1;
         foreach (var productId in productIds)
@@ -280,7 +348,8 @@ public class WooManagerAladin : DomainService
                 var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
                 var contentMedias = await _mediaAladinRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
                 var wooProduct =
-                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags, contentMedias);
+                    await _wooManangerBase.PostToWooProduct(_dataSource, wc, productNav, wooCategories, productTags,
+                        contentMedias);
                 if (wooProduct is { id: > 0 })
                 {
                     productNav.Product.ExternalId = wooProduct.id.To<int>();
@@ -303,9 +372,10 @@ public class WooManagerAladin : DomainService
                 await auditingScope.SaveAsync();
             }
         }
-        
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct, PageSyncStatus.Completed);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.SyncProduct,
+            PageSyncStatus.Completed);
     }
 
     public async Task DoReSyncProductToWooAsync()
@@ -318,7 +388,8 @@ public class WooManagerAladin : DomainService
         // }
         //
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.InProgress);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct,
+            PageSyncStatus.InProgress);
 
         // get rest api, wc object
         var wcObject = await _wooManangerBase.InitWCObject(_dataSource);
@@ -333,27 +404,29 @@ public class WooManagerAladin : DomainService
 
             try
             {
-                var product = await _productRepository.FirstOrDefaultAsync(_ => _.ExternalId == checkProduct.id.To<int>());
+                var product =
+                    await _productRepository.FirstOrDefaultAsync(_ => _.ExternalId == checkProduct.id.To<int>());
                 if (product is null)
                 {
                     continue;
                 }
 
                 var productNav = await _productRepository.GetWithNavigationPropertiesAsync(product.Id);
-               
+
                 var listContentMediaIds = StringHtmlHelper.GetContentMediaIds(productNav.Product.Description);
                 var contentMedias = await _mediaAladinRepository.GetListAsync(x => listContentMediaIds.Contains(x.Id));
-                
-                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject,contentMedias);
+
+                await _wooManangerBase.DoReSyncProductToWooAsync(_dataSource, checkProduct, productNav, wcObject,
+                    contentMedias);
             }
             catch (Exception ex)
             {
                 //Add exceptions
                 _wooManangerBase.LogException(_auditingManager.Current.Log,
-                                              ex,
-                                              new Products.Product(),
-                                              PageDataSourceConsts.AladinUrl,
-                                              "DoReSyncProductToWooAsync");
+                    ex,
+                    new Products.Product(),
+                    PageDataSourceConsts.AladinUrl,
+                    "DoReSyncProductToWooAsync");
             }
             finally
             {
@@ -361,9 +434,10 @@ public class WooManagerAladin : DomainService
                 await auditingScope.SaveAsync();
             }
         }
-        
+
         // update re-sync status
-        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct, PageSyncStatus.Completed);
+        await _dataSourceManager.DoUpdateSyncStatus(_dataSource.Id, PageSyncStatusType.ResyncProduct,
+            PageSyncStatus.Completed);
     }
 
     /// <summary>
@@ -377,11 +451,12 @@ public class WooManagerAladin : DomainService
         {
             return;
         }
-        
+
         // Update the products are not found in the latest crawl
-        var productCodes     = products.Select(_ => _.Code).ToList();
-        var notFoundProducts = await _productRepository.GetListAsync(_ => !productCodes.Contains(_.Code) && _.ExternalId != null);
-        
+        var productCodes = products.Select(_ => _.Code).ToList();
+        var notFoundProducts =
+            await _productRepository.GetListAsync(_ => !productCodes.Contains(_.Code) && _.ExternalId != null);
+
         // Change status
         await _wooManangerBase.DoChangeStatusWooAsync(_dataSource, notFoundProducts);
     }
@@ -389,15 +464,15 @@ public class WooManagerAladin : DomainService
     public async Task RemoveExternalIdAsync()
     {
         var productIds = (await _productRepository.GetQueryableAsync())
-                        .Where(x => x.DataSourceId == _dataSource.Id
-                                 && x.Name         != null
-                                 && x.Code         != null
-                                 && x.ExternalId   != null
-                              )
-                        .ToList().Select(x => x.Id).ToList();
+            .Where(x => x.DataSourceId == _dataSource.Id
+                        && x.Name != null
+                        && x.Code != null
+                        && x.ExternalId != null
+            )
+            .ToList().Select(x => x.Id).ToList();
         // sync product to wp
         var number = 1;
-        var total  = productIds.Count();
+        var total = productIds.Count();
         foreach (var productId in productIds)
         {
             try
@@ -408,7 +483,7 @@ public class WooManagerAladin : DomainService
                     product.ExternalId = null;
                     await _productRepository.UpdateAsync(product, true);
                 }
-                
+
                 Console.WriteLine($"Product -> {number}/{total}");
                 number++;
             }
